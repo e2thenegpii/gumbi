@@ -66,11 +66,11 @@ void spi_ss_pin(uint8_t hl)
 {
 	if(hl)
 	{
-		DDRB |= (1 << SPI_SS_PIN);
+		PORTB |= (1 << SPI_SS_PIN);
 	}
 	else
 	{
-		DDRB &= ~(1 << SPI_SS_PIN);
+		PORTB &= ~(1 << SPI_SS_PIN);
 	}
 }
 

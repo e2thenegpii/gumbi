@@ -3,6 +3,10 @@
 
 #include "common.h"
 
+#define RESET_PORT PORTB
+#define RESET_DDR DDRB
+#define RESET_PIN PB0
+
 #define REG_READ 1
 #define REG_WRITE 0
 #define OPCODE 0x40
@@ -11,10 +15,13 @@
 #define REG_DEFAULT_VALUE 0x00
 
 void mcp23s17_init(void);
+void mcp23s17_chip_reset(uint8_t rst);
+void mcp23s17_enable(void);
 void mcp23s17_disable(void);
 void io_init(void);
 uint8_t read_register(uint8_t addr, uint8_t reg);
 void write_register(uint8_t addr, uint8_t reg, uint8_t val);
+uint8_t get_pin(struct pin *p);
 void set_pin_high(struct pin *p);
 void set_pin_low(struct pin *p);
 void set_pins_high(struct pin pins[], uint8_t n);

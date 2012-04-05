@@ -30,6 +30,7 @@ SRC = $(TARGET).c common.c mcp23s17.c parallel.c command.c avrlib/uart.c avrlib/
 
 # Programming hardware: type `avrdude -c ?` to get a full listing.
 AVRDUDE_PROGRAMMER = usbtiny
+#AVRDUDE_PROGRAMMER = avrispmkII
 
 # Port to which the programmer is connected
 AVRDUDE_PORT = /dev/ttyUSB0
@@ -133,7 +134,7 @@ AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 
 # Uncomment the following if you are using arduino (or any other programmer
 # that needs custom baud rate) as a programmer.
-AVRDUDE_FLAGS += -b 19200
+#AVRDUDE_FLAGS += -b 19200
 
 # Uncomment the following if you want avrdude's erase cycle counter.
 # Note that this counter needs to be initialized first using -Yn,

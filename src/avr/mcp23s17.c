@@ -6,6 +6,27 @@
 
 void mcp23s17_init(void)
 {
+	RESET_DDR |= (1 << RESET_PIN);
+	mcp23s17_chip_reset(TRUE);
+}
+
+void mcp23s17_chip_reset(uint8_t rst)
+{
+	if(rst == TRUE)
+	{
+		RESET_PORT &= ~(1 << RESET_PIN);
+	}
+	else
+	{
+		RESET_PORT |= (1 << RESET_PIN);
+	}
+}
+
+void mcp23s17_enable(void)
+{
+	/* Bring the I/O chips out of their reset state */
+	mcp23s17_chip_reset(FALSE);
+
 	/* Initialize SPI */
 	spi_init(SPI_MODE_0, SPI_MSB, SPI_NO_INTERRUPT, SPI_MSTR_CLK4, SPI_SS_IDLE_HIGH);
 
@@ -16,6 +37,7 @@ void mcp23s17_init(void)
 void mcp23s17_disable(void)
 {
 	io_init();
+	//mcp23s17_chip_reset(TRUE);
 	spi_disable();
 }
 
@@ -69,6 +91,12 @@ uint8_t read_register(uint8_t addr, uint8_t reg)
 	spi_release();
 
 	return value;
+}
+
+/* Get the status of a specific pin. Returns 1 for high, 0 for low. */
+uint8_t get_pin(struct pin *p)
+{
+	return (read_register(p->addr, p->reg) & p->bit);
 }
 
 /* Set the specified pins high (hl = 1) or low (hl = 0) */

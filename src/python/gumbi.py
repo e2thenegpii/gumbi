@@ -4,6 +4,11 @@ import serial
 import struct
 import time
 
+EXIT = 0
+READ = 1
+WRITE = 2
+ERASE = 3
+
 class Pin:
 
 	NUM_DEVICES = 4
@@ -46,13 +51,10 @@ class Pin:
 	
 class Configuration:
 
-	READ = 1
-	WRITE = 2
-	ERASE = 3
 	MAX_PINS = 64
 
 	def __init__(self, address=[], data=[], gnd=[], vcc=[], ce=(0,0), we=(0,0), oe=(0,0), be=(0,0), by=(0,0), wp=(0,0), rst=(0,0)):
-		self.action = self.READ
+		self.action = READ
 		self.num_addr_pins = len(address)
 		self.num_data_pins = len(data)
 		self.num_gnd_pins = len(gnd)
@@ -91,15 +93,18 @@ class Configuration:
 		return data
 
 	def Read(self):
-		self.__set_action__(self.READ)
+		self.__set_action__(READ)
 
 	def Write(self):
-		self.__set_action__(self.WRITE)
+		self.__set_action__(WRITE)
 
 	def Erase(self):
-		self.__set_action__(self.ERASE)
+		self.__set_action__(ERASE)
+	
+	def Exit(self):
+		self.__set_action__(EXIT)
 
-	def Address(self, address):
+	def Start(self, address):
 		self.address = address
 
 	def Count(self, count):
@@ -183,6 +188,17 @@ class Command:
 		self.mode = self.RAWIO
 		return self.__struct__()
 
+class IO:
+
+	def __init__(self, pin, hl=0, rw=READ):	
+		self.rw = rw
+		self.pin = Pin(pin, hl)
+
+	def struct(self):
+		data = chr(self.rw)
+		data += self.pin.struct()
+		return data
+
 class Gumbi:
 
 	ACK = "ACK"
@@ -203,7 +219,7 @@ class Gumbi:
 		self.Write(conf)
 
 		while ack is None:
-			line = self.Read().strip()
+			line = self.ReadText()
 
 			if line.startswith(self.ACK):
 				ack = self.ACK
@@ -214,8 +230,11 @@ class Gumbi:
 		
 		return (ack, data)
 
-	def Read(self):
-		return self.serial.readline()
+	def ReadText(self):
+		return self.serial.readline().strip()
+
+	def Read(self, n=1):
+		return self.serial.read(n)
 
 	def Write(self, data):
 		self.serial.write(data)
@@ -224,12 +243,13 @@ class Gumbi:
 		return self.serial.close()
 
 
-config = Configuration(address=[1,2,3,4], data=[61,62,63,64])
-config.Count(15)
+config = Configuration(vcc=[1,2,3,4,5,6,7,8])
 cmd = Command(config)
 gumbi = Gumbi()
 print gumbi.Execute(cmd.Debug())
 print gumbi.Execute(cmd.IO())
+gumbi.Write(IO(1,0).struct())
+print gumbi.Read()
 gumbi.Close()
 
 
