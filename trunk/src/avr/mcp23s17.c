@@ -1,9 +1,14 @@
-#include <avr/io.h>
-
-#include "avrlib/spi.h"
-#include "common.h"
 #include "mcp23s17.h"
 
+/* 
+ * Configures the MCP23S17 reset pin as an output.
+ * Identifies how many MCP23S17 chips are on the SPI bus.
+ * Calculates the number of available I/O pins.
+ * Puts the MCP32S17 chips into a reset (standby) state.
+ * Initializes the gconfig.pins data structures.
+ *
+ * This should be called before any other functions in mcp23s17.c.
+ */
 void mcp23s17_init(void)
 {
 	RESET_DDR |= (1 << RESET_PIN);
@@ -16,10 +21,16 @@ void mcp23s17_init(void)
 	init_pins();
 }
 
+/* 
+ * Puts the MCP23S17 chips into a reset state, or takes the out of a reset state.
+ * If rst == TRUE, the chips are put into a reset state.
+ * If rst == FALSE, the chips are taken out of a reset state.
+ */
 void mcp23s17_chip_reset(uint8_t rst)
 {
 	if(rst == TRUE)
 	{
+		/* The reset pin is active low. */
 		RESET_PORT &= ~(1 << RESET_PIN);
 	}
 	else
@@ -28,6 +39,7 @@ void mcp23s17_chip_reset(uint8_t rst)
 	}
 }
 
+/* Enables and configures all the MCP23S17 chips on the SPI bus. */
 void mcp23s17_enable(void)
 {
 	/* Bring the I/O chips out of their reset state */
@@ -40,12 +52,14 @@ void mcp23s17_enable(void)
 	mcp23s17_io_init();
 }
 
+/* Puts the MCP23S17 chips into a reset state and disables SPI on the AVR. */
 void mcp23s17_disable(void)
 {
 	mcp23s17_chip_reset(TRUE);
 	spi_disable();
 }
 
+/* Loads all MCP23S17 chips with their initial configurations. */
 void mcp23s17_io_init(void)
 {
 	uint8_t i = 0, j = 0;
@@ -92,11 +106,12 @@ uint8_t mcp23s17_chip_count(void)
 	return i;
 }
 
+/* Initializes all available pins in the gconfig.pins data structure array */
 void init_pins(void)
 {
         uint8_t i = 0;
 
-        for(i=0; i<gconfig.num_io_devices; i++)
+        for(i=0; i<gconfig.num_pins; i++)
         {
                 gconfig.pins[i].inuse = 1;
                 gconfig.pins[i].active = 1;
@@ -115,6 +130,7 @@ void init_pins(void)
         }
 }
 
+/* Writes val to the reg register on the MCP23S17 chip configured with the addr hardware address */
 void write_register(uint8_t addr, uint8_t reg, uint8_t val)
 {
 	spi_select();
@@ -124,6 +140,7 @@ void write_register(uint8_t addr, uint8_t reg, uint8_t val)
 	spi_release();
 }
 
+/* Reads the current value of the reg register from teh MCP23S17 chip configured with teh addr hardware address */
 uint8_t read_register(uint8_t addr, uint8_t reg)
 {
 	uint8_t value = 0;

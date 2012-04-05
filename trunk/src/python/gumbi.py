@@ -2,7 +2,7 @@
 
 import serial
 import struct
-import timeit
+import time
 
 class Packer:
 
@@ -54,7 +54,11 @@ class Gumbi:
 
 	def SetMode(self, mode):
 		self.Write(Packer().packbyte(mode))
-		return self.ReadText()
+
+		if self.ReadText() != self.ACK:
+			raise Exception(self.ReadText())
+
+		return
 
 	def ReadText(self):
 		return self.serial.readline().strip()
@@ -70,26 +74,60 @@ class Gumbi:
 
 class SpeedTest:
 
-	def __init__(self, count, port=''):
-		if not port:
-			self.port = None
+	def __init__(self, count, port=None):
 		self.count = count
 		self.gumbi = Gumbi(port)
 
 	def Go(self):
-		t = timeit.Timer("SpeedTest(%d, '%s')._test()" % (self.count, self.port), "from __main__ import SpeedTest")
-		time = t.timeit(1)
+		start = time.time()
+		self.__test__()
+		time = time.time() - start
 		self.Close()
 		return time
 
-	def _test(self):
-		if self.gumbi.SetMode(self.gumbi.SPEED) == self.gumbi.ACK:
-			self.gumbi.Write(Packer().pack32(self.count))
-			self.gumbi.Read(self.count)
+	def __test__(self):
+		self.gumbi.SetMode(self.gumbi.SPEED)
+		self.gumbi.Write(Packer().pack32(self.count))
+		self.gumbi.Read(self.count)
+
+	def Close(self):
+		self.gumbi.Close()
+
+class Info:
+
+	def __init__(self, port=None):
+		self.gumbi = Gumbi(port)
+
+	def Go(self):
+		data = []
+
+		self.gumbi.SetMode(self.gumbi.INFO)
+		while True:
+			line = self.gumbi.ReadText()
+			if line == self.gumbi.ACK:
+				break
+			else:
+				data.append(line)
 		self.Close()
+		return data
 
 	def Close(self):
 		self.gumbi.Close()
 
 
-print SpeedTest(128)
+class Ping:
+
+	def __init__(self, port=None):
+		self.gumbi = Gumbi(port)
+
+	def Go(self):
+		data = None
+		self.gumbi.SetMode(self.gumbi.PING)
+		data = self.gumbi.ReadText()
+		self.Close()
+		return data
+
+	def Close(self):
+		self.gumbi.Close()
+
+print Info().Go()

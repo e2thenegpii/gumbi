@@ -1,7 +1,3 @@
-#include <avr/io.h>
-#include <string.h>
-
-#include "common.h"
 #include "gumbi.h"
 #include "mcp23s17.h"
 #include "parallel.h"
@@ -21,6 +17,7 @@ int main(void)
 	uart_init();
 	dup2uart();
 
+	/* Show that we're alive and ready */
 	printf("%s\r\n", BOARD_ID);
 
 	while(TRUE)
@@ -32,18 +29,22 @@ int main(void)
 	return 0;
 }
 
+/* Handler for PING mode. Just responds with an ACK. */
 void ping(void)
 {
 	ack();
 }
 
+/* Handler for INFO mode. Prints out several lines of info, with the last line being an ACK. */
 void info(void)
 {
+	printf("Board ID: %s\r\n", BOARD_ID);
 	printf("Number of I/O chips: %d\r\n", gconfig.num_io_devices);
 	printf("Available I/O pins: %d\r\n", gconfig.num_pins);
 	ack();
 }
 
+/* Handler for SPEED mode. Reads in a 4 byte size field, then prints out that many bytes of data. */
 void speed_test(void)
 {
 	uint8_t *data = NULL;
@@ -58,12 +59,12 @@ void speed_test(void)
 		{
 			putchar('A');
 		}
-		printf("\r\n");
 		
 		free(data);
 	}
 }
 
+/* Checks the specified mode and calls the appropriate handler function. */
 void command_handler(uint8_t mode)
 {
 	void (*handler)(void);
@@ -96,13 +97,15 @@ void command_handler(uint8_t mode)
 
 	if(handler)
 	{
+		/* Always ACK if the specified mode was identified. */
 		ack();
 		handler();
 	}
 	else
 	{
-		printf("Mode not implemented!\r\n");
+		/* If the specified mode is unknown/unsupported, send a NACK followed by a reason */
 		nack();
+		printf("Specified mode not implemented!\r\n");
 	}
 
 	return;
