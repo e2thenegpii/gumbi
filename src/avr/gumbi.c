@@ -2,13 +2,17 @@
 #include <string.h>
 
 #include "common.h"
-#include "command.h"
+#include "gumbi.h"
 #include "mcp23s17.h"
+#include "parallel.h"
+#include "io.h"
 
 int main(void)
 {
-	uint8_t data[sizeof(struct command)] = { 0 };
-	uint16_t i = 0, data_size = sizeof(struct command);
+	uint8_t mode = 0;
+
+	/* Make sure the entire gconfig structure is zeroed out */
+	memset(&gconfig, 0, sizeof(gconfig));
 
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();
@@ -18,21 +22,88 @@ int main(void)
 	dup2uart();
 
 	printf("%s\r\n", BOARD_ID);
-//	printf("Waiting for %d bytes of command data...\r\n", data_size);
 
 	while(TRUE)
 	{
-		memset(&data, 0, data_size);
-
-		for(i=0; i<data_size; i++)
-		{
-//			printf("%d/%d\r\n", i, data_size);
-			data[i] = getchar();
-		}
-
-		/* Pass command data off to command_handler */
-		command_handler((struct command *) &data);
+		mode = getchar();
+		command_handler(mode);
 	}
 
 	return 0;
+}
+
+void ping(void)
+{
+	ack();
+}
+
+void info(void)
+{
+	printf("Number of I/O chips: %d\r\n", gconfig.num_io_devices);
+	printf("Available I/O pins: %d\r\n", gconfig.num_pins);
+	ack();
+}
+
+void speed_test(void)
+{
+	uint8_t *data = NULL;
+	uint32_t i = 0, count = 0, data_size = sizeof(uint32_t);
+
+	data = read_data(data_size);
+	if(data)
+	{
+		count = (uint32_t) *data;
+
+		for(i=0; i<count; i++)
+		{
+			putchar('A');
+		}
+		printf("\r\n");
+		
+		free(data);
+	}
+}
+
+void command_handler(uint8_t mode)
+{
+	void (*handler)(void);
+
+	handler = NULL;
+
+	switch(mode)
+	{
+		case PING:
+			handler = &ping;
+			break;
+		case INFO:
+			handler = &info;
+			break;
+		case SPEED:
+			handler = &speed_test;
+			break;
+		case PFLASH:
+			handler = &parallel_flash;
+			break;
+		case IO:
+			handler = &io;
+			break;
+		case SPIFLASH:
+		case SPIEEPROM:
+		case I2CEEPROM:
+		default:
+			break;
+	}
+
+	if(handler)
+	{
+		ack();
+		handler();
+	}
+	else
+	{
+		printf("Mode not implemented!\r\n");
+		nack();
+	}
+
+	return;
 }
