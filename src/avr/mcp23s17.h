@@ -2,6 +2,7 @@
 #define __MCP23S17_H__
 
 #include "common.h"
+#include <avrlib/spi.h>
 
 #define RESET_PORT PORTB
 #define RESET_DDR DDRB

@@ -2,6 +2,7 @@
 #define __COMMON_H__
 
 #include <string.h>
+#include <avr/io.h>
 #include <avrlib/uart.h>
 
 #define BOARD_ID "GUMBI v1"
