@@ -12,8 +12,6 @@
 #define ACK "ACK"
 #define NACK "NACK"
 
-#define SPEED_TEST_SIZE 65535
-
 #define MAX_PINS 128
 #define MAX_DEVICES 8
 #define PINS_PER_DEVICE 16
