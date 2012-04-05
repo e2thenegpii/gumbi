@@ -8,7 +8,7 @@
 void parallel_flash(void)
 {
 	/* Initialize SPI and the MCP23S17 chips */
-	mcp23s17_init();
+	mcp23s17_enable();
 
 	/* Configure all address, Vcc and GND pins as outputs */
 	configure_pins_as_outputs(gconfig->addr_pins, gconfig->num_addr_pins);

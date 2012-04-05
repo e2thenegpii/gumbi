@@ -61,6 +61,7 @@ enum modes
 
 enum actions
 {
+	EXIT = 0,
 	READ = 1,
 	WRITE = 2,
 	ERASE = 3
@@ -73,6 +74,12 @@ struct pin
         uint8_t bit;				/* The bit (0-7) in the GPIO register that represents this pin */
 	uint8_t inuse;				/* Set to 1 if the pin is in use, 0 if not */
 	uint8_t active;				/* The active state (1, 0) of the pin, mostly used for control pins */
+};
+
+struct io
+{
+	enum actions action;
+	struct pin p;
 };
 
 struct device
