@@ -7,80 +7,91 @@
 /* Handles parallel flash commands */
 void parallel_flash(void)
 {
-	/* Initialize SPI and the MCP23S17 chips */
-	mcp23s17_enable();
+	uint16_t data_size = sizeof(struct parallel);
 
-	/* Configure all address, Vcc and GND pins as outputs */
-	configure_pins_as_outputs(gconfig->addr_pins, gconfig->num_addr_pins);
-	configure_pins_as_outputs(gconfig->vcc_pins, gconfig->num_vcc_pins);
-	configure_pins_as_outputs(gconfig->gnd_pins, gconfig->num_gnd_pins);
+	/* Read in parallel flash configuration data */
+	pconfig = (struct parallel *) read_data(data_size);
 
-	/* Set control pins as outputs */
-	configure_pin_as_output(&gconfig->oe_pin);
-	configure_pin_as_output(&gconfig->we_pin);
-	configure_pin_as_output(&gconfig->ce_pin);
-	configure_pin_as_output(&gconfig->be_pin);
-	configure_pin_as_output(&gconfig->rst_pin);
-
-	/* Set the busy/ready pin as an input */
-	configure_pin_as_input(&gconfig->by_pin);
-
-	/* If we have more than 8 data pins, enable word-size data access */
-	if(gconfig->num_data_pins > 8)
+	if(pconfig)
 	{
-		byte_enable(FALSE);
+		/* Initialize SPI and the MCP23S17 chips */
+		mcp23s17_enable();
+
+		/* Configure all address, Vcc and GND pins as outputs */
+		configure_pins_as_outputs(pconfig->addr_pins, pconfig->num_addr_pins);
+		configure_pins_as_outputs(pconfig->vcc_pins, pconfig->num_vcc_pins);
+		configure_pins_as_outputs(pconfig->gnd_pins, pconfig->num_gnd_pins);
+
+		/* Set control pins as outputs */
+		configure_pin_as_output(pconfig->oe.pin);
+		configure_pin_as_output(pconfig->we.pin);
+		configure_pin_as_output(pconfig->ce.pin);
+		configure_pin_as_output(pconfig->be.pin);
+		configure_pin_as_output(pconfig->rst.pin);
+
+		/* Set the busy/ready pin as an input */
+		configure_pin_as_input(pconfig->by.pin);
+
+		/* If we have more than 8 data pins, enable word-size data access */
+		if(pconfig->num_data_pins > 8)
+		{
+			byte_enable(FALSE);
+		}
+		else
+		{
+			byte_enable(TRUE);
+		}
+	
+		/* Enable the target chip while disabling output and writing */
+		reset_enable(FALSE);
+		write_enable(FALSE);
+		output_enable(FALSE);
+		chip_enable(TRUE);
+	
+		/* Supply power to the target chip */
+		set_pins_high(pconfig->vcc_pins, pconfig->num_vcc_pins);
+		set_pins_low(pconfig->gnd_pins, pconfig->num_gnd_pins);
+	
+		/* Commit settings */
+		commit_ddr_settings();
+		commit_io_settings();
+	
+		switch(pconfig->action)
+		{
+			case READ:
+				configure_pins_as_inputs(pconfig->data_pins, pconfig->num_data_pins);
+				commit_ddr_settings();
+				parallel_read();
+				break;
+			case WRITE:
+				configure_pins_as_outputs(pconfig->data_pins, pconfig->num_data_pins);
+				commit_ddr_settings();
+				parallel_write();
+				break;
+			default:
+				break;
+		}
+	
+		mcp23s17_disable();
+		free(pconfig);
+		pconfig = NULL;
 	}
-	else
-	{
-		byte_enable(TRUE);
-	}
 
-	/* Enable the target chip while disabling output and writing */
-	reset_enable(FALSE);
-	write_enable(FALSE);
-	output_enable(FALSE);
-	chip_enable(TRUE);
-
-	/* Supply power to the target chip */
-	set_pins_high(gconfig->vcc_pins, gconfig->num_vcc_pins);
-	set_pins_low(gconfig->gnd_pins, gconfig->num_gnd_pins);
-
-	/* Commit settings */
-	commit_ddr_settings();
-	commit_io_settings();
-
-	switch(gconfig->action)
-	{
-		case READ:
-			configure_pins_as_inputs(gconfig->data_pins, gconfig->num_data_pins);
-			commit_ddr_settings();
-			parallel_read();
-			break;
-		case WRITE:
-			configure_pins_as_outputs(gconfig->data_pins, gconfig->num_data_pins);
-			commit_ddr_settings();
-			parallel_write();
-			break;
-		default:
-			break;
-	}
-
-	mcp23s17_disable();
 	return;
 }
 
 /* Sets the specified control pin to active (tf = TRUE) or inactive (tf = FALSE) state */
-void set_control_pin(struct pin *p, uint8_t tf)
+void set_control_pin(struct ctrlpin p, uint8_t tf)
 {
-	if(p->inuse)
+	if(gconfig.pins[p.pin].inuse)
 	{
 		if(tf)
 		{
-			set_pin_immediate(p, p->active);
+			set_pin_immediate(p.pin, p.active);
 		}
 		else
 		{
-			set_pin_immediate(p, ~p->active);
+			set_pin_immediate(p.pin, ~p.active);
 		}
 	}
 }
@@ -88,31 +99,31 @@ void set_control_pin(struct pin *p, uint8_t tf)
 /* Set the output enable pin */
 void output_enable(uint8_t tf)
 {
-	set_control_pin(&gconfig->oe_pin, tf);
+	set_control_pin(pconfig->oe, tf);
 }
 
 /* Set the write enable pin */
 void write_enable(uint8_t tf)
 {
-	set_control_pin(&gconfig->we_pin, tf);
+	set_control_pin(pconfig->we, tf);
 }
 
 /* Set the chip enable pin */
 void chip_enable(uint8_t tf)
 {
-	set_control_pin(&gconfig->ce_pin, tf);
+	set_control_pin(pconfig->ce, tf);
 }
 
 /* Set the reset enable pin */
 void reset_enable(uint8_t tf)
 {
-	set_control_pin(&gconfig->rst_pin, tf);
+	set_control_pin(pconfig->rst, tf);
 }
 
 /* Set the byte enable pin (disable BE pin to enable word-based operations) */
 void byte_enable(uint8_t tf)
 {
-	set_control_pin(&gconfig->be_pin, tf);
+	set_control_pin(pconfig->be, tf);
 }
 
 /* Check if the chip is busy or not */
@@ -120,9 +131,9 @@ uint8_t is_busy(void)
 {
 	uint8_t busy = FALSE;
 
-	if(gconfig->by_pin.inuse)
+	if(gconfig.pins[pconfig->by.pin].inuse)
 	{
-		if((read_register(gconfig->by_pin.addr, gconfig->by_pin.reg) & (1 << gconfig->by_pin.bit)) == gconfig->by_pin.active)
+		if((read_register(gconfig.pins[pconfig->by.pin].addr, gconfig.pins[pconfig->by.pin].reg) & (1 << gconfig.pins[pconfig->by.pin].bit)) == gconfig.pins[pconfig->by.pin].active)
 		{
 			busy = TRUE;
 		}
@@ -135,10 +146,10 @@ uint8_t is_busy(void)
 void commit_address_settings(void)
 {
 	uint8_t i = 0, j = 0;
-	struct device updates[NUM_DEVICES];
+	struct device updates[MAX_DEVICES];
 
 	/* Initialize ports in updates */
-	for(i=0; i<NUM_DEVICES; i++)
+	for(i=0; i<MAX_DEVICES; i++)
 	{
 		for(j=0; j<NUM_REGISTERS; j++)
 		{
@@ -147,13 +158,13 @@ void commit_address_settings(void)
 	}
 
 	/* Mark all I/O chips and registers that need to be updated */
-	for(i=0; i<gconfig->num_addr_pins; i++)
+	for(i=0; i<pconfig->num_addr_pins; i++)
 	{
-		updates[gconfig->addr_pins[i].addr].port[gconfig->addr_pins[i].reg] = 1;		
+		updates[gconfig.pins[pconfig->addr_pins[i]].addr].port[gconfig.pins[pconfig->addr_pins[i]].reg] = 1;		
 	}
 
 	/* Update only the registers on the I/O chips that have address pins assigned to them */
-	for(i=0; i<NUM_DEVICES; i++)
+	for(i=0; i<gconfig.num_io_devices; i++)
 	{
 		for(j=0; j<NUM_REGISTERS; i++)
 		{
@@ -169,10 +180,10 @@ void commit_address_settings(void)
 void commit_data_settings(void)
 {
 	uint8_t i = 0, j = 0;
-	struct device updates[NUM_DEVICES];
+	struct device updates[MAX_DEVICES];
 
 	/* Initialize ports in updates */
-        for(i=0; i<NUM_DEVICES; i++)
+        for(i=0; i<gconfig.num_io_devices; i++)
         {
                 for(j=0; j<NUM_REGISTERS; j++)
                 {
@@ -180,12 +191,12 @@ void commit_data_settings(void)
                 }
         }
 
-	for(i=0; i<gconfig->num_data_pins; i++)
+	for(i=0; i<pconfig->num_data_pins; i++)
 	{
-		updates[gconfig->data_pins[i].addr].port[gconfig->data_pins[i].reg] = 1;
+		updates[gconfig.pins[pconfig->data_pins[i]].addr].port[gconfig.pins[pconfig->data_pins[i]].reg] = 1;
 	}
 	
-	for(i=0; i<NUM_DEVICES; i++)
+	for(i=0; i<gconfig.num_io_devices; i++)
 	{
 		for(j=0; j<NUM_REGISTERS; i++)
 		{
@@ -198,20 +209,20 @@ void commit_data_settings(void)
 }
 
 /* Read in one (or two) bytes of data from the data lines */
-uint16_t read_data(void)
+uint16_t read_data_word(void)
 {
 	uint8_t i = 0, j = 0, reg = 0, rega = 0, regb = 0;
 	uint16_t data = 0;
 	
 	/* Loop through all the I/O expansion chips */
-	for(i=0; i<NUM_DEVICES; i++)
+	for(i=0; i<gconfig.num_io_devices; i++)
 	{
 		reg = rega = regb = 0;
 
 		/* Only read from chips that have data pins assigned to them */
-		for(j=0; j<gconfig->num_data_pins; j++)
+		for(j=0; j<pconfig->num_data_pins; j++)
 		{
-			if(gconfig->data_pins[j].addr == i)
+			if(gconfig.pins[pconfig->data_pins[j]].addr == i)
 			{
 				rega = read_register(i, GPIOA);
 				regb = read_register(i, GPIOB);
@@ -221,13 +232,13 @@ uint16_t read_data(void)
 
 		if(rega || regb)
 		{
-			for(j=0; j<gconfig->num_data_pins; j++)
+			for(j=0; j<pconfig->num_data_pins; j++)
 			{
 				/* Does this data pin reside on this chip? */
-				if(gconfig->data_pins[j].addr == i)
+				if(gconfig.pins[pconfig->data_pins[j]].addr == i)
 				{
 					/* Which port was the pin assigned to? */
-					if(gconfig->data_pins[j].reg == GPIOA)
+					if(gconfig.pins[pconfig->data_pins[j]].reg == GPIOA)
 					{
 						reg = rega;
 					}
@@ -237,7 +248,7 @@ uint16_t read_data(void)
 					}
 
 					/* If this pin is set, set the appropriate bit in data */
-					if((reg | (1 << gconfig->data_pins[j].bit)) == reg)
+					if((reg | (1 << gconfig.pins[pconfig->data_pins[j]].bit)) == reg)
 					{
 						data |= (1 << j);
 					}
@@ -254,15 +265,15 @@ void set_address(uint32_t address)
 {
 	uint8_t i = 0;
 
-	for(i=0; i<gconfig->num_addr_pins; i++)
+	for(i=0; i<pconfig->num_addr_pins; i++)
 	{
 		if((address | (1 << i)) == address)
 		{
-			set_pin_high(&gconfig->addr_pins[i]);
+			set_pin_high(pconfig->addr_pins[i]);
 		}
 		else
 		{
-			set_pin_low(&gconfig->addr_pins[i]);
+			set_pin_low(pconfig->addr_pins[i]);
 		}
 	}
 	
@@ -277,14 +288,14 @@ void parallel_read(void)
 	uint32_t i = 0;
 
 	/* This should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
-	read_size = gconfig->num_data_pins;
+	read_size = pconfig->num_data_pins;
 
-	for(i=0; i<gconfig->count; i+=read_size)
+	for(i=0; i<pconfig->count; i+=read_size)
 	{
 		/* TODO: Do we need sleeps in here to ensure the data is latched before reading? I don't think so... */
-		set_address(gconfig->addr+i);
+		set_address(pconfig->addr+i);
 		output_enable(TRUE);
-		data = read_data();
+		data = read_data_word();
 		output_enable(FALSE);
 
 		putchar((uint8_t) (data & 0xFF));

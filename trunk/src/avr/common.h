@@ -1,6 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#include <string.h>
 #include <avrlib/uart.h>
 
 #define BOARD_ID "GUMBI v1"
@@ -13,8 +14,8 @@
 
 #define SPEED_TEST_SIZE 65535
 
-#define MAX_PINS 64
-#define NUM_DEVICES 4
+#define MAX_PINS 128
+#define MAX_DEVICES 8
 #define PINS_PER_DEVICE 16
 #define PINS_PER_REGISTER 8
 #define NUM_REGISTERS 0x16
@@ -54,7 +55,7 @@ enum modes
 	SPIEEPROM = 3,
 	I2CEEPROM = 4,
 	PING = 5,
-	DEBUG = 6,
+	INFO = 6,
 	SPEED = 7,
 	IO = 8
 };
@@ -79,7 +80,7 @@ struct pin
 struct io
 {
 	enum actions action;
-	struct pin p;
+	uint8_t pin;
 };
 
 struct device
@@ -87,7 +88,13 @@ struct device
         uint8_t port[NUM_REGISTERS];
 };
 
-struct config
+struct ctrlpin
+{
+	uint8_t pin;
+	uint8_t active;
+};
+
+struct parallel
 {
         enum actions action;			/* Are we reading? Writing? Erasing? */
         uint32_t addr;				/* What is the start address? */
@@ -96,18 +103,26 @@ struct config
         uint16_t num_data_pins;
         uint16_t num_vcc_pins;
         uint16_t num_gnd_pins;
-        struct pin addr_pins[MAX_PINS];
-        struct pin data_pins[MAX_PINS];
-        struct pin vcc_pins[MAX_PINS];
-        struct pin gnd_pins[MAX_PINS];
-        struct pin ce_pin;			/* Chip Enable */
-        struct pin we_pin;			/* Write Enable */
-        struct pin oe_pin;			/* Output Enable */
-	struct pin be_pin;			/* Byte Enable */
-	struct pin by_pin;			/* Ready / Busy */
-	struct pin wp_pin;			/* Write Protect */
-	struct pin rst_pin;			/* Reset */
-};
+        uint8_t addr_pins[MAX_PINS];
+        uint8_t data_pins[MAX_PINS];
+        uint8_t vcc_pins[MAX_PINS];
+        uint8_t gnd_pins[MAX_PINS];
+        struct ctrlpin ce;			/* Chip Enable */
+        struct ctrlpin we;			/* Write Enable */
+	struct ctrlpin oe;			/* Output Enable */
+	struct ctrlpin be;			/* Byte Enable */
+	struct ctrlpin by;			/* Ready / Busy */
+	struct ctrlpin wp;			/* Write Protect */
+	struct ctrlpin rst;			/* Reset */
+} *pconfig;
+
+struct config
+{
+	uint8_t num_pins;
+	uint8_t num_io_devices;
+	struct pin pins[MAX_PINS];
+	struct device chips[MAX_DEVICES];
+} gconfig;
 
 struct command
 {
@@ -115,14 +130,10 @@ struct command
         struct config configuration;
 };
 
-struct config *gconfig;
-struct device chips[NUM_DEVICES];
-
-
 void ack(void);
 void nack(void);
-uint8_t is_valid_pin(struct pin *p);
-uint8_t are_valid_pins(struct pin pins[]);
-uint8_t validate_gconfig(void);
+uint8_t is_valid_pin(uint8_t p);
+uint8_t *read_data(uint32_t size);
+uint8_t are_valid_pins(uint8_t pins[]);
 
 #endif
