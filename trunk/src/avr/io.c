@@ -31,6 +31,7 @@ void io(void)
 					break;
 				case READ:
 					configure_pin_immediate(cmd->pin, 'r');
+					ack();
 					putchar(get_pin(cmd->pin));
 					break;
 				case EXIT:
@@ -38,6 +39,8 @@ void io(void)
 					ack();
 					break;
 				default:
+					nack();
+					printf("IO action %d is not supported\r\n", cmd->action);
 					break;
 			}
 

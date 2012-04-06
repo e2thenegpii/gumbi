@@ -10,8 +10,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define ACK "ACK"
-#define NACK "NACK"
+#define ACK "A"
+#define NACK "N"
 
 #define MAX_PINS 128
 #define MAX_DEVICES 8

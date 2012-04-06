@@ -4,29 +4,13 @@ import serial
 import struct
 import time
 
-class Packer:
-
-	def pack32(self, value):
-		return struct.pack("<I", value)
-
-	def pack16(self, value):
-		return struct.pack("<H", value)
-
-	def packbyte(self, value):
-		return chr(value)
-	
-	def packbytes(self, data):
-		pdata = ''
-
-		for byte in data:
-			pdata += self.pack8(byte)
-
-		return pdata
-
 class Gumbi:
+	"""
+	Primary gumbi class. All other classes should be subclassed from this.
+	"""
 
-	ACK = "ACK"
-	NACK = "NACK"
+	ACK = "A"
+	NACK = "N"
 	BAUD = 9600
 	DEFAULT_PORT = '/dev/ttyUSB0'
 	MAX_PINS = 128
@@ -49,18 +33,44 @@ class Gumbi:
 	LOW = 5
 
 	def __init__(self, port=None):
+		self.serial = None
+		self._open(port)
+
+	def _open(self, port):
 		if port is None:
 			port = self.DEFAULT_PORT
-
 		self.serial = serial.Serial(port, self.BAUD)
 
-	def SetMode(self, mode):
-		self.Write(Packer().packbyte(mode))
+	def _close(self):
+		self.serial.close()
 
-		if self.ReadText() != self.ACK:
+	def Pin2Real(self, pin):
+		return (pin - 1)
+
+	def Pack32(self, value):
+                return struct.pack("<I", value)
+
+        def Pack16(self, value):
+                return struct.pack("<H", value)
+
+        def PackByte(self, value):
+                return chr(value)
+
+        def PackBytes(self, data):
+                pdata = ''
+
+                for byte in data:
+                        pdata += self.PackByte(byte)
+
+                return pdata
+
+	def ReadAck(self):
+		if self.Read(1) != self.ACK:
 			raise Exception(self.ReadText())
+		return True
 
-		return
+	def SetMode(self, mode):
+		self.Write(self.PackByte(mode))
 
 	def ReadText(self):
 		return self.serial.readline().strip()
@@ -70,97 +80,76 @@ class Gumbi:
 
 	def Write(self, data):
 		self.serial.write(data)
+		self.ReadAck()
 
 	def Close(self):
-		return self.serial.close()
+		return self._close()
 
-class IO:
+class IO(Gumbi):
 
 	def __init__(self, port=None):
-		self.gumbi = Gumbi(port)
-		self.gumbi.SetMode(self.gumbi.IO)
+		Gumbi.__init__(self, port)
+		self.SetMode(self.IO)
 
-	def __struct__(self, action, pin):
-		return (chr(action) + chr(pin))
-
-	def __exit__(self):
-		self.gumbi.Write(self.__struct__(self.gumbi.EXIT, 0))
-		return self.gumbi.ReadText()
+	def _exit(self):
+		self.Write(self.PackBytes([self.EXIT, 0]))
 
 	def PinHigh(self, pin):
-		self.gumbi.Write(self.__struct__(self.gumbi.HIGH, pin))
-		return self.gumbi.ReadText()
+		self.Write(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
 
 	def PinLow(self, pin):
-		self.gumbi.Write(self.__struct__(self.gumbi.LOW, pin))
-		return self.gumbi.ReadText()
+		self.Write(self.PackBytes([self.LOW, self.Pin2Real(pin)]))
 
 	def ReadPin(self, pin):
-		self.gumbi.Write(self.__struct__(self.gumbi.READ, pin))
-		return ord(self.gumbi.Read(1))
+		self.Write(self.PackBytes([self.READ, self.Pin2Real(pin)]))
+		return ord(self.Read(1))
 
 	def Close(self):
-		self.__exit__()
-		self.gumbi.ReadText()
-		self.gumbi.Close()
+		self._exit()
+		self._close()
 
-class SpeedTest:
+class SpeedTest(Gumbi):
 
 	def __init__(self, count, port=None):
+		Gumbi.__init__(self, port)
 		self.count = count
-		self.gumbi = Gumbi(port)
+		self.SetMode(self.SPEED)
+
+	def _test(self):
+		self.Write(self.Pack32(self.count))
+		self.Read(self.count)
 
 	def Go(self):
 		start = time.time()
-		self.__test__()
+		self._test()
 		time = time.time() - start
 		return time
 
-	def __test__(self):
-		self.gumbi.SetMode(self.gumbi.SPEED)
-		self.gumbi.Write(Packer().pack32(self.count))
-		self.gumbi.Read(self.count)
+class Info(Gumbi):
 
-	def Close(self):
-		self.gumbi.Close()
-
-class Info:
-
-	def __init__(self, port=None):
-		self.gumbi = Gumbi(port)
-
-	def Go(self):
+	def Info(self):
 		data = []
 
-		self.gumbi.SetMode(self.gumbi.INFO)
+		self.SetMode(self.INFO)
 		while True:
-			line = self.gumbi.ReadText()
-			if line == self.gumbi.ACK:
+			line = self.ReadText()
+			if line == self.ACK:
 				break
 			else:
 				data.append(line)
 		return data
 
-	def Close(self):
-		self.gumbi.Close()
+class Ping(Gumbi):
+
+	def Ping(self):
+		self.SetMode(self.PING)
+		return self.ReadAck()
 
 
-class Ping:
-
-	def __init__(self, port=None):
-		self.gumbi = Gumbi(port)
-
-	def Go(self):
-		data = None
-		self.gumbi.SetMode(self.gumbi.PING)
-		data = self.gumbi.ReadText()
-		return data
-
-	def Close(self):
-		self.gumbi.Close()
-
-if __name __ == '__main__':
-	info = Info()
-	print info.Go()
-	info.Close()
-
+if __name__ == '__main__':
+	try:
+		info = Info()
+		print info.Info()
+		info.Close()
+	except Exception, e:
+		print "Error:", e
