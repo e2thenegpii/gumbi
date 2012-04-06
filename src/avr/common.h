@@ -64,7 +64,9 @@ enum actions
 	EXIT = 0,
 	READ = 1,
 	WRITE = 2,
-	ERASE = 3
+	ERASE = 3,
+	HIGH = 4,
+	LOW = 5
 };
 
 struct pin
