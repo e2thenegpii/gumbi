@@ -14,6 +14,7 @@ class Gumbi:
 	BAUD = 9600
 	DEFAULT_PORT = '/dev/ttyUSB0'
 	MAX_PINS = 128
+	RESET_LEN = 1024
 
 	NOP = 0
 	PFLASH = 1
@@ -82,6 +83,12 @@ class Gumbi:
 		self.serial.write(data)
 		self.ReadAck()
 
+	def Reset(self):
+		self.serial.write(self.PackByte(self.EXIT))
+		for i in range(0, self.RESET_LEN):
+			self.serial.write(self.PackByte(self.NOP))
+		self.SetMode(self.NOP)
+
 	def Close(self):
 		return self._close()
 
@@ -138,6 +145,12 @@ class Info(Gumbi):
 			else:
 				data.append(line)
 		return data
+
+class ID(Gumbi):
+
+	def ID(self):
+		self.SetMode(self.ID)
+		return self.ReadText()
 
 class Ping(Gumbi):
 

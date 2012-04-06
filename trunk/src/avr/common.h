@@ -10,8 +10,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define ACK "A"
-#define NACK "N"
+#define ACK 'A'
+#define NACK 'N'
 
 #define MAX_PINS 128
 #define MAX_DEVICES 8
@@ -56,7 +56,8 @@ enum modes
 	PING = 5,
 	INFO = 6,
 	SPEED = 7,
-	IO = 8
+	IO = 8,
+	ID = 9
 };
 
 enum actions
