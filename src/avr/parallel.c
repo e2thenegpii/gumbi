@@ -59,16 +59,22 @@ void parallel_flash(void)
 		switch(pconfig->action)
 		{
 			case READ:
+				ack();
+				/* When reading, data pins are inputs to us */
 				configure_pins_as_inputs(pconfig->data_pins, pconfig->num_data_pins);
 				commit_ddr_settings();
 				parallel_read();
 				break;
 			case WRITE:
+				ack();
+				/* When writing, data pins are outputs from us */
 				configure_pins_as_outputs(pconfig->data_pins, pconfig->num_data_pins);
 				commit_ddr_settings();
 				parallel_write();
 				break;
 			default:
+				nack();
+				printf("The specified action (0x%.2X) is not supported\r\n", pconfig->action);
 				break;
 		}
 	
@@ -77,6 +83,8 @@ void parallel_flash(void)
 		pconfig = NULL;
 	}
 
+	/* Final ACK indicates the parallel flash operation is complete */
+	ack();
 	return;
 }
 
@@ -209,7 +217,7 @@ void commit_data_settings(void)
 }
 
 /* Read in one (or two) bytes of data from the data lines */
-uint16_t read_data_word(void)
+uint16_t read_data_pins(void)
 {
 	uint8_t i = 0, j = 0, reg = 0, rega = 0, regb = 0;
 	uint16_t data = 0;
@@ -295,7 +303,7 @@ void parallel_read(void)
 		/* TODO: Do we need sleeps in here to ensure the data is latched before reading? I don't think so... */
 		set_address(pconfig->addr+i);
 		output_enable(TRUE);
-		data = read_data_word();
+		data = read_data_pins();
 		output_enable(FALSE);
 
 		putchar((uint8_t) (data & 0xFF));

@@ -3,13 +3,13 @@
 /* Send an ACK. */
 void ack(void)
 {
-	printf("%s\r\n", ACK);
+	putchar(ACK);
 }
 
 /* Send a NACK. */
 void nack(void)
 {
-	printf("%s\r\n", NACK);
+	putchar(NACK);
 }
 
 /* Read size bytes of data from the PC and return a pointer to the data. Return value must be freed by the caller. */
@@ -27,6 +27,16 @@ uint8_t *read_data(uint32_t size)
 		{
 			data[i] = getchar();
 		}
+	}
+	else
+	{
+		/* 
+		 * Any time data is received from the PC, it must be acknowledged or not acknowledged. 
+		 * If we couldn't even allocate data, then we need to send a NACK with a reason string.
+		 * Else, it is up to the caller to verify that the recieved data is valid and send a N/ACK.
+		 */
+		nack();
+		printf("Cannot receive data: malloc(%ld) failed\r\n", size);
 	}
 	
 	return data;
