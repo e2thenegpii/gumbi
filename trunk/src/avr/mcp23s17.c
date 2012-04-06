@@ -256,6 +256,25 @@ void configure_pin(uint8_t p, uint8_t rw)
         }
 }
 
+/* Configure a pin as an output immediately, without needing to call commit_ddr_settings(). */
+void configure_pin_immediate(uint8_t pin, uint8_t rw)
+{
+	uint8_t ddr = 0;
+
+	configure_pin(pin, rw);
+
+	if(gconfig.pins[pin].reg == GPIOA)
+	{
+		ddr = IODIRA;
+	}
+	else
+	{
+		ddr = IODIRB;
+	}
+
+	write_register(gconfig.pins[pin].addr, ddr, gconfig.chips[gconfig.pins[pin].addr].port[ddr]);
+}
+
 /* Configure a list of pins as inputs (rw = 'r') or low (rw = 'w') */
 void configure_pins(uint8_t pins[], uint8_t n, uint8_t rw)
 {

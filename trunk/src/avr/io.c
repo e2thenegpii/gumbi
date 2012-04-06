@@ -19,14 +19,23 @@ void io(void)
 		{
 			switch(cmd->action)
 			{
-				case WRITE:
-					set_pin_immediate(cmd->pin, gconfig.pins[cmd->pin].active);
+				case HIGH:
+					configure_pin_immediate(cmd->pin, 'w');
+					set_pin_immediate(cmd->pin, 1);
+					ack();
+					break;
+				case LOW:
+					configure_pin_immediate(cmd->pin, 'w');
+					set_pin_immediate(cmd->pin, 0);
+					ack();
 					break;
 				case READ:
+					configure_pin_immediate(cmd->pin, 'r');
 					putchar(get_pin(cmd->pin));
 					break;
 				case EXIT:
 					loop = FALSE;
+					ack();
 					break;
 				default:
 					break;

@@ -45,6 +45,8 @@ class Gumbi:
 	READ = 1
 	WRITE = 2
 	ERASE = 3
+	HIGH = 4
+	LOW = 5
 
 	def __init__(self, port=None):
 		if port is None:
@@ -72,6 +74,36 @@ class Gumbi:
 	def Close(self):
 		return self.serial.close()
 
+class IO:
+
+	def __init__(self, port=None):
+		self.gumbi = Gumbi(port)
+		self.gumbi.SetMode(self.gumbi.IO)
+
+	def __struct__(self, action, pin):
+		return (chr(action) + chr(pin))
+
+	def __exit__(self):
+		self.gumbi.Write(self.__struct__(self.gumbi.EXIT, 0))
+		return self.gumbi.ReadText()
+
+	def PinHigh(self, pin):
+		self.gumbi.Write(self.__struct__(self.gumbi.HIGH, pin))
+		return self.gumbi.ReadText()
+
+	def PinLow(self, pin):
+		self.gumbi.Write(self.__struct__(self.gumbi.LOW, pin))
+		return self.gumbi.ReadText()
+
+	def ReadPin(self, pin):
+		self.gumbi.Write(self.__struct__(self.gumbi.READ, pin))
+		return ord(self.gumbi.Read(1))
+
+	def Close(self):
+		self.__exit__()
+		self.gumbi.ReadText()
+		self.gumbi.Close()
+
 class SpeedTest:
 
 	def __init__(self, count, port=None):
@@ -82,7 +114,6 @@ class SpeedTest:
 		start = time.time()
 		self.__test__()
 		time = time.time() - start
-		self.Close()
 		return time
 
 	def __test__(self):
@@ -108,7 +139,6 @@ class Info:
 				break
 			else:
 				data.append(line)
-		self.Close()
 		return data
 
 	def Close(self):
@@ -124,10 +154,13 @@ class Ping:
 		data = None
 		self.gumbi.SetMode(self.gumbi.PING)
 		data = self.gumbi.ReadText()
-		self.Close()
 		return data
 
 	def Close(self):
 		self.gumbi.Close()
 
-print Info().Go()
+if __name __ == '__main__':
+	info = Info()
+	print info.Go()
+	info.Close()
+

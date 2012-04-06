@@ -34,6 +34,7 @@ void commit_io_settings(void);
 void commit_ddr_settings(void);
 void set_pin_immediate(uint8_t p, uint8_t hl);
 void configure_pin(uint8_t p, uint8_t rw);
+void configure_pin_immediate(uint8_t pin, uint8_t rw);
 void configure_pin_as_output(uint8_t p);
 void configure_pins_as_outputs(uint8_t pins[], uint8_t pin_count);
 void configure_pin_as_input(uint8_t p);
