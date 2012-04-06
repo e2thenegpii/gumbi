@@ -19,7 +19,7 @@ int main(void)
 	dup2uart();
 
 	/* Show that we're alive and ready */
-	printf("%s\r\n", BOARD_ID);
+	id();
 
 	while(TRUE)
 	{
@@ -54,9 +54,12 @@ void command_handler(uint8_t mode)
 		case IO:
 			handler = &io;
 			break;
-		case SPIFLASH:
-		case SPIEEPROM:
-		case I2CEEPROM:
+		case ID:
+			handler = &id;
+			break;
+		case NOP:
+			handler = &nop;
+			break;
 		default:
 			break;
 	}
