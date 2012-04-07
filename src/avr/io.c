@@ -7,44 +7,39 @@
 void io(void)
 {
 	uint8_t loop = TRUE;
-	struct io *cmd = NULL;
-	uint16_t data_size = sizeof(struct io);
+	struct io cmd = { 0 };
 
 	mcp23s17_enable();
 
 	while(loop)
 	{
-		cmd = (struct io *) read_data(data_size);
-		if(cmd)
+		read_data((uint8_t *) &cmd, sizeof(struct io));
+		
+		switch(cmd.action)
 		{
-			switch(cmd->action)
-			{
-				case HIGH:
-					configure_pin_immediate(cmd->pin, 'w');
-					set_pin_immediate(cmd->pin, 1);
-					ack();
-					break;
-				case LOW:
-					configure_pin_immediate(cmd->pin, 'w');
-					set_pin_immediate(cmd->pin, 0);
-					ack();
-					break;
-				case READ:
-					configure_pin_immediate(cmd->pin, 'r');
-					ack();
-					putchar(get_pin(cmd->pin));
-					break;
-				case EXIT:
-					loop = FALSE;
-					ack();
-					break;
-				default:
-					nack();
-					printf("IO action %d is not supported\r\n", cmd->action);
-					break;
-			}
-
-			free(cmd);
+			case HIGH:
+				configure_pin_immediate(cmd.pin, 'w');
+				set_pin_immediate(cmd.pin, 1);
+				ack();
+				break;
+			case LOW:
+				configure_pin_immediate(cmd.pin, 'w');
+				set_pin_immediate(cmd.pin, 0);
+				ack();
+				break;
+			case READ:
+				configure_pin_immediate(cmd.pin, 'r');
+				ack();
+				putchar(get_pin(cmd.pin));
+				break;
+			case EXIT:
+				loop = FALSE;
+				ack();
+				break;
+			default:
+				nack();
+				printf("IO action %d is not supported\r\n", cmd.action);
+				break;
 		}
 	}
 	

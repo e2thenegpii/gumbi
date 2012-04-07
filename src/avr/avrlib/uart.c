@@ -16,11 +16,11 @@ void uart_init(void)
 	/* Enable receive and transmit operations on UART0 */
 	UART0_CONTROL = ((1 << UART0_RX_ENABLE) | (1 << UART0_TX_ENABLE));
 	/* Set frame properties to 8N1 */
-        UART0_FRAME = ((1 << UART0_DATA_BIT1) | (1 << UART0_DATA_BIT2));
+	UART0_FRAME = ((1 << UART0_DATA_BIT1) | (1 << UART0_DATA_BIT2));
 
 	/* Define the baudrate prescaling */
-        UART0_UBRRH = UBRRH_VALUE;
-        UART0_UBRRL = UBRRL_VALUE;
+	UART0_UBRRH = UBRRH_VALUE;
+	UART0_UBRRL = UBRRL_VALUE;
 }
 
 uint8_t uart_read_byte(void)
