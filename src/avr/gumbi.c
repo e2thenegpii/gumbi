@@ -2,7 +2,6 @@
 #include "debug.h"
 #include "mcp23s17.h"
 #include "parallel.h"
-#include "io.h"
 
 int main(void)
 {
