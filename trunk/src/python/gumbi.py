@@ -82,6 +82,7 @@ class Gumbi:
 
 	def Write(self, data):
 		self.serial.write(data)
+		self.serial.flush()
 		self.ReadAck()
 
 	def Reset(self):
