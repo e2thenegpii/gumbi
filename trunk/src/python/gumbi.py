@@ -25,6 +25,7 @@ class Gumbi:
 	INFO = 6
 	SPEED = 7
 	IO = 8
+	ID = 9
 
 	EXIT = 0
 	READ = 1
@@ -88,6 +89,7 @@ class Gumbi:
 		for i in range(0, self.RESET_LEN):
 			self.serial.write(self.PackByte(self.NOP))
 		self.SetMode(self.NOP)
+		time.sleep(1)
 
 	def Close(self):
 		return self._close()
@@ -124,13 +126,15 @@ class SpeedTest(Gumbi):
 
 	def _test(self):
 		self.Write(self.Pack32(self.count))
-		self.Read(self.count)
+		for i in range(0, self.count):
+			self.Read(1)
 
 	def Go(self):
+		time.sleep(1)
 		start = time.time()
 		self._test()
-		time = time.time() - start
-		return time
+		t = time.time() - start
+		return t
 
 class Info(Gumbi):
 
@@ -146,9 +150,9 @@ class Info(Gumbi):
 				data.append(line)
 		return data
 
-class ID(Gumbi):
+class Identify(Gumbi):
 
-	def ID(self):
+	def Identify(self):
 		self.SetMode(self.ID)
 		return self.ReadText()
 
@@ -164,5 +168,16 @@ if __name__ == '__main__':
 		info = Info()
 		print info.Info()
 		info.Close()
+
+		id = Identify()
+		print id.Identify()
+		id.Close()
+
+		io = IO()
+		io.PinHigh(1)
+		io.PinHigh(2)
+		print io.ReadPin(3)
+		io.Close()
+
 	except Exception, e:
 		print "Error:", e

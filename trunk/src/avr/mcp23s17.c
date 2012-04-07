@@ -109,25 +109,25 @@ uint8_t mcp23s17_chip_count(void)
 /* Initializes all available pins in the gconfig.pins data structure array */
 void init_pins(void)
 {
-        uint8_t i = 0;
+	uint8_t i = 0;
 
-        for(i=0; i<gconfig.num_pins; i++)
-        {
-                gconfig.pins[i].inuse = 1;
-                gconfig.pins[i].active = 1;
-                gconfig.pins[i].addr = (i / PINS_PER_DEVICE);
-                gconfig.pins[i].bit = (i - (gconfig.pins[i].addr * PINS_PER_DEVICE));
+	for(i=0; i<gconfig.num_pins; i++)
+	{
+		gconfig.pins[i].inuse = 1;
+		gconfig.pins[i].active = 1;
+		gconfig.pins[i].addr = (i / PINS_PER_DEVICE);
+		gconfig.pins[i].bit = (i - (gconfig.pins[i].addr * PINS_PER_DEVICE));
 
-                if(gconfig.pins[i].bit >= PINS_PER_REGISTER)
-                {
-                        gconfig.pins[i].bit -= PINS_PER_REGISTER;
-                        gconfig.pins[i].reg = GPIOB;
-                }
-                else
-                {
-                        gconfig.pins[i].reg = GPIOA;
-                }
-        }
+		if(gconfig.pins[i].bit >= PINS_PER_REGISTER)
+		{
+			gconfig.pins[i].bit -= PINS_PER_REGISTER;
+			gconfig.pins[i].reg = GPIOB;
+		}
+		else
+		{
+			gconfig.pins[i].reg = GPIOA;
+		}
+	}
 }
 
 /* Writes val to the reg register on the MCP23S17 chip configured with the addr hardware address */
@@ -163,97 +163,97 @@ uint8_t get_pin(uint8_t p)
 /* Set the specified pins high (hl = 1) or low (hl = 0) */
 void set_pins(uint8_t pins[], uint8_t n, uint8_t hl)
 {
-        uint8_t i = 0;
+	uint8_t i = 0;
 
-        for(i=0; i<n; i++)
-        {
-                if(hl)
-                {
-                        set_pin_high(pins[i]);
-                }
-                else
-                {
-                        set_pin_low(pins[i]);
-                }
-        }
+	for(i=0; i<n; i++)
+	{
+		if(hl)
+		{
+			set_pin_high(pins[i]);
+		}
+		else
+		{
+			set_pin_low(pins[i]);
+		}
+	}
 }
 
 /* Set the specified pin high */
 void set_pin_high(uint8_t p)
 {
-        if(gconfig.pins[p].inuse)
-        {
-                gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] |= (1 << gconfig.pins[p].bit);
-        }
+	if(gconfig.pins[p].inuse)
+	{
+		gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] |= (1 << gconfig.pins[p].bit);
+	}
 }
 
 /* Set the specified pin low */
 void set_pin_low(uint8_t p)
 {
-        if(gconfig.pins[p].inuse)
-        {
-                gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] &= ~(1 << gconfig.pins[p].bit);
-        }
+	if(gconfig.pins[p].inuse)
+	{
+		gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] &= ~(1 << gconfig.pins[p].bit);
+	}
 }
 
 /* Set a list of pins low */
 void set_pins_low(uint8_t pins[], uint8_t n)
 {
-        set_pins(pins, n, 0);
+	set_pins(pins, n, 0);
 }
 
 /* Set a list of pins high */
 void set_pins_high(uint8_t pins[], uint8_t n)
 {
-        set_pins(pins, n, 1);
+	set_pins(pins, n, 1);
 }
 
 /* Set a pin high (hl = 1) or low (hl = 0) immediately */
 void set_pin_immediate(uint8_t p, uint8_t hl)
 {
-        if(hl)
-        {
-                set_pin_high(p);
-        }
-        else
-        {
-                set_pin_low(p);
-        }
+	if(hl)
+	{
+		set_pin_high(p);
+	}
+	else
+	{
+		set_pin_low(p);
+	}
 
-        write_register(gconfig.pins[p].addr, gconfig.pins[p].reg, gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg]);
+	write_register(gconfig.pins[p].addr, gconfig.pins[p].reg, gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg]);
 }
 
 /* Configure a pin as an input (rw = 'r') or an output (rw = 'w') */
 void configure_pin(uint8_t p, uint8_t rw)
 {
-        uint8_t ddr = 0;
+	uint8_t ddr = 0;
 
-        if(!gconfig.pins[p].inuse)
-        {
-                return;
-        }
+	if(!gconfig.pins[p].inuse)
+	{
+		return;
+	}
 
-        if(gconfig.pins[p].reg == GPIOA)
-        {
-                ddr = IODIRA;
-        }
-        else if(gconfig.pins[p].reg == GPIOB)
-        {
-                ddr = IODIRB;
-        }
-        else
-        {
-                return;
-        }
+	if(gconfig.pins[p].reg == GPIOA)
+	{
+		ddr = IODIRA;
+	}
+	else if(gconfig.pins[p].reg == GPIOB)
+	{
+		ddr = IODIRB;
+	}
+	else
+	{
+		return;
+	}
 
-        if(rw == 'r')
-        {
-                gconfig.chips[gconfig.pins[p].addr].port[ddr] |= (1 << gconfig.pins[p].bit);
-        }
-        else if(rw == 'w')
-        {
-                gconfig.chips[gconfig.pins[p].addr].port[ddr] &= ~(1 << gconfig.pins[p].bit);
-        }
+	if(rw == 'r')
+	{
+		gconfig.chips[gconfig.pins[p].addr].port[ddr] |= (1 << gconfig.pins[p].bit);
+	}
+	else if(rw == 'w')
+	{
+		gconfig.chips[gconfig.pins[p].addr].port[ddr] &= ~(1 << gconfig.pins[p].bit);
+	}
 }
 
 /* Configure a pin as an output immediately, without needing to call commit_ddr_settings(). */
@@ -278,72 +278,72 @@ void configure_pin_immediate(uint8_t pin, uint8_t rw)
 /* Configure a list of pins as inputs (rw = 'r') or low (rw = 'w') */
 void configure_pins(uint8_t pins[], uint8_t n, uint8_t rw)
 {
-        uint8_t i = 0;
+	uint8_t i = 0;
 
-        for(i=0; i<n; i++)
-        {
-                if(rw == 'w')
-                {
-                        configure_pin_as_output(pins[i]);
-                }
-                else if(rw == 'r')
-                {
-                        configure_pin_as_input(pins[i]);
-                }
-        }
+	for(i=0; i<n; i++)
+	{
+		if(rw == 'w')
+		{
+			configure_pin_as_output(pins[i]);
+		}
+		else if(rw == 'r')
+		{
+			configure_pin_as_input(pins[i]);
+		}
+	}
 }
 
 /* Configure the specified pin as an output pin */
 void configure_pin_as_output(uint8_t p)
 {
-        configure_pin(p, 'w');
+	configure_pin(p, 'w');
 }
 
 /* Configure a list of pins as output pins */
 void configure_pins_as_outputs(uint8_t pins[], uint8_t n)
 {
-        configure_pins(pins, n, 'w');
+	configure_pins(pins, n, 'w');
 }
 
 /* Configure a pin as an input pin */
 void configure_pin_as_input(uint8_t p)
 {
-        configure_pin(p, 'r');
+	configure_pin(p, 'r');
 }
 
 /* Configure a list of pins as input pins */
 void configure_pins_as_inputs(uint8_t pins[], uint8_t n)
 {
-        configure_pins(pins, n, 'r');
+	configure_pins(pins, n, 'r');
 }
 
 /* Commit the current settings for the specified registers to all I/O chips */
 void commit_settings(uint8_t device, uint8_t reg)
 {
-        write_register(device, reg, gconfig.chips[device].port[reg]);
+	write_register(device, reg, gconfig.chips[device].port[reg]);
 }
 
 /* Commit GPIO settings */
 void commit_io_settings(void)
 {
-        uint8_t i = 0;
+	uint8_t i = 0;
 
-        for(i=0; i<gconfig.num_io_devices; i++)
-        {
-                commit_settings(i, GPIOA);
-                commit_settings(i, GPIOB);
-        }
+	for(i=0; i<gconfig.num_io_devices; i++)
+	{
+		commit_settings(i, GPIOA);
+		commit_settings(i, GPIOB);
+	}
 }
 
 /* Commit IODIR settings */
 void commit_ddr_settings(void)
 {
-        uint8_t i = 0;
+	uint8_t i = 0;
 
-        for(i=0; i<gconfig.num_io_devices; i++)
-        {
-                commit_settings(i, IODIRA);
-                commit_settings(i, IODIRB);
-        }
+	for(i=0; i<gconfig.num_io_devices; i++)
+	{
+		commit_settings(i, IODIRA);
+		commit_settings(i, IODIRB);
+	}
 }
 

@@ -71,11 +71,11 @@ extern "C"{
 #define SPI_SS_IDLE_HIGH 1
 
 // setup spi
-void spi_init(uint8_t mode,         // timing mode SPI_MODE[0-4]
-	      int dord,             // data direction SPI_LSB|SPI_MSB
-	      int interrupt,        // whether to raise interrupt on recieve (SPI_INTERRUPT, SPI_NO_INTERRUPT)
-	      uint8_t clock,        // clock diviser (SPI_MSTR_CLK4, etc)
-	      uint8_t idle);        // whether SPI slave select pin idles high or low (SPI_SS_IDLE_HIGH, SPI_SS_IDLE_LOW)
+void spi_init(uint8_t mode,	 // timing mode SPI_MODE[0-4]
+	      int dord,	     // data direction SPI_LSB|SPI_MSB
+	      int interrupt,	// whether to raise interrupt on recieve (SPI_INTERRUPT, SPI_NO_INTERRUPT)
+	      uint8_t clock,	// clock diviser (SPI_MSTR_CLK4, etc)
+	      uint8_t idle);	// whether SPI slave select pin idles high or low (SPI_SS_IDLE_HIGH, SPI_SS_IDLE_LOW)
 
 // disable spi
 void spi_disable(void);
