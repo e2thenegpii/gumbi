@@ -8,5 +8,6 @@ void id(void);
 void ping(void);
 void info(void);
 void speed_test(void);
+void io(void);
 
 #endif
