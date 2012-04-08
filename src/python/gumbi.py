@@ -35,85 +35,149 @@ class Gumbi:
 	LOW = 5
 
 	def __init__(self, port=None):
+		"""
+		Class constructor, calls self._open().
+		@port - Gumbi serial port.
+		"""
 		self.serial = None
 		self._open(port)
 
 	def _open(self, port):
+		"""
+		Opens a connection to the Gumbi board.
+		"""
 		if port is None:
 			port = self.DEFAULT_PORT
 		self.serial = serial.Serial(port, self.BAUD)
 
 	def _close(self):
+		"""
+		Closes the connection with the Gumbi board.
+		"""
 		self.serial.close()
 
 	def Pin2Real(self, pin):
+		"""
+		Converts user-supplied pin numbers (index 1) to Gumbi board pin numbers (index 0).
+		"""
 		return (pin - 1)
 
 	def Pack32(self, value):
+		"""
+		Packs a 32-bit value for transmission to the Gumbi board.
+		"""
                 return struct.pack("<I", value)
 
         def Pack16(self, value):
+		"""
+		Packs a 16-bit value for transmission to the Gumbi board.
+		"""
                 return struct.pack("<H", value)
 
         def PackByte(self, value):
+		"""
+		Packs an 8-bit value for transmission to the Gumbi board.
+		"""
                 return chr(value)
 
         def PackBytes(self, data):
+		"""
+		Packs an array of 8-bit values for transmission to the Gumbi board.
+		"""
                 pdata = ''
-
                 for byte in data:
                         pdata += self.PackByte(byte)
-
                 return pdata
 
 	def ReadAck(self):
+		"""
+		Reads an ACK/NACK from the Gumbi board. Returns True on ACK, raises an exception on NACK.
+		"""
 		if self.Read(1) != self.ACK:
 			raise Exception(self.ReadText())
 		return True
 
 	def SetMode(self, mode):
+		"""
+		Puts the Gumbi board in the specified mode.
+		"""
 		self.Write(self.PackByte(mode))
 
 	def ReadText(self):
+		"""
+		Reads and returns a new-line terminated string from the Gumbi board.
+		"""
 		return self.serial.readline().strip()
 
 	def Read(self, n=1):
+		"""
+		Reads n bytes of data from the Gumbi board. Default n == 1.
+		"""
 		return self.serial.read(n)
 
 	def Write(self, data):
+		"""
+		Sends data to the Gumbi board and verifies acknowledgement.
+		"""
 		self.serial.write(data)
 		self.ReadAck()
 
 	def Reset(self):
+		"""
+		Resets the communications stream with the Gumbi board.
+		"""
 		self.serial.write(self.PackByte(self.EXIT))
 		for i in range(0, self.RESET_LEN):
-			self.serial.write(self.PackByte(self.NOP))
-		self.SetMode(self.NOP)
-		time.sleep(1)
+			self.SetMode(self.NOP)
 
 	def Close(self):
+		"""
+		Closes the connection with the Gumbi board.
+		"""
 		return self._close()
 
 class IO(Gumbi):
+	"""
+	Class to provide raw read/write access to all I/O pins.
+	"""
 
 	def __init__(self, port=None):
+		"""
+		Class constructor.
+		"""
 		Gumbi.__init__(self, port)
 		self.SetMode(self.IO)
 
 	def _exit(self):
+		"""
+		Exits the Gumbi board from IO mode.
+		"""
 		self.Write(self.PackBytes([self.EXIT, 0]))
 
 	def PinHigh(self, pin):
+		"""
+		Sets the specified pin high.
+		"""
 		self.Write(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
 
 	def PinLow(self, pin):
+		"""
+		Sets the specified pin low.
+		"""
 		self.Write(self.PackBytes([self.LOW, self.Pin2Real(pin)]))
 
 	def ReadPin(self, pin):
+		"""
+		Reads and returns the value of the specified pin.
+		High == 1, Low == 0.
+		"""
 		self.Write(self.PackBytes([self.READ, self.Pin2Real(pin)]))
 		return ord(self.Read(1))
 
 	def Close(self):
+		"""
+		Exits IO mode, closes the Gumbi board connection.
+		"""
 		self._exit()
 		self._close()
 
