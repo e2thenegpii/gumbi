@@ -85,7 +85,7 @@ void mcp23s17_io_init(void)
 					gconfig.chips[i].port[j] = REG_DEFAULT_VALUE;
 			}
 
-			write_register(i, j, gconfig.chips[i].port[j]);
+			commit_settings(i, j);
 		}
 	}
 }
@@ -219,8 +219,8 @@ void set_pin_immediate(uint8_t p, uint8_t hl)
 	{
 		set_pin_low(p);
 	}
-
-	write_register(gconfig.pins[p].addr, gconfig.pins[p].reg, gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg]);
+	
+	commit_settings(gconfig.pins[p].addr, gconfig.pins[p].reg);
 }
 
 /* Configure a pin as an input (rw = 'r') or an output (rw = 'w') */
@@ -272,7 +272,7 @@ void configure_pin_immediate(uint8_t pin, uint8_t rw)
 		ddr = IODIRB;
 	}
 
-	write_register(gconfig.pins[pin].addr, ddr, gconfig.chips[gconfig.pins[pin].addr].port[ddr]);
+	commit_settings(gconfig.pins[pin].addr, ddr);
 }
 
 /* Configure a list of pins as inputs (rw = 'r') or low (rw = 'w') */
