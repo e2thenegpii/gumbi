@@ -82,7 +82,6 @@ class Gumbi:
 
 	def Write(self, data):
 		self.serial.write(data)
-		self.serial.flush()
 		self.ReadAck()
 
 	def Reset(self):
@@ -127,11 +126,9 @@ class SpeedTest(Gumbi):
 
 	def _test(self):
 		self.Write(self.Pack32(self.count))
-		for i in range(0, self.count):
-			self.Read(1)
+		self.Read(self.count)
 
 	def Go(self):
-		time.sleep(1)
 		start = time.time()
 		self._test()
 		t = time.time() - start
@@ -167,18 +164,16 @@ class Ping(Gumbi):
 if __name__ == '__main__':
 	try:
 		info = Info()
-		print info.Info()
+		print "Board info:", info.Info()
 		info.Close()
 
-		id = Identify()
-		print id.Identify()
-		id.Close()
-
 		io = IO()
-		io.PinHigh(1)
-		io.PinHigh(2)
-		print io.ReadPin(3)
+		print "Pin 3 status:", io.ReadPin(3)
 		io.Close()
+
+		s = SpeedTest(1024)
+		print "Speed test (1024 bytes):", s.Go()
+		s.Close()
 
 	except Exception, e:
 		print "Error:", e
