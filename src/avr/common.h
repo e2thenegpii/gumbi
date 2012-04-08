@@ -56,7 +56,7 @@ enum modes
 	PING = 5,
 	INFO = 6,
 	SPEED = 7,
-	IO = 8,
+	GPIO = 8,
 	ID = 9
 };
 
@@ -134,8 +134,9 @@ struct command
 
 void ack(void);
 void nack(void);
+uint8_t validate_pconfig(void);
 uint8_t is_valid_pin(uint8_t p);
-uint8_t are_valid_pins(uint8_t pins[]);
 void read_data(uint8_t *data, uint32_t size);
+uint8_t are_valid_pins(uint8_t pins[], uint8_t count);
 
 #endif

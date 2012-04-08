@@ -24,7 +24,7 @@ class Gumbi:
 	PING = 5
 	INFO = 6
 	SPEED = 7
-	IO = 8
+	GPIO = 8
 	ID = 9
 
 	EXIT = 0
@@ -136,7 +136,7 @@ class Gumbi:
 		"""
 		return self._close()
 
-class IO(Gumbi):
+class GPIO(Gumbi):
 	"""
 	Class to provide raw read/write access to all I/O pins.
 	"""
@@ -146,11 +146,11 @@ class IO(Gumbi):
 		Class constructor.
 		"""
 		Gumbi.__init__(self, port)
-		self.SetMode(self.IO)
+		self.SetMode(self.GPIO)
 
 	def _exit(self):
 		"""
-		Exits the Gumbi board from IO mode.
+		Exits the Gumbi board from GPIO mode.
 		"""
 		self.Write(self.PackBytes([self.EXIT, 0]))
 
@@ -176,7 +176,7 @@ class IO(Gumbi):
 
 	def Close(self):
 		"""
-		Exits IO mode, closes the Gumbi board connection.
+		Exits GPIO mode, closes the Gumbi board connection.
 		"""
 		self._exit()
 		self._close()
@@ -231,7 +231,7 @@ if __name__ == '__main__':
 		print "Board info:", info.Info()
 		info.Close()
 
-		io = IO()
+		io = GPIO()
 		print "Pin 3 status:", io.ReadPin(3)
 		io.Close()
 
