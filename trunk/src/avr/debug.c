@@ -39,8 +39,8 @@ void speed_test(void)
 	}
 }
 
-/* Handler for IO test mode. */
-void io(void)
+/* Handler for GPIO test mode. */
+void gpio(void)
 {
 	uint8_t loop = TRUE;
 	struct io cmd = { 0 };
@@ -74,7 +74,7 @@ void io(void)
 				break;
 			default:
 				nack();
-				printf("IO action %d is not supported\r\n", cmd.action);
+				printf("GPIO action %d is not supported\r\n", cmd.action);
 				break;
 		}
 	}

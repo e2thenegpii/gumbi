@@ -10,81 +10,93 @@ void parallel_flash(void)
 	/* Read in parallel flash configuration data */
 	read_data((uint8_t *) &pconfig, sizeof(pconfig));
 
-	/* Initialize SPI and the MCP23S17 chips */
-	mcp23s17_enable();
-
-	/* Configure all address, Vcc and GND pins as outputs */
-	configure_pins_as_outputs(pconfig.addr_pins, pconfig.num_addr_pins);
-	configure_pins_as_outputs(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	configure_pins_as_outputs(pconfig.gnd_pins, pconfig.num_gnd_pins);
-
-	/* Set control pins as outputs */
-	configure_pin_as_output(pconfig.oe.pin);
-	configure_pin_as_output(pconfig.we.pin);
-	configure_pin_as_output(pconfig.ce.pin);
-	configure_pin_as_output(pconfig.be.pin);
-	configure_pin_as_output(pconfig.rst.pin);
-
-	/* Set the busy/ready pin as an input */
-	configure_pin_as_input(pconfig.by.pin);
-
-	/* If we have more than 8 data pins, enable word-size data access */
-	if(pconfig.num_data_pins > 8)
+	if(validate_pconfig())
 	{
-		byte_enable(FALSE);
+		/* Acknowledge successful receipt of configuration data */
+		ack();
+
+		/* Initialize SPI and the MCP23S17 chips */
+		mcp23s17_enable();
+
+		/* Configure all address, Vcc and GND pins as outputs */
+		configure_pins_as_outputs(pconfig.addr_pins, pconfig.num_addr_pins);
+		configure_pins_as_outputs(pconfig.vcc_pins, pconfig.num_vcc_pins);
+		configure_pins_as_outputs(pconfig.gnd_pins, pconfig.num_gnd_pins);
+
+		/* Set control pins as outputs */
+		configure_pin_as_output(pconfig.oe.pin);
+		configure_pin_as_output(pconfig.we.pin);
+		configure_pin_as_output(pconfig.ce.pin);
+		configure_pin_as_output(pconfig.be.pin);
+		configure_pin_as_output(pconfig.rst.pin);
+
+		/* Set the busy/ready pin as an input */
+		configure_pin_as_input(pconfig.by.pin);
+
+		/* If we have more than 8 data pins, enable word-size data access */
+		if(pconfig.num_data_pins > 8)
+		{
+			byte_enable(FALSE);
+		}
+		else
+		{
+			byte_enable(TRUE);
+		}
+	
+		/* Enable the target chip while disabling output and writing */
+		reset_enable(FALSE);
+		write_enable(FALSE);
+		output_enable(FALSE);
+		chip_enable(TRUE);
+	
+		/* Supply power to the target chip */
+		set_pins_high(pconfig.vcc_pins, pconfig.num_vcc_pins);
+		set_pins_low(pconfig.gnd_pins, pconfig.num_gnd_pins);
+	
+		/* Commit settings */
+		commit_ddr_settings();
+		commit_io_settings();
+	
+		switch(pconfig.action)
+		{
+			case READ:
+				ack();
+				/* When reading, data pins are inputs to us */
+				configure_pins_as_inputs(pconfig.data_pins, pconfig.num_data_pins);
+				commit_ddr_settings();
+				parallel_read();
+				break;
+			case WRITE:
+				ack();
+				/* When writing, data pins are outputs from us */
+				configure_pins_as_outputs(pconfig.data_pins, pconfig.num_data_pins);
+				commit_ddr_settings();
+				parallel_write();
+				break;
+			default:
+				nack();
+				printf("The specified action (0x%.2X) is not supported\r\n", pconfig.action);
+				break;
+		}
+
+		mcp23s17_disable();
+
+		/* Final ACK indicates the parallel flash operation is complete */
+		ack();
 	}
 	else
 	{
-		byte_enable(TRUE);
-	}
-	
-	/* Enable the target chip while disabling output and writing */
-	reset_enable(FALSE);
-	write_enable(FALSE);
-	output_enable(FALSE);
-	chip_enable(TRUE);
-	
-	/* Supply power to the target chip */
-	set_pins_high(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	set_pins_low(pconfig.gnd_pins, pconfig.num_gnd_pins);
-	
-	/* Commit settings */
-	commit_ddr_settings();
-	commit_io_settings();
-	
-	switch(pconfig.action)
-	{
-		case READ:
-			ack();
-			/* When reading, data pins are inputs to us */
-			configure_pins_as_inputs(pconfig.data_pins, pconfig.num_data_pins);
-			commit_ddr_settings();
-			parallel_read();
-			break;
-		case WRITE:
-			ack();
-			/* When writing, data pins are outputs from us */
-			configure_pins_as_outputs(pconfig.data_pins, pconfig.num_data_pins);
-			commit_ddr_settings();
-			parallel_write();
-			break;
-		default:
-			nack();
-			printf("The specified action (0x%.2X) is not supported\r\n", pconfig.action);
-			break;
+		nack();
+		printf("Invalid pin configuration\r\n");
 	}
 
-	mcp23s17_disable();
-
-	/* Final ACK indicates the parallel flash operation is complete */
-	ack();
 	return;
 }
 
 /* Sets the specified control pin to active (tf = TRUE) or inactive (tf = FALSE) state */
 void set_control_pin(struct ctrlpin p, uint8_t tf)
 {
-	if(gconfig.pins[p.pin].inuse)
+	if(is_valid_pin(p.pin))
 	{
 		if(tf)
 		{
@@ -132,7 +144,7 @@ uint8_t is_busy(void)
 {
 	uint8_t busy = FALSE;
 
-	if(gconfig.pins[pconfig.by.pin].inuse)
+	if(is_valid_pin(pconfig.by.pin))
 	{
 		if((read_register(gconfig.pins[pconfig.by.pin].addr, gconfig.pins[pconfig.by.pin].reg) & (1 << gconfig.pins[pconfig.by.pin].bit)) == gconfig.pins[pconfig.by.pin].active)
 		{

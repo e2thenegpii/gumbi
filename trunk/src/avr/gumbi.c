@@ -50,8 +50,8 @@ void command_handler(uint8_t mode)
 		case PFLASH:
 			handler = &parallel_flash;
 			break;
-		case IO:
-			handler = &io;
+		case GPIO:
+			handler = &gpio;
 			break;
 		case ID:
 			handler = &id;
