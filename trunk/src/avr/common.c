@@ -32,12 +32,9 @@ uint8_t is_valid_pin(uint8_t p)
 {
 	uint8_t ok = FALSE;
 
-	if(p > 0 && p < gconfig.num_pins)
+	if(p > 0 && p < gconfig.num_pins && gconfig.pins[p].inuse)
 	{
-		if(gconfig.pins[p].inuse)
-		{
-			ok = TRUE;
-		}
+		ok = TRUE;
 	}
 
 	return ok;
@@ -63,12 +60,12 @@ uint8_t are_valid_pins(uint8_t pins[], uint8_t count)
 /* Validate pin arrays in pconfig.Control pins are not validated here. */
 uint8_t validate_pconfig(void)
 {
-	uint8_t ok = FALSE;
+	uint8_t ok = TRUE;
 
-	ok |= are_valid_pins(pconfig.addr_pins, pconfig.num_addr_pins);
-	ok |= are_valid_pins(pconfig.data_pins, pconfig.num_data_pins);
-	ok |= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	ok |= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
+	ok &= are_valid_pins(pconfig.addr_pins, pconfig.num_addr_pins);
+	ok &= are_valid_pins(pconfig.data_pins, pconfig.num_data_pins);
+	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
+	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
 
 	return ok;
 }
