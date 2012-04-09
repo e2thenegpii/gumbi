@@ -164,6 +164,7 @@ void commit_targeted_settings(uint8_t pins[], uint32_t count)
 	{
 		updates[gconfig.pins[pins[i]].addr].port[gconfig.pins[pins[i]].reg] = 1;		
 	}
+	updates[gconfig.pins[pconfig.oe.pin].addr].port[gconfig.pins[pconfig.oe.pin].reg] = 1;
 
 	/* Update only the registers on the I/O chips that have address pins assigned to them */
 	for(i=0; i<gconfig.num_io_devices; i++)
@@ -276,14 +277,7 @@ void parallel_read(void)
 	for(i=0; i<pconfig.count; i+=read_size)
 	{
 		/* 
-		 * TODO: Try to improve the speed of this code block. Ideas:
-		 *
-		 * 	o How long do the SPI reads/writes take?
-		 * 	o Remove the is_valid_pin checks in set_pin_high/set_pin_low.
-		 *	o Remove first loop in commit_targeted_settings.
-		 * 	o Each output_enable call results in an additional SPI transaction.
-		 * 	o Can the read_data_pins function be minimized?
-		 *	o Call uart_write_byte directly, instead of putchar.
+		 * TODO: Try to improve the speed of this code block.
  		 */
 		set_address(pconfig.addr+i);
 		_delay_us(pconfig.toe);

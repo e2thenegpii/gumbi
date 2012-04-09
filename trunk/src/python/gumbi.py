@@ -88,7 +88,7 @@ class Gumbi:
 						pass
 			else:
 				try:
-					value = int(value)
+					value = [int(value)]
 				except:
 					pass
 		return (key, value)
@@ -322,22 +322,37 @@ class ParallelFlash(Gumbi):
 	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None, port=None):
 		if config is None:
 			self.CONFIG["TOE"] = [toe]
-			self.CONFIG["ADDRESS"] = self._convert_pin_array(address)
-			self.CONFIG["DATA"] = self._convert_pin_array(data)
-			self.CONFIG["VCC"] = self._convert_pin_array(vcc)
-			self.CONFIG["GND"] = self._convert_pin_array(gnd)
-			self.CONFIG["CE"] = self._convert_control_pin(ce)
-			self.CONFIG["WE"] = self._convert_control_pin(we)
-			self.CONFIG["OE"] = self._convert_control_pin(oe)
-			self.CONFIG["BE"] = self._convert_control_pin(be)
-			self.CONFIG["BY"] = self._convert_control_pin(by)
-			self.CONFIG["WP"] = self._convert_control_pin(wp)
-			self.CONFIG["RST"] = self._convert_control_pin(rst)
+			self.CONFIG["ADDRESS"] = address
+			self.CONFIG["DATA"] = data
+			self.CONFIG["VCC"] = vcc
+			self.CONFIG["GND"] = gnd
+			self.CONFIG["CE"] = ce
+			self.CONFIG["WE"] = we
+			self.CONFIG["OE"] = oe
+			self.CONFIG["BE"] = be
+			self.CONFIG["BY"] = by
+			self.CONFIG["WP"] = wp
+			self.CONFIG["RST"] = rst
 		else:
 			self.ReadConfig(config)
+		
+		self._shift_pins()
 
 		Gumbi.__init__(self, port)
 		self.SetMode(self.PFLASH)
+
+	def _shift_pins(self):
+		self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
+		self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
+		self.CONFIG["VCC"] = self._convert_pin_array(self.CONFIG["VCC"])
+		self.CONFIG["GND"] = self._convert_pin_array(self.CONFIG["GND"])
+		self.CONFIG["CE"] = self._convert_control_pin(self.CONFIG["CE"])
+		self.CONFIG["WE"] = self._convert_control_pin(self.CONFIG["WE"])
+		self.CONFIG["OE"] = self._convert_control_pin(self.CONFIG["OE"])
+		self.CONFIG["BE"] = self._convert_control_pin(self.CONFIG["BE"])
+		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
+		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
+		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
 
 	def _convert_control_pin(self, cp):
 		cpc = (self.UNUSED, 0)
@@ -382,16 +397,14 @@ class ParallelFlash(Gumbi):
 
 	def ReadConfig(self, config):
 		mode_name = self.ConfigMode(config)
-		if mode_name != self.CONFIG_MODE:
-			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.CONFIG_MODE))
+		if mode_name != self.MODE_VALUE:
+			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.MODE_VALUE))
 
 		for line in open(config).readlines():
 			(key, value) = self._parse_config_line(line)
 			if key is not None and value is not None:
 				if self.CONFIG.has_key(key):
 					self.CONFIG[key] = value
-		for key, value in self.CONFIG.iteritems():
-			print key, "=", value
 
 	def ReadFlash(self, start, count):
 		data = self._struct(self.READ, start, count)
@@ -406,7 +419,7 @@ class ParallelFlash(Gumbi):
 
 
 if __name__ == '__main__':
-	try:
+#	try:
 
 		info = Info()
 		for line in info.Info():
@@ -423,5 +436,5 @@ if __name__ == '__main__':
 
 		print "Read 0x40000 bytes in", t, "seconds"
 		open("flash.bin", "w").write(data)
-	except Exception, e:
-		print "Error:", e
+#	except Exception, e:
+#		print "Error:", e
