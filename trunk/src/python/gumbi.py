@@ -305,7 +305,7 @@ class ParallelFlash(Gumbi):
 
 	MODE_VALUE = "PARALLEL"
 	CONFIG = {
-		"LATCH"		: [0],
+		"TOE"		: [0],
 		"ADDRESS"	: [],
 		"DATA"		: [],
 		"VCC"		: [],
@@ -319,9 +319,9 @@ class ParallelFlash(Gumbi):
 		"RST"		: [Gumbi.UNUSED, 0]
 	}
 	
-	def __init__(self, config=None, latch=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None, port=None):
+	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None, port=None):
 		if config is None:
-			self.CONFIG["LATCH"] = [latch]
+			self.CONFIG["TOE"] = [toe]
 			self.CONFIG["ADDRESS"] = self._convert_pin_array(address)
 			self.CONFIG["DATA"] = self._convert_pin_array(data)
 			self.CONFIG["VCC"] = self._convert_pin_array(vcc)
@@ -362,7 +362,7 @@ class ParallelFlash(Gumbi):
 		data = self.PackByte(action)
 		data += self.Pack32(start)
 		data += self.Pack32(count)
-		data += self.PackByte(self.CONFIG["LATCH"][0])
+		data += self.PackByte(self.CONFIG["TOE"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))
