@@ -16,6 +16,7 @@ class Gumbi:
 	MAX_PINS = 128
 	RESET_LEN = 1024
 	UNUSED = 0xFF
+	TEST_BYTE = "\xFF"
 
 	NOP = 0
 	PFLASH = 1
@@ -40,6 +41,7 @@ class Gumbi:
 		Class constructor, calls self._open().
 		@port - Gumbi serial port.
 		"""
+		self.ts = 0
 		self.serial = None
 		self._open(port)
 
@@ -56,6 +58,18 @@ class Gumbi:
 		Closes the connection with the Gumbi board.
 		"""
 		self.serial.close()
+
+	def StartTimer(self):
+		"""
+		Starts the timer.
+		"""
+		self.ts = time.time()
+
+	def StopTimer(self):
+		"""
+		Stops the timer and returns the seconds elapsed since StartTimer().
+		"""
+		return (time.time() - self.ts)
 
 	def Pin2Real(self, pin):
 		"""
@@ -192,18 +206,26 @@ class SpeedTest(Gumbi):
 
 	def __init__(self, count, port=None):
 		Gumbi.__init__(self, port)
+		self.data = ''
 		self.count = count
 		self.SetMode(self.SPEED)
 
 	def _test(self):
 		self.Write(self.Pack32(self.count))
-		self.Read(self.count)
+		self.data = self.Read(self.count)
 
 	def Go(self):
-		start = time.time()
+		self.StartTimer()
 		self._test()
-		t = time.time() - start
-		return t
+		return self.StopTimer()
+
+	def Validate(self):
+		retval = True
+		for byte in self.data:
+			if byte != self.TEST_BYTE:
+				retval = False
+				break
+		return retval
 
 class Info(Gumbi):
 
@@ -233,7 +255,8 @@ class Ping(Gumbi):
 
 class ParallelFlash(Gumbi):
 	
-	def __init__(self, address=[], data=[], vcc=[], gnd=[], ce=(Gumbi.UNUSED,0), we=(Gumbi.UNUSED,0), oe=(Gumbi.UNUSED,0), be=(Gumbi.UNUSED,0), by=(Gumbi.UNUSED,0), wp=(Gumbi.UNUSED,0), rst=(Gumbi.UNUSED,0), port=None):
+	def __init__(self, latchd=0, address=[], data=[], vcc=[], gnd=[], ce=(Gumbi.UNUSED,0), we=(Gumbi.UNUSED,0), oe=(Gumbi.UNUSED,0), be=(Gumbi.UNUSED,0), by=(Gumbi.UNUSED,0), wp=(Gumbi.UNUSED,0), rst=(Gumbi.UNUSED,0), port=None):
+		self.latch_delay = latchd
 		self.address = self._convert_pin_array(address)
 		self.data = self._convert_pin_array(data)
 		self.vcc = self._convert_pin_array(vcc)
@@ -266,6 +289,7 @@ class ParallelFlash(Gumbi):
 		data = self.PackByte(action)
 		data += self.Pack32(start)
 		data += self.Pack32(count)
+		data += self.PackByte(self.latch_delay)
 		data += self.Pack16(len(self.address))
 		data += self.Pack16(len(self.data))
 		data += self.Pack16(len(self.vcc))
@@ -298,16 +322,25 @@ class ParallelFlash(Gumbi):
 if __name__ == '__main__':
 #	try:
 		info = Info()
-		print "Board info:", info.Info()
+		for line in info.Info():
+			print line
 		info.Close()
 
+		print "Starting test run..."
+		s = SpeedTest(1024)
+		t = s.Go()
+		v = s.Validate()
+		s.Close()
+		print "Read 1024 bytes in", t, "seconds"
+		print "Data valid:", v
+
 		flash = ParallelFlash(address=[12,11,10,9,8,7,6,5,27,26,23,25,4,3,2,30], data=[13,14,15,17,18,19,20,21], vcc=[32], gnd=[16], ce=(22,0), we=(31,0), oe=(24,0))
-		s = time.time()
-		data = flash.ReadFlash(0, 262144)
-		e = time.time()
+		flash.StartTimer()
+		data = flash.ReadFlash(0, 1024) #262144)
+		t = flash.StopTimer()
 		flash.Close()
 
-		print "Read 262144 bytes in", (e-s), "seconds"
+		print "Read 1024 bytes in", t, "seconds"
 		open("flash.bin", "w").write(data)
 #	except Exception, e:
-#		print "Error:", e
+##		print "Error:", e

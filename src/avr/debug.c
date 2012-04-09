@@ -35,7 +35,7 @@ void speed_test(void)
 
 	for(i=0; i<count; i++)
 	{
-		putchar('A');
+		putchar(TEST_BYTE);
 	}
 }
 
