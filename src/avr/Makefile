@@ -14,7 +14,7 @@
 # To rebuild project do "make clean" then "make all".
 
 # Microcontroller Type
-MCU=atmega328p
+MCU=atxmega32a4 #atmega328p
 
 # Clock speed, in hertz
 F_CPU=16000000

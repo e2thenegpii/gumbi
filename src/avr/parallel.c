@@ -154,7 +154,7 @@ uint8_t is_busy(void)
 /* Only commit settings to those devices/registers that correspond with the provided list of pins */
 void commit_targeted_settings(uint8_t pins[], uint32_t count)
 {
-	uint8_t i = 0, j = 0;
+	uint8_t i = 0;
 	struct device updates[MAX_DEVICES];
 
 	memset((void *) &updates, 0, sizeof(updates));
@@ -168,12 +168,13 @@ void commit_targeted_settings(uint8_t pins[], uint32_t count)
 	/* Update only the registers on the I/O chips that have address pins assigned to them */
 	for(i=0; i<gconfig.num_io_devices; i++)
 	{
-		for(j=0; j<NUM_REGISTERS; j++)
+		if(updates[i].port[GPIOA] == 1)
 		{
-			if(updates[i].port[j] == 1)
-			{
-				commit_settings(i, j);
-			}
+			commit_settings(i, GPIOA);
+		}
+		else if(updates[i].port[GPIOB] == 1)
+		{
+			commit_settings(i, GPIOB);
 		}
 	}
 }
@@ -274,12 +275,21 @@ void parallel_read(void)
 
 	for(i=0; i<pconfig.count; i+=read_size)
 	{
+		/* 
+		 * TODO: Try to improve the speed of this code block. Ideas:
+		 *
+		 * 	o Remove the is_valid_pin checks in set_pin_high/set_pin_low.
+		 *	o Remove first loop in commit_targeted_settings.
+		 * 	o Each output_enable call results in an additional SPI transaction.
+		 * 	o Can the read_data_pins function be minimized?
+		 *	o Call uart_write_byte directly, instead of putchar.
+ 		 */
 		set_address(pconfig.addr+i);
-		_delay_us(pconfig.latch_delay);
+		_delay_us(pconfig.toe);
 		output_enable(TRUE);
-		_delay_us(pconfig.latch_delay);
+		_delay_us(pconfig.toe);
 		data = read_data_pins();
-		_delay_us(pconfig.latch_delay);
+		_delay_us(pconfig.toe);
 		output_enable(FALSE);
 
 		putchar((uint8_t) (data & 0xFF));
