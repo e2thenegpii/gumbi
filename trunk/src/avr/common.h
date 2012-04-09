@@ -103,7 +103,7 @@ struct parallel
 	enum actions action;			/* Are we reading? Writing? Erasing? */
 	uint32_t addr;				/* What is the start address? */
 	uint32_t count;				/* How many bytes? */
-	uint8_t latch_delay;			/* How long to sleep when latching pins (uS) */
+	uint8_t toe;				/* How long to sleep when latching pins (uS) */
 	uint16_t num_addr_pins;
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;
