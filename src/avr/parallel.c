@@ -1,4 +1,5 @@
 #include <avr/io.h>
+#include <util/delay.h>
 
 #include "common.h"
 #include "mcp23s17.h"
@@ -161,14 +162,15 @@ void commit_address_settings(void)
 	uint8_t i = 0, j = 0;
 	struct device updates[MAX_DEVICES];
 
-	/* Initialize ports in updates */
+	memset((void *) &updates, 0, sizeof(updates));
+	/* Initialize ports in updates 
 	for(i=0; i<MAX_DEVICES; i++)
 	{
 		for(j=0; j<NUM_REGISTERS; j++)
 		{
 			updates[i].port[j] = 0;
 		}
-	}
+	}*/
 
 	/* Mark all I/O chips and registers that need to be updated */
 	for(i=0; i<pconfig.num_addr_pins; i++)
@@ -179,10 +181,11 @@ void commit_address_settings(void)
 	/* Update only the registers on the I/O chips that have address pins assigned to them */
 	for(i=0; i<gconfig.num_io_devices; i++)
 	{
-		for(j=0; j<NUM_REGISTERS; i++)
+		for(j=0; j<NUM_REGISTERS; j++)
 		{
 			if(updates[i].port[j] == 1)
 			{
+				//printf("Updating chip %d, register 0x%.2X\r\n", i, j);
 				commit_settings(i, j);
 			}
 		}
@@ -211,7 +214,7 @@ void commit_data_settings(void)
 	
 	for(i=0; i<gconfig.num_io_devices; i++)
 	{
-		for(j=0; j<NUM_REGISTERS; i++)
+		for(j=0; j<NUM_REGISTERS; j++)
 		{
 			if(updates[i].port[j] == 1)
 			{
@@ -301,18 +304,22 @@ void parallel_read(void)
 	uint32_t i = 0;
 
 	/* This should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
-	read_size = pconfig.num_data_pins;
+	read_size = (pconfig.num_data_pins / 8);
 
+	//printf("Reading %ld bytes %d bytes at a time\r\n", pconfig.count, read_size);
 	for(i=0; i<pconfig.count; i+=read_size)
 	{
-		/* TODO: Do we need sleeps in here to ensure the data is latched before reading? I don't think so... */
+		/* TODO: Do we need sleeps in here to ensure the data is latched before reading? Possibly. */
+	//	printf("Reading address %ld\r\n", pconfig.addr+i);
 		set_address(pconfig.addr+i);
 		output_enable(TRUE);
+	//	printf("Reading data from data pins...\r\n");
 		data = read_data_pins();
 		output_enable(FALSE);
+	//	printf("Read byte: 0x%.4X\r\n", data);
 
 		putchar((uint8_t) (data & 0xFF));
-		if(read_size > 8)
+		if(read_size > 1)
 		{
 			putchar((uint8_t) (data >> 8));
 		}

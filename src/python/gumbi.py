@@ -15,6 +15,7 @@ class Gumbi:
 	DEFAULT_PORT = '/dev/ttyUSB0'
 	MAX_PINS = 128
 	RESET_LEN = 1024
+	UNUSED = 0xFF
 
 	NOP = 0
 	PFLASH = 1
@@ -88,6 +89,12 @@ class Gumbi:
                 for byte in data:
                         pdata += self.PackByte(byte)
                 return pdata
+
+	def PackFiller(self, count):
+		"""
+		Returns count filler bytes of data.
+		"""
+		return ("\x00" * count)
 
 	def ReadAck(self):
 		"""
@@ -224,20 +231,83 @@ class Ping(Gumbi):
 		self.SetMode(self.PING)
 		return self.ReadAck()
 
+class ParallelFlash(Gumbi):
+	
+	def __init__(self, address=[], data=[], vcc=[], gnd=[], ce=(Gumbi.UNUSED,0), we=(Gumbi.UNUSED,0), oe=(Gumbi.UNUSED,0), be=(Gumbi.UNUSED,0), by=(Gumbi.UNUSED,0), wp=(Gumbi.UNUSED,0), rst=(Gumbi.UNUSED,0), port=None):
+		self.address = self._convert_pin_array(address)
+		self.data = self._convert_pin_array(data)
+		self.vcc = self._convert_pin_array(vcc)
+		self.gnd = self._convert_pin_array(gnd)
+		self.ce = self._convert_control_pin(ce)
+		self.we = self._convert_control_pin(we)
+		self.oe = self._convert_control_pin(oe)
+		self.be = self._convert_control_pin(be)
+		self.by = self._convert_control_pin(by)
+		self.wp = self._convert_control_pin(wp)
+		self.rst = self._convert_control_pin(rst)
+
+		Gumbi.__init__(self, port)
+		self.SetMode(self.PFLASH)
+
+	def _convert_control_pin(self, cp):
+		return (self.Pin2Real(cp[0]), cp[1])
+
+	def _convert_pin_array(self, pins):
+		for i in range(0, len(pins)):
+			pins[i] = self.Pin2Real(pins[i])
+		return pins
+
+	def _pack_pins(self, pins):
+		pd = self.PackBytes(pins)
+		pd += self.PackFiller(self.MAX_PINS - len(pins))
+		return pd
+
+	def _struct(self, action, start, count):
+		data = self.PackByte(action)
+		data += self.Pack32(start)
+		data += self.Pack32(count)
+		data += self.Pack16(len(self.address))
+		data += self.Pack16(len(self.data))
+		data += self.Pack16(len(self.vcc))
+		data += self.Pack16(len(self.gnd))
+		data += self._pack_pins(self.address)
+		data += self._pack_pins(self.data)
+		data += self._pack_pins(self.vcc)
+		data += self._pack_pins(self.gnd)
+		data += self.PackBytes(self.ce)
+		data += self.PackBytes(self.we)
+		data += self.PackBytes(self.oe)
+		data += self.PackBytes(self.be)
+		data += self.PackBytes(self.by)
+		data += self.PackBytes(self.wp)
+		data += self.PackBytes(self.rst)
+		return data
+
+	def ReadFlash(self, start, count):
+		data = self._struct(self.READ, start, count)
+		self.Write(data)
+		self.ReadAck()
+		return self.Read(count)
+
+	def WriteFlash(self, addr, data):
+		self.Write(self._struct(self.WRITE, start, len(data)))
+		self.Write(data)
+		return self.ReadAck()
+
 
 if __name__ == '__main__':
-	try:
+#	try:
 		info = Info()
 		print "Board info:", info.Info()
 		info.Close()
 
-		io = GPIO()
-		print "Pin 3 status:", io.ReadPin(3)
-		io.Close()
+		flash = ParallelFlash(address=[12,11,10,9,8,7,6,5,27,26,23,25,4,3,2,30], data=[13,14,15,17,18,19,20,21], vcc=[32], gnd=[16], ce=(22,0), we=(31,0), oe=(24,0))
+		s = time.time()
+		data = flash.ReadFlash(0, 262144)
+		e = time.time()
+		flash.Close()
 
-		s = SpeedTest(1024)
-		print "Speed test (1024 bytes):", s.Go()
-		s.Close()
-
-	except Exception, e:
-		print "Error:", e
+		print "Read 262144 bytes in", (e-s), "seconds"
+		open("flash.bin", "w").write(data)
+#	except Exception, e:
+#		print "Error:", e
