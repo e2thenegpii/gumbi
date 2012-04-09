@@ -36,14 +36,20 @@ class Gumbi:
 	HIGH = 4
 	LOW = 5
 
-	def __init__(self, port=None):
+	MODE_KEY = "MODE"
+	MODE_VALUE = None
+
+	def __init__(self, port=None, new=True):
 		"""
 		Class constructor, calls self._open().
+
 		@port - Gumbi serial port.
+		@new  - Set to False to not open a connection to the Gumbi board.
 		"""
 		self.ts = 0
 		self.serial = None
-		self._open(port)
+		if new:
+			self._open(port)
 
 	def _open(self, port):
 		"""
@@ -58,6 +64,48 @@ class Gumbi:
 		Closes the connection with the Gumbi board.
 		"""
 		self.serial.close()
+
+	def _parse_config_line(self, line):
+		"""
+		Parses a configuration file line.
+
+		@line - A line from the configuration file.
+
+		Returns the (key, value) pair from the line.
+		"""
+		key = value = None
+		line = line.split('#')[0]
+		if '=' in line:
+			(key, value) = line.split('=', 1)
+			key = key.strip().upper()
+			value = value.strip().upper()
+			if ',' in value:
+				value = value.split(',')
+				for i in range(0, len(value)):
+					try:
+						value[i] = int(value[i])
+					except:
+						pass
+			else:
+				try:
+					value = int(value)
+				except:
+					pass
+		return (key, value)
+
+	def ConfigMode(self, config):
+		"""
+		Returns the mode specified in a configuration file.
+
+		@config - Configuration file path.
+
+		Returns the mode on success. Returns None on failure.
+		"""
+		for line in open(config).readlines():
+			(key, value) = self._parse_config_line(line)
+			if key == self.MODE_KEY:
+				return value
+		return None
 
 	def StartTimer(self):
 		"""
@@ -254,26 +302,51 @@ class Ping(Gumbi):
 		return self.ReadAck()
 
 class ParallelFlash(Gumbi):
+
+	MODE_VALUE = "PARALLEL"
+	CONFIG = {
+		"LATCH"		: [0],
+		"ADDRESS"	: [],
+		"DATA"		: [],
+		"VCC"		: [],
+		"GND"		: [],
+		"CE"		: [Gumbi.UNUSED, 0],
+		"WE"		: [Gumbi.UNUSED, 0],
+		"OE"		: [Gumbi.UNUSED, 0],
+		"BE"		: [Gumbi.UNUSED, 0],
+		"BY"		: [Gumbi.UNUSED, 0],
+		"WP"		: [Gumbi.UNUSED, 0],
+		"RST"		: [Gumbi.UNUSED, 0]
+	}
 	
-	def __init__(self, latchd=0, address=[], data=[], vcc=[], gnd=[], ce=(Gumbi.UNUSED,0), we=(Gumbi.UNUSED,0), oe=(Gumbi.UNUSED,0), be=(Gumbi.UNUSED,0), by=(Gumbi.UNUSED,0), wp=(Gumbi.UNUSED,0), rst=(Gumbi.UNUSED,0), port=None):
-		self.latch_delay = latchd
-		self.address = self._convert_pin_array(address)
-		self.data = self._convert_pin_array(data)
-		self.vcc = self._convert_pin_array(vcc)
-		self.gnd = self._convert_pin_array(gnd)
-		self.ce = self._convert_control_pin(ce)
-		self.we = self._convert_control_pin(we)
-		self.oe = self._convert_control_pin(oe)
-		self.be = self._convert_control_pin(be)
-		self.by = self._convert_control_pin(by)
-		self.wp = self._convert_control_pin(wp)
-		self.rst = self._convert_control_pin(rst)
+	def __init__(self, config=None, latch=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None, port=None):
+		if config is None:
+			self.CONFIG["LATCH"] = [latch]
+			self.CONFIG["ADDRESS"] = self._convert_pin_array(address)
+			self.CONFIG["DATA"] = self._convert_pin_array(data)
+			self.CONFIG["VCC"] = self._convert_pin_array(vcc)
+			self.CONFIG["GND"] = self._convert_pin_array(gnd)
+			self.CONFIG["CE"] = self._convert_control_pin(ce)
+			self.CONFIG["WE"] = self._convert_control_pin(we)
+			self.CONFIG["OE"] = self._convert_control_pin(oe)
+			self.CONFIG["BE"] = self._convert_control_pin(be)
+			self.CONFIG["BY"] = self._convert_control_pin(by)
+			self.CONFIG["WP"] = self._convert_control_pin(wp)
+			self.CONFIG["RST"] = self._convert_control_pin(rst)
+		else:
+			self.ReadConfig(config)
 
 		Gumbi.__init__(self, port)
 		self.SetMode(self.PFLASH)
 
 	def _convert_control_pin(self, cp):
-		return (self.Pin2Real(cp[0]), cp[1])
+		cpc = (self.UNUSED, 0)
+		if cp is not None and len(cp) > 0:
+			if len(cp) == 1:
+				cpc = (self.Pin2Real(cp[0]), 0)
+			else:
+				cpc = (self.Pin2Real(cp[0]), cp[1])
+		return cpc
 
 	def _convert_pin_array(self, pins):
 		for i in range(0, len(pins)):
@@ -289,23 +362,36 @@ class ParallelFlash(Gumbi):
 		data = self.PackByte(action)
 		data += self.Pack32(start)
 		data += self.Pack32(count)
-		data += self.PackByte(self.latch_delay)
-		data += self.Pack16(len(self.address))
-		data += self.Pack16(len(self.data))
-		data += self.Pack16(len(self.vcc))
-		data += self.Pack16(len(self.gnd))
-		data += self._pack_pins(self.address)
-		data += self._pack_pins(self.data)
-		data += self._pack_pins(self.vcc)
-		data += self._pack_pins(self.gnd)
-		data += self.PackBytes(self.ce)
-		data += self.PackBytes(self.we)
-		data += self.PackBytes(self.oe)
-		data += self.PackBytes(self.be)
-		data += self.PackBytes(self.by)
-		data += self.PackBytes(self.wp)
-		data += self.PackBytes(self.rst)
+		data += self.PackByte(self.CONFIG["LATCH"][0])
+		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
+		data += self.Pack16(len(self.CONFIG["DATA"]))
+		data += self.Pack16(len(self.CONFIG["VCC"]))
+		data += self.Pack16(len(self.CONFIG["GND"]))
+		data += self._pack_pins(self.CONFIG["ADDRESS"])
+		data += self._pack_pins(self.CONFIG["DATA"])
+		data += self._pack_pins(self.CONFIG["VCC"])
+		data += self._pack_pins(self.CONFIG["GND"])
+		data += self.PackBytes(self.CONFIG["CE"])
+		data += self.PackBytes(self.CONFIG["WE"])
+		data += self.PackBytes(self.CONFIG["OE"])
+		data += self.PackBytes(self.CONFIG["BE"])
+		data += self.PackBytes(self.CONFIG["BY"])
+		data += self.PackBytes(self.CONFIG["WP"])
+		data += self.PackBytes(self.CONFIG["RST"])
 		return data
+
+	def ReadConfig(self, config):
+		mode_name = self.ConfigMode(config)
+		if mode_name != self.CONFIG_MODE:
+			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.CONFIG_MODE))
+
+		for line in open(config).readlines():
+			(key, value) = self._parse_config_line(line)
+			if key is not None and value is not None:
+				if self.CONFIG.has_key(key):
+					self.CONFIG[key] = value
+		for key, value in self.CONFIG.iteritems():
+			print key, "=", value
 
 	def ReadFlash(self, start, count):
 		data = self._struct(self.READ, start, count)
@@ -320,27 +406,22 @@ class ParallelFlash(Gumbi):
 
 
 if __name__ == '__main__':
-#	try:
+	try:
+
 		info = Info()
 		for line in info.Info():
 			print line
+		print ""
 		info.Close()
 
-		print "Starting test run..."
-		s = SpeedTest(1024)
-		t = s.Go()
-		v = s.Validate()
-		s.Close()
-		print "Read 1024 bytes in", t, "seconds"
-		print "Data valid:", v
-
-		flash = ParallelFlash(address=[12,11,10,9,8,7,6,5,27,26,23,25,4,3,2,30], data=[13,14,15,17,18,19,20,21], vcc=[32], gnd=[16], ce=(22,0), we=(31,0), oe=(24,0))
+		flash = ParallelFlash(config="config/39SF020.conf")
+		print "Reading flash..."
 		flash.StartTimer()
-		data = flash.ReadFlash(0, 1024) #262144)
+		data = flash.ReadFlash(0, 0x40000)
 		t = flash.StopTimer()
 		flash.Close()
 
-		print "Read 1024 bytes in", t, "seconds"
+		print "Read 0x40000 bytes in", t, "seconds"
 		open("flash.bin", "w").write(data)
-#	except Exception, e:
-##		print "Error:", e
+	except Exception, e:
+		print "Error:", e
