@@ -278,6 +278,7 @@ void parallel_read(void)
 		/* 
 		 * TODO: Try to improve the speed of this code block. Ideas:
 		 *
+		 * 	o How long do the SPI reads/writes take?
 		 * 	o Remove the is_valid_pin checks in set_pin_high/set_pin_low.
 		 *	o Remove first loop in commit_targeted_settings.
 		 * 	o Each output_enable call results in an additional SPI transaction.
