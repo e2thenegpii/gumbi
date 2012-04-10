@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import serial
 import struct
 import time
 import sys
@@ -60,11 +59,11 @@ class RawHID:
 				retval = True
 				if self.verbose:
 					hid_write_identification(sys.stderr, self.hid)
+			else:
+				raise Exception("hid_force_open() failed with error code: %d\n" % hid_ret)
+		else:
+			raise Exception("hid_init() failed with error code: %d\n" % hid_ret)
 
-			elif self.verbose:
-				sys.stderr.write("hid_force_open() failed with error code: %d\n" % hid_ret);
-		elif self.verbose:
-			sys.stderr.write("hid_init() failed with error code: %d\n" % hid_ret)
 		return retval
 
 	def close(self):
@@ -101,9 +100,7 @@ class RawHID:
 
 		if hid_ret == HID_RET_SUCCESS:
 			retval = True
-		elif self.verbose:
-			sys.stderr.write("hid_interrupt_write() failed with error code: %d\n" % hid_ret)
-
+			
 		return retval
 
 	def recv(self, count=PACKET_LEN, timeout=TIMEOUT):
@@ -117,24 +114,22 @@ class RawHID:
 		Returns None on failure.
 		"""
 
-		hid_ret, packet = hid_interrupt_read(self.hid, self.inep, self.PACKET_LEN, timeout)
+		hid_ret, packet = hid_interrupt_read(self.hid, self.inep, count, timeout)
 
 		if hid_ret != HID_RET_SUCCESS:
 			packet = None
-		elif self.verbose:
-			sys.stderr.write("hid_interrupt_read() failed with error code: %d\n" % hid_ret)
 
-		return packet[0:count]
+		return packet
 	
 class Gumbi:
 	"""
 	Primary gumbi class. All other classes should be subclassed from this.
 	"""
 
-	ACK = "A"
-	NACK = "N"
-	BAUD = 9600
-	DEFAULT_PORT = '/dev/ttyUSB0'
+	VID = 0x16C0 
+	PID = 0x0480
+	ACK = "GUMBIACK"
+	NACK = "GUMBINACK"
 	MAX_PINS = 128
 	RESET_LEN = 1024
 	UNUSED = 0xFF
@@ -161,31 +156,28 @@ class Gumbi:
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
 
-	def __init__(self, port=None, new=True):
+	def __init__(self, new=True):
 		"""
 		Class constructor, calls self._open().
 
-		@port - Gumbi serial port.
 		@new  - Set to False to not open a connection to the Gumbi board.
 		"""
 		self.ts = 0
-		self.serial = None
+		self.hid = RawHID(verbose=True)
 		if new:
-			self._open(port)
+			self._open()
 
-	def _open(self, port):
+	def _open(self):
 		"""
 		Opens a connection to the Gumbi board.
 		"""
-		if port is None:
-			port = self.DEFAULT_PORT
-		self.serial = serial.Serial(port, self.BAUD)
+		self.hid.open(self.VID, self.PID)
 
 	def _close(self):
 		"""
 		Closes the connection with the Gumbi board.
 		"""
-		self.serial.close()
+		self.hid.close()
 
 	def _parse_config_line(self, line):
 		"""
@@ -284,7 +276,7 @@ class Gumbi:
 		"""
 		Reads an ACK/NACK from the Gumbi board. Returns True on ACK, raises an exception on NACK.
 		"""
-		if self.Read(1) != self.ACK:
+		if !self.Read().startswith(self.ACK):
 			raise Exception(self.ReadText())
 		return True
 
@@ -298,26 +290,26 @@ class Gumbi:
 		"""
 		Reads and returns a new-line terminated string from the Gumbi board.
 		"""
-		return self.serial.readline().strip()
+		return self.Read().strip()
 
-	def Read(self, n=1):
+	def Read(self, n=None):
 		"""
 		Reads n bytes of data from the Gumbi board. Default n == 1.
 		"""
-		return self.serial.read(n)
+		return self.hid.recv(n)
 
 	def Write(self, data):
 		"""
 		Sends data to the Gumbi board and verifies acknowledgement.
 		"""
-		self.serial.write(data)
+		self.hid.send(data)
 		self.ReadAck()
 
 	def Reset(self):
 		"""
 		Resets the communications stream with the Gumbi board.
 		"""
-		self.serial.write(self.PackByte(self.EXIT))
+		self.hid.send(self.PackByte(self.EXIT))
 		for i in range(0, self.RESET_LEN):
 			self.SetMode(self.NOP)
 
@@ -541,22 +533,37 @@ class ParallelFlash(Gumbi):
 
 
 if __name__ == '__main__':
+	gumbi = RawHID(verbose=True)
+	if gumbi.open(0x16c0, 0x0480):
+		gumbi.send("\x06")
+		while True:
+			data = gumbi.recv()
+			print data
+			if data == "A":
+				break
+		gumbi.close()
+
+
+
+
+
+
 #	try:
 
-		info = Info()
-		for line in info.Info():
-			print line
-		print ""
-		info.Close()
+#		info = Info()
+#		for line in info.Info():
+#			print line
+#		print ""
+#		info.Close()
 
-		flash = ParallelFlash(config="config/39SF020.conf")
-		print "Reading flash..."
-		flash.StartTimer()
-		data = flash.ReadFlash(0, 0x40000)
-		t = flash.StopTimer()
-		flash.Close()
+#		flash = ParallelFlash(config="config/39SF020.conf")
+#		print "Reading flash..."
+#		flash.StartTimer()
+#		data = flash.ReadFlash(0, 0x40000)
+#		t = flash.StopTimer()
+#		flash.Close()
 
-		print "Read 0x40000 bytes in", t, "seconds"
-		open("flash.bin", "w").write(data)
+#		print "Read 0x40000 bytes in", t, "seconds"
+#		open("flash.bin", "w").write(data)
 #	except Exception, e:
-#		print "Error:", e
+##		print "Error:", e
