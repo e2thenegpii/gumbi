@@ -35,13 +35,22 @@ void speed_test(void)
 	uint8_t byte = TEST_BYTE;
 
 	read_data((uint8_t *) &count, sizeof(count));
-	ack();
 
 	for(i=0; i<count; i++)
 	{
 		buffered_write((uint8_t *) &byte, 1);
 	}
 	
+	flush_buffer();
+}
+
+/* Handler for XFER mode. Reads in a 4 byte size field, reads in size data while sending it back out to the host. */
+void xfer_test(void)
+{
+	uint8_t buf[XFER_TEST_SIZE] = { 0 };
+
+	read_data((uint8_t *) &buf, sizeof(buf));
+	buffered_write((uint8_t *) &buf, sizeof(buf));
 	flush_buffer();
 }
 
@@ -55,7 +64,7 @@ void gpio(void)
 
 	while(loop)
 	{
-		read_data((uint8_t *) &cmd, sizeof(struct io));
+		read_data((uint8_t *) &cmd, sizeof(cmd));
 		
 		switch(cmd.action)
 		{
@@ -71,7 +80,6 @@ void gpio(void)
 				break;
 			case READ:
 				configure_pin_immediate(cmd.pin, 'r');
-				ack();
 				c = get_pin(cmd.pin);
 				write_data((uint8_t *) &c, 1);
 				break;

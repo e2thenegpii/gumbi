@@ -17,6 +17,7 @@
 
 #define BLOCK_SIZE 64
 #define TEST_BYTE 0xFF
+#define XFER_TEST_SIZE 128
 
 #define MAX_PINS 128
 #define MAX_DEVICES 8
@@ -62,7 +63,8 @@ enum modes
 	INFO = 6,
 	SPEEDTEST = 7,
 	GPIO = 8,
-	GID = 9
+	GID = 9,
+	XFER = 10
 };
 
 enum actions

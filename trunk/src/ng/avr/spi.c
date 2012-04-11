@@ -35,11 +35,35 @@ void spi_flash(void)
 	mcp23s17_disable();
 }
 
-void read_spi_flash(void)
+void spi_dump(void)
 {
 	uint32_t i = 0;
 	uint8_t byte = 0;
 
+	for(i=0; i<sconfig.count; i++)
+	{
+		byte = soft_spi_read();
+		buffered_write((uint8_t *) &byte, 1);
+	}
+
+	flush_buffer();
+}
+
+void read_spi_eeprom(void)
+{
+	set_pin_immediate(sconfig.ss, 0);
+
+	soft_spi_write(SPI_READ_COMMAND);
+	soft_spi_write((uint8_t) (sconfig.addr >> 8));
+	soft_spi_write((uint8_t) (sconfig.addr));
+
+	spi_dump();
+
+	set_pin_immediate(sconfig.ss, 1);
+}
+
+void read_spi_flash(void)
+{
 	set_pin_immediate(sconfig.ss, 0);
 	
 	soft_spi_write(SPI_READ_COMMAND);
@@ -47,13 +71,7 @@ void read_spi_flash(void)
 	soft_spi_write((uint8_t) (sconfig.addr >> 8));
 	soft_spi_write((uint8_t) (sconfig.addr));
 
-	for(i=0; i<sconfig.count; i++)
-	{	
-		byte = soft_spi_read();
-		buffered_write((uint8_t *) &byte, 1);
-	}
-
-	flush_buffer();
+	spi_dump();
 
 	set_pin_immediate(sconfig.ss, 1);
 }

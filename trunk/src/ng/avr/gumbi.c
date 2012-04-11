@@ -68,6 +68,9 @@ void command_handler(uint8_t mode)
 		case NOP:
 			handler = &nop;
 			break;
+		case XFER:
+			handler = &xfer_test;
+			break;
 		default:
 			break;
 	}
