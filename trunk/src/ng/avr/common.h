@@ -124,6 +124,21 @@ struct parallel
 	struct ctrlpin rst;			/* Reset */
 } pconfig;
 
+struct spi
+{
+	enum actions action;
+	uint32_t addr;
+	uint32_t count;
+	uint8_t ss;
+	uint8_t clk;
+	uint8_t mosi;
+	uint8_t miso;
+	uint16_t num_vcc_pins;
+	uint16_t num_gnd_pins;
+	uint8_t vcc_pins[MAX_PINS];
+	uint8_t gnd_pins[MAX_PINS];
+} sconfig;
+
 struct config
 {
 	uint8_t num_pins;
