@@ -130,6 +130,8 @@ struct config
 	uint8_t num_io_devices;
 	struct pin pins[MAX_PINS];
 	struct device chips[MAX_DEVICES];
+	uint8_t buffer[BLOCK_SIZE];
+	uint8_t buffer_size;
 } gconfig;
 
 struct command
@@ -146,5 +148,7 @@ void write_string(char *string);
 void read_data(uint8_t *buffer, uint32_t count);
 void write_data(uint8_t *buffer, uint32_t count);
 uint8_t are_valid_pins(uint8_t pins[], uint8_t count);
+void flush_buffer(void);
+void buffered_write(uint8_t *buffer, uint32_t size);
 
 #endif

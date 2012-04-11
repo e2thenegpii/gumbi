@@ -49,7 +49,7 @@
 // all, but allocating more than necessary means reserved
 // bandwidth is no longer available to other USB devices.
 #define RAWHID_TX_SIZE		64	// transmit packet size
-#define RAWHID_TX_INTERVAL	2	// max # of ms between transmit packets
+#define RAWHID_TX_INTERVAL	1	// max # of ms between transmit packets
 #define RAWHID_RX_SIZE		64	// receive packet size
 #define RAWHID_RX_INTERVAL	8	// max # of ms between receive packets
 

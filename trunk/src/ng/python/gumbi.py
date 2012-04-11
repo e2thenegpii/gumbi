@@ -116,11 +116,11 @@ class RawHID:
 
 		if count is None:
 			count = self.PACKET_LEN
-
+		timeout = self.TIMEOUT * 10
 		hid_ret, packet = hid_interrupt_read(self.hid, self.rep, count, timeout)
 
-		if hid_ret != HID_RET_SUCCESS:
-			packet = None
+		#if hid_ret != HID_RET_SUCCESS:
+		#	packet = None
 
 		return packet
 	
@@ -566,17 +566,24 @@ if __name__ == '__main__':
 		info = Info()
 		for line in info.Info():
 			print line
-		print ""
 		info.Close()
 
-#		flash = ParallelFlash(config="config/39SF020.conf")
-#		print "Reading flash..."
-#		flash.StartTimer()
-#		data = flash.ReadFlash(0, 0x40000)
-#		t = flash.StopTimer()
-#		flash.Close()
+#		speed = SpeedTest(0x40000)
+#		print "Speed test finished in", speed.Go(), "seconds."
+#		print "Data valid:", speed.Validate()
+#		print "Data length:", len(speed.data)
+#		open("data.bin", "w").write(speed.data)
+#		speed.Close()
 
-#		print "Read 0x40000 bytes in", t, "seconds"
-#		open("flash.bin", "w").write(data)
+		flash = ParallelFlash(config="config/39SF020.conf")
+		print "Reading flash..."
+		flash.StartTimer()
+		data = flash.ReadFlash(0, 1024)
+		t = flash.StopTimer()
+		flash.Close()
+
+		print "Read flash data in", t, "seconds"
+		open("flash.bin", "w").write(data)
+
 #	except Exception, e:
 ##		print "Error:", e
