@@ -3,6 +3,8 @@
 
 #include <util/delay.h>
 #include <avr/power.h>
+#include <avr/wdt.h>
+#include <avr/interrupt.h>
 #include "common.h"
 
 void ping(void);

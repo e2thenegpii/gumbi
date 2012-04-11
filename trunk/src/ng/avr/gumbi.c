@@ -1,41 +1,55 @@
-#include "common.h"
+//#include "common.h"
 #include "gumbi.h"
-#include "debug.h"
-#include "mcp23s17.h"
-#include "parallel.h"
-#include "spi.h"
+//#include "debug.h"
+//#include "mcp23s17.h"
+//#include "parallel.h"
+//#include "spi.h"
 
 int main(void)
 {
-	uint8_t mode = 0;
+//	uint8_t mode = 0;
 
-	/* Make sure the entire gconfig structure is zeroed out */
-	memset(&gconfig, 0, sizeof(gconfig));
-
-	/* Initialize the MCP23S17 chips */	
-	mcp23s17_init();
+	/* Disable watchdog if enabled by bootloader/fuses */
+//	MCUSR &= ~(1 << WDRF);
+//	wdt_disable();
 
 	/* Full speed clock */
-	clock_prescale_set(0);
+	clock_prescale_set(clock_div_1);
 
-	/* Initialize USB */
-	usb_init();
-	while(!usb_configured()) { }
+	DDRD |= (1 << PD5);
+	PORTD |= (1 << PD5);
 	_delay_ms(1000);
 
-	/* Show that we're alive and ready */
-	//id();
-
-	while(TRUE)
+	while(1)
 	{
-		read_data((uint8_t *) &mode, 1);
-		command_handler(mode);
+		PORTD &= ~(1 << PD5);
+		_delay_ms(1000);
+		PORTD |= (1 << PD5);
+		_delay_ms(1000);
 	}
+
+	/* Make sure the entire gconfig structure is zeroed out */
+//	memset(&gconfig, 0, sizeof(gconfig));
+
+	/* Initialize the MCP23S17 chips */	
+//	mcp23s17_init();
+
+	/* Initialize USB */
+//	usb_init();
+//	while(!usb_configured()) { }
+//	_delay_ms(1000);
+//	PORTD &= ~(1 << PD5);
+
+//	while(TRUE)
+//	{
+//		read_data((uint8_t *) &mode, 1);
+//		command_handler(mode);
+//	}
 
 	return 0;
 }
 
-/* Checks the specified mode and calls the appropriate handler function. */
+/* Checks the specified mode and calls the appropriate handler function. 
 void command_handler(uint8_t mode)
 {
 	void (*handler)(void);
@@ -45,31 +59,31 @@ void command_handler(uint8_t mode)
 	switch(mode)
 	{
 		case PING:
-			handler = &ping;
+//			handler = &ping;
 			break;
 		case INFO:
-			handler = &info;
+//			handler = &info;
 			break;
 		case SPEEDTEST:
-			handler = &speed_test;
+//			handler = &speed_test;
 			break;
 		case PFLASH:
-			handler = &parallel_flash;
+//			handler = &parallel_flash;
 			break;
 		case SPIFLASH:
-			handler = &spi_flash;
+//			handler = &spi_flash;
 			break;
 		case GPIO:
-			handler = &gpio;
+//			handler = &gpio;
 			break;
 		case GID:
-			handler = &id;
+//			handler = &id;
 			break;
 		case NOP:
-			handler = &nop;
+//			handler = &nop;
 			break;
 		case XFER:
-			handler = &xfer_test;
+//			handler = &xfer_test;
 			break;
 		default:
 			break;
@@ -77,16 +91,17 @@ void command_handler(uint8_t mode)
 
 	if(handler)
 	{
-		/* Always ACK if the specified mode was identified. */
+		/ * Always ACK if the specified mode was identified. 
 		ack();
 		handler();
 	}
 	else
 	{
-		/* If the specified mode is unknown/unsupported, send a NACK followed by a reason */
+		/ * If the specified mode is unknown/unsupported, send a NACK followed by a reason 
 		nack();
 		write_string("Specified mode not implemented!");
 	}
 
 	return;
 }
+*/
