@@ -14,7 +14,7 @@
 # To rebuild project do "make clean" then "make all".
 
 # Microcontroller Type
-#MCU=atmega328p
+#MCU=atmega32u4
 MCU=at90usb1286
 
 # Clock speed, in hertz

@@ -29,7 +29,7 @@ extern "C"{
 #endif
 
 // create alias for the different SPI chip pins - code assumes all on port B
-#if (defined(__AVR_AT90USB82__) || defined(__AVR_AT90USB162__) || defined(__AVR_AT90USB1286__))
+#if (defined(__AVR_AT90USB82__) || defined(__AVR_AT90USB162__) || defined(__AVR_ATmega32U4__) || defined(__AVR_AT90USB1286__))
  #define SPI_SS_PIN PORTB0
  #define SPI_SCK_PIN PORTB1
  #define SPI_MOSI_PIN PORTB2

@@ -288,12 +288,15 @@ void parallel_read(void)
 		output_enable(FALSE);
 
 		/* TODO: For HID, send data in BLOCK_SIZE byte blocks */
-		write_data((uint8_t *) &data, 1);
-		//if(read_size > 1)
-		//{
-		//	putchar((uint8_t) (data >> 8));
-		//}
+		buffered_write((uint8_t *) &data, 1);
+		if(read_size > 1)
+		{
+			data = (data >> 8);
+			buffered_write((uint8_t *) &data, 1);
+		}
 	}
+
+	flush_buffer();
 }
 
 /* Read bytes from the UART and write them to the target chip */

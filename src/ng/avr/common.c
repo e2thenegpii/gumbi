@@ -19,8 +19,10 @@ void read_data(uint8_t *buffer, uint32_t size)
 	uint8_t r = 0, n = 0;
 	uint8_t rx_buf[BLOCK_SIZE] = { 0 };
 
-	for(i=0,r=0; i<size; i+=n)
+	for(i=0; i<size; i+=n)
 	{
+		memset((uint8_t *) &rx_buf, 0, sizeof(rx_buf));
+
 		r = usb_rawhid_recv((uint8_t *) &rx_buf, 0);
 		if(r > 0)
 		{
@@ -37,7 +39,7 @@ void read_data(uint8_t *buffer, uint32_t size)
 		}
 		else
 		{
-			r = 0;
+			n = 0;
 		}
 	}
 }
@@ -115,7 +117,7 @@ uint8_t is_valid_pin(uint8_t p)
 {
 	uint8_t ok = FALSE;
 
-	if(p > 0 && p < gconfig.num_pins && gconfig.pins[p].inuse)
+	if(p >= 0 && p < gconfig.num_pins && gconfig.pins[p].inuse)
 	{
 		ok = TRUE;
 	}

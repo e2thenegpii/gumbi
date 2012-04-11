@@ -17,7 +17,7 @@ class RawHID:
 	WRITE_ENDPOINT = 0x02
 	INTERFACE = 0
 
-	PACKET_LEN = 64
+	BLOCK_SIZE = 64
 	TIMEOUT = 1000 # milliseconds
 	CONNECT_RETRIES = 3
 
@@ -95,35 +95,47 @@ class RawHID:
 		Returns False on failure.
 		"""
 
+		tx = 0
 		retval = False
 
-		hid_ret = hid_interrupt_write(self.hid, self.wep, packet, timeout)
-
-		if hid_ret == HID_RET_SUCCESS:
-			retval = True
+		while tx < len(packet):
+			hid_ret = hid_interrupt_write(self.hid, self.wep, packet[tx:tx+self.BLOCK_SIZE], timeout)
+			
+			if hid_ret != HID_RET_SUCCESS:
+				retval = False
+				raise Exception("hid_interrupt_write failed with error code 0x%X" % hid_ret)
+			else:
+				tx += self.BLOCK_SIZE
 			
 		return retval
 
-	def recv(self, count=PACKET_LEN, timeout=TIMEOUT):
+	def recv(self, count=BLOCK_SIZE, timeout=TIMEOUT):
 		"""
 		Read data from the connected USB device.
 	
-		@len     - Number of bytes to read. Defaults to PACKET_LEN.
+		@len     - Number of bytes to read. Defaults to BLOCK_SIZE.
 		@timeout - Read timeout, in milliseconds. Defaults to TIMEOUT.
 	
 		Returns the received bytes on success.
 		Returns None on failure.
 		"""
 
+		rx = 0
+		data = ''
+
 		if count is None:
-			count = self.PACKET_LEN
-		timeout = self.TIMEOUT * 10
-		hid_ret, packet = hid_interrupt_read(self.hid, self.rep, count, timeout)
+			count = self.BLOCK_SIZE
+		
+		while rx < count:
+			hid_ret, packet = hid_interrupt_read(self.hid, self.rep, self.BLOCK_SIZE, timeout)
 
-		#if hid_ret != HID_RET_SUCCESS:
-		#	packet = None
+			if hid_ret != HID_RET_SUCCESS:
+				print "hid_interrupt_read failed with error code 0x%X" % hid_ret
+			else:
+				data += packet
+				rx += len(packet)
 
-		return packet
+		return data
 	
 class Gumbi:
 	"""
@@ -147,9 +159,10 @@ class Gumbi:
 	I2CEEPROM = 4
 	PING = 5
 	INFO = 6
-	SPEED = 7
+	SPEEDTEST = 7
 	GPIO = 8
-	ID = 9
+	GID = 9
+	XFER = 10
 
 	EXIT = 0
 	READ = 1
@@ -281,7 +294,9 @@ class Gumbi:
 		"""
 		Reads an ACK/NACK from the Gumbi board. Returns True on ACK, raises an exception on NACK.
 		"""
-		if self.ReadText() != self.ACK:
+		line = self.ReadText() 
+		if line != self.ACK:
+			print "Instead of ack, I got:", line
 			raise Exception(self.ReadText())
 		return True
 
@@ -290,6 +305,7 @@ class Gumbi:
 		Puts the Gumbi board in the specified mode.
 		"""
 		self.Write(self.PackByte(mode))
+		self.ReadAck()
 
 	def ReadText(self):
 		"""
@@ -308,7 +324,6 @@ class Gumbi:
 		Sends data to the Gumbi board and verifies acknowledgement.
 		"""
 		self.hid.send(data)
-		self.ReadAck()
 
 	def Reset(self):
 		"""
@@ -341,18 +356,24 @@ class GPIO(Gumbi):
 		Exits the Gumbi board from GPIO mode.
 		"""
 		self.Write(self.PackBytes([self.EXIT, 0]))
+		self.ReadAck()
 
 	def PinHigh(self, pin):
 		"""
 		Sets the specified pin high.
 		"""
 		self.Write(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
+		print self.ReadText()
+		print self.ReadText()
+		print self.ReadText()
+		self.ReadAck()
 
 	def PinLow(self, pin):
 		"""
 		Sets the specified pin low.
 		"""
 		self.Write(self.PackBytes([self.LOW, self.Pin2Real(pin)]))
+		self.ReadAck()
 
 	def ReadPin(self, pin):
 		"""
@@ -360,7 +381,7 @@ class GPIO(Gumbi):
 		High == 1, Low == 0.
 		"""
 		self.Write(self.PackBytes([self.READ, self.Pin2Real(pin)]))
-		return ord(self.Read(1))
+		return ord(self.Read()[0])
 
 	def Close(self):
 		"""
@@ -385,7 +406,7 @@ class SpeedTest(Gumbi):
 		Gumbi.__init__(self)
 		self.data = ''
 		self.count = count
-		self.SetMode(self.SPEED)
+		self.SetMode(self.SPEEDTEST)
 
 	def _test(self):
 		"""
@@ -416,6 +437,41 @@ class SpeedTest(Gumbi):
 			if byte != self.TEST_BYTE:
 				retval = False
 				break
+		return retval
+
+class TransferTest(Gumbi):
+
+	XFER_SIZE = 128
+
+	def __init__(self):
+		self.data = ''
+		self.count = self.XFER_SIZE
+
+		Gumbi.__init__(self)
+		self.SetMode(self.XFER)
+
+	def _xfer(self):
+		self.Write(self.TEST_BYTE * self.count)
+		self.data = self.Read(self.count)
+
+	def Go(self):
+		self.StartTimer()
+		self._xfer()
+		return self.StopTimer()
+
+	def Validate(self):
+		retval = True
+		if len(self.data) >= self.count:
+			print "Got %d bytes of data back" % len(self.data)
+			for i in range(0, self.count):
+				if self.data[i] != self.TEST_BYTE:
+					print "data[%d] == 0x%.2X doesn't match expected byte 0x%.2X" % (i, ord(self.data[i]), ord(self.TEST_BYTE))
+					retval = False
+					#break
+		else:
+			print "Data len invalid:", len(self.data)
+			retval = False
+
 		return retval
 
 class Info(Gumbi):
@@ -553,11 +609,13 @@ class ParallelFlash(Gumbi):
 		data = self._struct(self.READ, start, count)
 		self.Write(data)
 		self.ReadAck()
+		self.ReadAck()
 		return self.Read(count)
 
 	def WriteFlash(self, addr, data):
 		self.Write(self._struct(self.WRITE, start, len(data)))
 		self.Write(data)
+		self.ReadAck()
 		return self.ReadAck()
 
 
@@ -569,6 +627,11 @@ if __name__ == '__main__':
 			print line
 		info.Close()
 
+#		xfer = TransferTest()
+#		xfer.Go()
+#		print "Valid?", xfer.Validate()
+#		xfer.Close()
+
 #		speed = SpeedTest(0x40000)
 #		print "Speed test finished in", speed.Go(), "seconds."
 #		print "Data valid:", speed.Validate()
@@ -576,15 +639,20 @@ if __name__ == '__main__':
 #		open("data.bin", "w").write(speed.data)
 #		speed.Close()
 
-		flash = ParallelFlash(config="config/39SF020.conf")
-		print "Reading flash..."
-		flash.StartTimer()
-		data = flash.ReadFlash(0, 1024)
-		t = flash.StopTimer()
-		flash.Close()
+#		gpio = GPIO()
+#		gpio.PinLow(1)
+#		time.sleep(10)
+#		gpio.Close()
 
-		print "Read flash data in", t, "seconds"
-		open("flash.bin", "w").write(data)
+#		flash = ParallelFlash(config="config/39SF020.conf")
+#		print "Reading flash..."
+#		flash.StartTimer()
+#		data = flash.ReadFlash(0, 0x40000)
+#		t = flash.StopTimer()
+#		flash.Close()
+
+#		print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
+#		open("flash.bin", "w").write(data)
 
 #	except Exception, e:
-##		print "Error:", e
+###		print "Error:", e
