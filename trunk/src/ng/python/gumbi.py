@@ -27,6 +27,7 @@ class RawHID:
 		self.rep = self.READ_ENDPOINT
 		self.wep = self.WRITE_ENDPOINT
 
+	# TODO: Need to flush USB data for the device once it's opened so old data doesn't screw us up
 	def open(self, vid, pid, rep=None, wep=None):
 		"""
 		Initialize libhid and connect to USB device.
