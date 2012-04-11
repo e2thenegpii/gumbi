@@ -24,17 +24,17 @@ class RawHID:
 	def __init__(self, verbose=False):
 		self.verbose = verbose
 		self.hid = None
-		self.inep = self.READ_ENDPOINT
-		self.outep = self.WRITE_ENDPOINT
+		self.rep = self.READ_ENDPOINT
+		self.wep = self.WRITE_ENDPOINT
 
-	def open(self, vid, pid, inep=None, outep=None):
+	def open(self, vid, pid, rep=None, wep=None):
 		"""
 		Initialize libhid and connect to USB device.
 
 		@vid   - Vendor ID of the USB device.
 		@pid   - Product ID of the USB device.
-		@inep  - USB input endpoint
-		@outep - USB output endpoint
+		@rep   - USB input endpoint
+		@wep   - USB output endpoint
 
 		Returns True on success.
 		Returns False on failure.
@@ -42,10 +42,10 @@ class RawHID:
 
 		retval = False
 
-		if inep is not None:
-			self.inep = inep
-		if outep is not None:
-			self.outep = outep
+		if rep is not None:
+			self.rep = wep
+		if wep is not None:
+			self.wep = rep
 
 		hid_ret = hid_init()
 		if hid_ret == HID_RET_SUCCESS:
@@ -96,7 +96,7 @@ class RawHID:
 
 		retval = False
 
-		hid_ret = hid_interrupt_write(self.hid, self.outep, packet, timeout)
+		hid_ret = hid_interrupt_write(self.hid, self.wep, packet, timeout)
 
 		if hid_ret == HID_RET_SUCCESS:
 			retval = True
@@ -114,7 +114,10 @@ class RawHID:
 		Returns None on failure.
 		"""
 
-		hid_ret, packet = hid_interrupt_read(self.hid, self.inep, count, timeout)
+		if count is None:
+			count = self.PACKET_LEN
+
+		hid_ret, packet = hid_interrupt_read(self.hid, self.rep, count, timeout)
 
 		if hid_ret != HID_RET_SUCCESS:
 			packet = None
@@ -123,7 +126,7 @@ class RawHID:
 	
 class Gumbi:
 	"""
-	Primary gumbi class. All other classes should be subclassed from this.
+	Primary gumbi class. All other classes that interact with the Gumbi board should be subclassed from this.
 	"""
 
 	VID = 0x16C0 
@@ -133,6 +136,7 @@ class Gumbi:
 	MAX_PINS = 128
 	RESET_LEN = 1024
 	UNUSED = 0xFF
+	NULL = "\x00"
 	TEST_BYTE = "\xFF"
 
 	NOP = 0
@@ -270,13 +274,13 @@ class Gumbi:
 		"""
 		Returns count filler bytes of data.
 		"""
-		return ("\x00" * count)
+		return (self.NULL * count)
 
 	def ReadAck(self):
 		"""
 		Reads an ACK/NACK from the Gumbi board. Returns True on ACK, raises an exception on NACK.
 		"""
-		if !self.Read().startswith(self.ACK):
+		if self.ReadText() != self.ACK:
 			raise Exception(self.ReadText())
 		return True
 
@@ -290,7 +294,7 @@ class Gumbi:
 		"""
 		Reads and returns a new-line terminated string from the Gumbi board.
 		"""
-		return self.Read().strip()
+		return self.Read().strip(self.NULL)
 
 	def Read(self, n=None):
 		"""
@@ -324,11 +328,11 @@ class GPIO(Gumbi):
 	Class to provide raw read/write access to all I/O pins.
 	"""
 
-	def __init__(self, port=None):
+	def __init__(self):
 		"""
 		Class constructor.
 		"""
-		Gumbi.__init__(self, port)
+		Gumbi.__init__(self)
 		self.SetMode(self.GPIO)
 
 	def _exit(self):
@@ -365,23 +369,47 @@ class GPIO(Gumbi):
 		self._close()
 
 class SpeedTest(Gumbi):
+	"""
+	Tests the speed of the PC to Gumbi interface.
+	"""
 
-	def __init__(self, count, port=None):
-		Gumbi.__init__(self, port)
+	def __init__(self, count):
+		"""
+		Class constructor.
+
+		@count - Number of bytes to send during the speed test.
+
+		Returns None.
+		"""
+		Gumbi.__init__(self)
 		self.data = ''
 		self.count = count
 		self.SetMode(self.SPEED)
 
 	def _test(self):
+		"""
+		Sends the byte count and reads the data. For internal use only.
+		"""
 		self.Write(self.Pack32(self.count))
 		self.data = self.Read(self.count)
 
 	def Go(self):
+		"""
+		Runs the speed test.
+
+		Returns the number of seconds it took to transfer self.count bytes.
+		"""
 		self.StartTimer()
 		self._test()
 		return self.StopTimer()
 
 	def Validate(self):
+		"""
+		Validates the received data.
+
+		Returns True if all data was received properly.
+		Returns False if data was corrupted.
+		"""
 		retval = True
 		for byte in self.data:
 			if byte != self.TEST_BYTE:
@@ -433,7 +461,7 @@ class ParallelFlash(Gumbi):
 		"RST"		: [Gumbi.UNUSED, 0]
 	}
 	
-	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None, port=None):
+	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None):
 		if config is None:
 			self.CONFIG["TOE"] = [toe]
 			self.CONFIG["ADDRESS"] = address
@@ -452,7 +480,7 @@ class ParallelFlash(Gumbi):
 		
 		self._shift_pins()
 
-		Gumbi.__init__(self, port)
+		Gumbi.__init__(self)
 		self.SetMode(self.PFLASH)
 
 	def _shift_pins(self):
@@ -533,28 +561,13 @@ class ParallelFlash(Gumbi):
 
 
 if __name__ == '__main__':
-	gumbi = RawHID(verbose=True)
-	if gumbi.open(0x16c0, 0x0480):
-		gumbi.send("\x06")
-		while True:
-			data = gumbi.recv()
-			print data
-			if data == "A":
-				break
-		gumbi.close()
-
-
-
-
-
-
 #	try:
 
-#		info = Info()
-#		for line in info.Info():
-#			print line
-#		print ""
-#		info.Close()
+		info = Info()
+		for line in info.Info():
+			print line
+		print ""
+		info.Close()
 
 #		flash = ParallelFlash(config="config/39SF020.conf")
 #		print "Reading flash..."

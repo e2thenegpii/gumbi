@@ -19,7 +19,8 @@ void info(void)
 {
 	uint8_t info[BLOCK_SIZE] = { 0 };
 
-	write_string(BOARD_ID);
+	snprintf((void *) &info, BLOCK_SIZE, "Board ID: %s", BOARD_ID);
+	write_string((char *) &info);
 	snprintf((void *) &info, BLOCK_SIZE, "I/O Chip Count: %d", gconfig.num_io_devices);
 	write_string((char *) &info);
 	snprintf((void *) &info, BLOCK_SIZE, "I/O Pin Count: %d", gconfig.num_pins);
@@ -34,7 +35,6 @@ void speed_test(void)
 	uint8_t buf[BLOCK_SIZE] = { TEST_BYTE };
 
 	read_data((uint8_t *) &count, sizeof(count));
-		
 	ack();
 
 	for(i=0; i<count; i+=sizeof(buf))
@@ -46,7 +46,7 @@ void speed_test(void)
 /* Handler for GPIO test mode. */
 void gpio(void)
 {
-	uint8_t loop = TRUE;
+	uint8_t loop = TRUE, c = 0;
 	struct io cmd = { 0 };
 
 	mcp23s17_enable();
@@ -70,7 +70,8 @@ void gpio(void)
 			case READ:
 				configure_pin_immediate(cmd.pin, 'r');
 				ack();
-				putchar(get_pin(cmd.pin));
+				c = get_pin(cmd.pin);
+				write_data((uint8_t *) &c, 1);
 				break;
 			case EXIT:
 				loop = FALSE;
