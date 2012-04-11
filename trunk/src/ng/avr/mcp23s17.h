@@ -6,7 +6,7 @@
 
 #define RESET_PORT PORTB
 #define RESET_DDR DDRB
-#define RESET_PIN PB0
+#define RESET_PIN PB4
 
 #define REG_READ 1
 #define REG_WRITE 0
