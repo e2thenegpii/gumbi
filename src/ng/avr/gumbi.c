@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "mcp23s17.h"
 #include "parallel.h"
+#include "spi.h"
 
 int main(void)
 {
@@ -54,6 +55,9 @@ void command_handler(uint8_t mode)
 			break;
 		case PFLASH:
 			handler = &parallel_flash;
+			break;
+		case SPIFLASH:
+			handler = &spi_flash;
 			break;
 		case GPIO:
 			handler = &gpio;

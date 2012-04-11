@@ -27,7 +27,7 @@ BAUD=9600
 TARGET = gumbi
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c common.c debug.c mcp23s17.c parallel.c avrlib/rawhid.c avrlib/spi.c
+SRC = $(TARGET).c common.c debug.c mcp23s17.c parallel.c spi.c avrlib/rawhid.c avrlib/spi.c
 
 # Programming hardware: type `avrdude -c ?` to get a full listing.
 AVRDUDE_PROGRAMMER = usbtiny
