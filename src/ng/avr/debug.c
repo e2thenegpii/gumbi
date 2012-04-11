@@ -32,15 +32,17 @@ void info(void)
 void speed_test(void)
 {
 	uint32_t i = 0, count = 0;
-	uint8_t buf[BLOCK_SIZE] = { TEST_BYTE };
+	uint8_t byte = TEST_BYTE;
 
 	read_data((uint8_t *) &count, sizeof(count));
 	ack();
 
-	for(i=0; i<count; i+=sizeof(buf))
+	for(i=0; i<count; i++)
 	{
-		write_data((uint8_t *) &buf, sizeof(buf));
+		buffered_write((uint8_t *) &byte, 1);
 	}
+	
+	flush_buffer();
 }
 
 /* Handler for GPIO test mode. */
