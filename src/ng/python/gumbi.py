@@ -58,6 +58,10 @@ class RawHID:
 			hid_ret = hid_force_open(self.hid, self.INTERFACE, match, self.CONNECT_RETRIES)
 			if hid_ret == HID_RET_SUCCESS:
 				retval = True
+				
+				self.reset()
+				self.flush()
+
 				if self.verbose:
 					hid_write_identification(sys.stderr, self.hid)
 			else:
@@ -66,6 +70,24 @@ class RawHID:
 			raise Exception("hid_init() failed with error code: %d\n" % hid_ret)
 
 		return retval
+
+	def reset(self):
+		"""
+		Resets the HID interface
+		"""
+		# Reset the HID interface
+		hid_reset_HIDInterface(self.hid)
+
+	def flush(self):
+		"""
+		Flushes any data from the HID receive buffer.
+		"""
+		# Read until a timeout occurs to ensure data is flushed
+		try:
+			while True:
+				self.recv(timeout=100)
+		except:
+			pass
 
 	def close(self):
 		"""
@@ -363,9 +385,6 @@ class GPIO(Gumbi):
 		Sets the specified pin high.
 		"""
 		self.Write(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
-		print self.ReadText()
-		print self.ReadText()
-		print self.ReadText()
 		self.ReadAck()
 
 	def PinLow(self, pin):
@@ -440,10 +459,16 @@ class SpeedTest(Gumbi):
 		return retval
 
 class TransferTest(Gumbi):
+	"""
+	Performs a two-way transfer test to ensure data is being sent and received properly over the USB interface.
+	"""
 
 	XFER_SIZE = 128
 
 	def __init__(self):
+		"""
+		Class initializer.
+		"""
 		self.data = ''
 		self.count = self.XFER_SIZE
 
@@ -451,35 +476,54 @@ class TransferTest(Gumbi):
 		self.SetMode(self.XFER)
 
 	def _xfer(self):
+		"""
+		Does the actual data transfer, for internal use only.
+		"""
 		self.Write(self.TEST_BYTE * self.count)
 		self.data = self.Read(self.count)
 
 	def Go(self):
+		"""
+		Starts the data transfer test.
+
+		Returns the number of seconds elapsed during the transfer.
+		"""
 		self.StartTimer()
 		self._xfer()
 		return self.StopTimer()
 
 	def Validate(self):
+		"""
+		Validates that the data received back from the transfer was complete and uncorrupted.
+
+		Returns True if data is valid, False if invalid.
+		"""
 		retval = True
 		if len(self.data) >= self.count:
-			print "Got %d bytes of data back" % len(self.data)
 			for i in range(0, self.count):
 				if self.data[i] != self.TEST_BYTE:
-					print "data[%d] == 0x%.2X doesn't match expected byte 0x%.2X" % (i, ord(self.data[i]), ord(self.TEST_BYTE))
 					retval = False
-					#break
+					break
 		else:
-			print "Data len invalid:", len(self.data)
 			retval = False
 
 		return retval
 
 class Info(Gumbi):
+	"""
+	Retrieves human-readable information description strings from the Gumbi board.
+	"""
 
 	def Info(self):
+		"""
+		Gets the current Gumbi board info.
+
+		Returns an array of ASCII description strings received from the Gumbi board.
+		"""
 		data = []
 
 		self.SetMode(self.INFO)
+
 		while True:
 			line = self.ReadText()
 			if line == self.ACK:
@@ -489,16 +533,28 @@ class Info(Gumbi):
 		return data
 
 class Identify(Gumbi):
+	"""
+	Retreives the Gumbi board ID string.
+	"""
 
 	def Identify(self):
+		"""
+		Returns the board ID string obtained from the Gumbi board.
+		"""
 		self.SetMode(self.ID)
 		return self.ReadText()
 
 class Ping(Gumbi):
+	"""
+	Simple ping to ensure the Gumbi board is present on the system.
+	"""
 
 	def Ping(self):
+		"""
+		Returns None on success, throws an exception on failure.
+		"""
 		self.SetMode(self.PING)
-		return self.ReadAck()
+		self.ReadAck()
 
 class ParallelFlash(Gumbi):
 
