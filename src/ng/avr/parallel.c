@@ -71,7 +71,6 @@ void parallel_flash(void)
 				break;
 			default:
 				nack();
-				write_string("The specified action is not supported");
 				break;
 		}
 
@@ -83,7 +82,6 @@ void parallel_flash(void)
 	else
 	{
 		nack();
-		write_string("Invalid pin configuration");
 	}
 
 	return;
@@ -142,7 +140,7 @@ uint8_t is_busy(void)
 
 	if(is_valid_pin(pconfig.by.pin))
 	{
-		if((read_register(gconfig.pins[pconfig.by.pin].addr, gconfig.pins[pconfig.by.pin].reg) & (1 << gconfig.pins[pconfig.by.pin].bit)) == gconfig.pins[pconfig.by.pin].active)
+		if((read_register(gconfig.pins[pconfig.by.pin].addr, gconfig.pins[pconfig.by.pin].reg) & (1 << gconfig.pins[pconfig.by.pin].bit)) == pconfig.by.active)
 		{
 			busy = TRUE;
 		}
