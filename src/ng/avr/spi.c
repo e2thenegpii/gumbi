@@ -95,7 +95,7 @@ uint8_t soft_spi_read(void)
 
 	set_pin_immediate(pconfig.clk, 0);
 
-	for(i=7; i>=0; i++)
+	for(i=7; i>=0; i--)
 	{
 		set_pin_immediate(pconfig.clk, 1);
 		if(get_pin(pconfig.miso))

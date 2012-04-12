@@ -30,7 +30,7 @@ int main(void)
 	}
 
 	/* Make sure the entire gconfig structure is zeroed out */
-	memset(&gconfig, 0, sizeof(gconfig));
+	memset((void *) pgm_read_word(&gconfig), 0, sizeof(gconfig));
 
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();

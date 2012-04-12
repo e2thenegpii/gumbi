@@ -166,9 +166,13 @@ class Gumbi:
 
 	VID = 0x16C0 
 	PID = 0x0480
-	ACK = "GUMBIACK"
-	NACK = "GUMBINACK"
+	ACK = "A"
+	NACK = "N"
 	MAX_PINS = 128
+	MAX_ADDR_PINS = 32
+	MAX_DATA_PINS = 16
+	MAX_MISC_PINS = 8
+
 	RESET_LEN = 1024
 	UNUSED = 0xFF
 	NULL = "\x00"
@@ -277,7 +281,9 @@ class Gumbi:
 		"""
 		Converts user-supplied pin numbers (index 1) to Gumbi board pin numbers (index 0).
 		"""
-		return (pin - 1)
+		if pin > 0 and pin <= self.MAX_PINS:
+			pin -= 1
+		return pin
 
 	def Pack32(self, value):
 		"""
@@ -561,6 +567,12 @@ class ParallelFlash(Gumbi):
 	MODE_VALUE = "PARALLEL"
 	CONFIG = {
 		"TOE"		: [0],
+		"TW"		: [0],
+		"SDA"		: [0],
+		"CLK"		: [0],
+		"SS"		: [0],
+		"MISO"		: [0],
+		"MOSI"		: [0],
 		"ADDRESS"	: [],
 		"DATA"		: [],
 		"VCC"		: [],
@@ -574,9 +586,10 @@ class ParallelFlash(Gumbi):
 		"RST"		: [Gumbi.UNUSED, 0]
 	}
 	
-	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None):
+	def __init__(self, config=None, toe=0, tw=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None):
 		if config is None:
 			self.CONFIG["TOE"] = [toe]
+			self.CONFIG["TW"] = [tw]
 			self.CONFIG["ADDRESS"] = address
 			self.CONFIG["DATA"] = data
 			self.CONFIG["VCC"] = vcc
@@ -608,6 +621,11 @@ class ParallelFlash(Gumbi):
 		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
 		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
 		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
+		self.CONFIG["SDA"][0] = self.Pin2Real(self.CONFIG["SDA"][0])
+		self.CONFIG["CLK"][0] = self.Pin2Real(self.CONFIG["CLK"][0])
+		self.CONFIG["SS"][0] = self.Pin2Real(self.CONFIG["SS"][0])
+		self.CONFIG["MISO"][0] = self.Pin2Real(self.CONFIG["MISO"][0])
+		self.CONFIG["MOSI"][0] = self.Pin2Real(self.CONFIG["MOSI"][0])
 
 	def _convert_control_pin(self, cp):
 		cpc = (self.UNUSED, 0)
@@ -623,9 +641,10 @@ class ParallelFlash(Gumbi):
 			pins[i] = self.Pin2Real(pins[i])
 		return pins
 
-	def _pack_pins(self, pins):
+	def _pack_pins(self, pins, msize):
 		pd = self.PackBytes(pins)
-		pd += self.PackFiller(self.MAX_PINS - len(pins))
+		if len(pins) < msize:
+			pd += self.PackFiller(msize - len(pins))
 		return pd
 
 	def _struct(self, action, start, count):
@@ -633,14 +652,15 @@ class ParallelFlash(Gumbi):
 		data += self.Pack32(start)
 		data += self.Pack32(count)
 		data += self.PackByte(self.CONFIG["TOE"][0])
+		data += self.PackByte(self.CONFIG["TW"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))
 		data += self.Pack16(len(self.CONFIG["GND"]))
-		data += self._pack_pins(self.CONFIG["ADDRESS"])
-		data += self._pack_pins(self.CONFIG["DATA"])
-		data += self._pack_pins(self.CONFIG["VCC"])
-		data += self._pack_pins(self.CONFIG["GND"])
+		data += self._pack_pins(self.CONFIG["ADDRESS"], self.MAX_ADDR_PINS)
+		data += self._pack_pins(self.CONFIG["DATA"], self.MAX_DATA_PINS)
+		data += self._pack_pins(self.CONFIG["VCC"], self.MAX_MISC_PINS)
+		data += self._pack_pins(self.CONFIG["GND"], self.MAX_MISC_PINS)
 		data += self.PackBytes(self.CONFIG["CE"])
 		data += self.PackBytes(self.CONFIG["WE"])
 		data += self.PackBytes(self.CONFIG["OE"])
@@ -648,6 +668,11 @@ class ParallelFlash(Gumbi):
 		data += self.PackBytes(self.CONFIG["BY"])
 		data += self.PackBytes(self.CONFIG["WP"])
 		data += self.PackBytes(self.CONFIG["RST"])
+		data += self.PackByte(self.CONFIG["SDA"][0])
+		data += self.PackByte(self.CONFIG["CLK"][0])
+		data += self.PackByte(self.CONFIG["SS"][0])
+		data += self.PackByte(self.CONFIG["MOSI"][0])
+		data += self.PackByte(self.CONFIG["MISO"][0])
 		return data
 
 	def ReadConfig(self, config):
