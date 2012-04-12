@@ -1,8 +1,7 @@
 #include "debug.h"
 #include "mcp23s17.h"
 
-void nop(void) { }
-
+#ifdef DEBUG
 void id(void)
 {
 	write_string(BOARD_ID);
@@ -19,11 +18,10 @@ void info(void)
 {
 	uint8_t info[BLOCK_SIZE] = { 0 };
 
-	snprintf((void *) &info, BLOCK_SIZE, "Board ID: %s", BOARD_ID);
+	write_string(BOARD_ID);
+	snprintf((void *) &info, BLOCK_SIZE, "%d", gconfig.num_io_devices);
 	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "I/O Chip Count: %d", gconfig.num_io_devices);
-	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "I/O Pin Count: %d", gconfig.num_pins);
+	snprintf((void *) &info, BLOCK_SIZE, "%d", gconfig.num_pins);
 	write_string((char *) &info);
 	ack();
 }
@@ -53,6 +51,9 @@ void xfer_test(void)
 	buffered_write((uint8_t *) &buf, sizeof(buf));
 	flush_buffer();
 }
+#endif
+
+void nop(void) { }
 
 /* Handler for GPIO test mode. */
 void gpio(void)
@@ -89,7 +90,6 @@ void gpio(void)
 				break;
 			default:
 				nack();
-				write_string("The specified GPIO action is not supported");
 				break;
 		}
 	}

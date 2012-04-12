@@ -114,7 +114,6 @@ void init_pins(void)
 	for(i=0; i<gconfig.num_pins; i++)
 	{
 		gconfig.pins[i].inuse = 1;
-		gconfig.pins[i].active = 1;
 		gconfig.pins[i].addr = (i / PINS_PER_DEVICE);
 		gconfig.pins[i].bit = (i - (gconfig.pins[i].addr * PINS_PER_DEVICE));
 
