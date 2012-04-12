@@ -9,14 +9,17 @@ int main(void)
 {
 	uint8_t mode = 0;
 
+	/* Full speed clock */
+	clock_prescale_set(clock_div_1);
+
+	/* Initialize LED pin(s) */
+	led_init();
+
 	/* Make sure the entire gconfig structure is zeroed out */
 	memset(&gconfig, 0, sizeof(gconfig));
 
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();
-
-	/* Full speed clock */
-	clock_prescale_set(0);
 
 	/* Initialize USB */
 	usb_init();
@@ -24,7 +27,7 @@ int main(void)
 	_delay_ms(1000);
 
 	/* Show that we're alive and ready */
-	//id();
+	led_on();
 
 	while(TRUE)
 	{
