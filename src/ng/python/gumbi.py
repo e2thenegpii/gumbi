@@ -142,8 +142,8 @@ class Gumbi:
 	Primary gumbi class. All other classes that interact with the Gumbi board should be subclassed from this.
 	"""
 
-	VID = 0x16C0 
-	PID = 0x0480
+	VID = 0xFFFF
+	PID = 0x1337
 	ACK = "GUMBIACK"
 	NACK = "GUMBINACK"
 	MAX_PINS = 128
@@ -151,6 +151,9 @@ class Gumbi:
 	UNUSED = 0xFF
 	NULL = "\x00"
 	TEST_BYTE = "\xFF"
+
+	TBP_DEFAULT = 25
+	TOE_DEFAULT = 0
 
 	NOP = 0
 	PFLASH = 1
@@ -225,20 +228,6 @@ class Gumbi:
 					pass
 		return (key, value)
 
-	def ConfigMode(self, config):
-		"""
-		Returns the mode specified in a configuration file.
-
-		@config - Configuration file path.
-
-		Returns the mode on success. Returns None on failure.
-		"""
-		for line in open(config).readlines():
-			(key, value) = self._parse_config_line(line)
-			if key == self.MODE_KEY:
-				return value
-		return None
-
 	def StartTimer(self):
 		"""
 		Starts the timer.
@@ -255,7 +244,10 @@ class Gumbi:
 		"""
 		Converts user-supplied pin numbers (index 1) to Gumbi board pin numbers (index 0).
 		"""
-		return (pin - 1)
+		if pin is not None and pin > 0:
+			return (pin - 1)
+		else:
+			return pin
 
 	def Pack32(self, value):
 		"""
@@ -338,6 +330,128 @@ class Gumbi:
 		Closes the connection with the Gumbi board.
 		"""
 		return self._close()
+
+class Configuration(Gumbi):
+
+	CONFIG = {
+		"TOE"		: [Gumbi.TOE_DEFAULT],
+		"TBP"		: [Gumbi.TBP_DEFAULT],
+		"ADDRESS"	: [],
+		"DATA"		: [],
+		"VCC"		: [],
+		"GND"		: [],
+		"CE"		: [Gumbi.UNUSED, 0],
+		"WE"		: [Gumbi.UNUSED, 0],
+		"OE"		: [Gumbi.UNUSED, 0],
+		"BE"		: [Gumbi.UNUSED, 0],
+		"BY"		: [Gumbi.UNUSED, 0],
+		"WP"		: [Gumbi.UNUSED, 0],
+		"RST"		: [Gumbi.UNUSED, 0],
+		"SDA"		: [0],
+		"CLK"		: [0],
+		"SS"		: [0],
+		"MISO"		: [0],
+		"MOSI"		: [0],
+	}
+	
+	def __init__(self, config=None, mode=None):
+		self.config = config
+		self.cmode = mode
+		self._parse_config()
+
+	def _shift_pins(self):
+		self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
+		self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
+		self.CONFIG["VCC"] = self._convert_pin_array(self.CONFIG["VCC"])
+		self.CONFIG["GND"] = self._convert_pin_array(self.CONFIG["GND"])
+		self.CONFIG["CE"] = self._convert_control_pin(self.CONFIG["CE"])
+		self.CONFIG["WE"] = self._convert_control_pin(self.CONFIG["WE"])
+		self.CONFIG["OE"] = self._convert_control_pin(self.CONFIG["OE"])
+		self.CONFIG["BE"] = self._convert_control_pin(self.CONFIG["BE"])
+		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
+		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
+		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
+		self.CONFIG["SDA"][0] = self.Pin2Real(self.CONFIG["SDA"][0])
+		self.CONFIG["CLK"][0] = self.Pin2Real(self.CONFIG["CLK"][0])
+		self.CONFIG["SS"][0] = self.Pin2Real(self.CONFIG["SS"][0])
+		self.CONFIG["MISO"][0] = self.Pin2Real(self.CONFIG["MISO"][0])
+		self.CONFIG["MOSI"][0] = self.Pin2Real(self.CONFIG["MOSI"][0])
+
+	def _convert_control_pin(self, cp):
+		cpc = (self.UNUSED, 0)
+		if cp is not None and len(cp) > 0:
+			if len(cp) == 1:
+				cpc = (self.Pin2Real(cp[0]), 0)
+			else:
+				cpc = (self.Pin2Real(cp[0]), cp[1])
+		return cpc
+
+	def _convert_pin_array(self, pins):
+		for i in range(0, len(pins)):
+			pins[i] = self.Pin2Real(pins[i])
+		return pins
+
+	def _pack_pins(self, pins):
+		pd = self.PackBytes(pins)
+		pd += self.PackFiller(self.MAX_PINS - len(pins))
+		return pd
+
+	def _config_mode(self):
+		"""
+		Returns the mode specified in a configuration file.
+
+		@config - Configuration file path.
+
+		Returns the mode on success. Returns None on failure.
+		"""
+		for line in open(self.config).readlines():
+			(key, value) = self._parse_config_line(line)
+			if key == self.MODE_KEY:
+				return value
+		return None
+
+	def _parse_config(self):
+		"""
+		Packs the configuration data into a string of bytes suitable for transmission to the Gumbi board.
+		"""
+		mode_name = self._config_mode()
+		if mode_name != self.cmode:
+			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.cmode))
+
+		for line in open(self.config).readlines():
+			(key, value) = self._parse_config_line(line)
+			if key is not None and value is not None:
+				if self.CONFIG.has_key(key):
+					self.CONFIG[key] = value
+		self._shift_pins()
+
+	def Pack(self, action, start, count):
+		data = self.PackByte(action)
+		data += self.Pack32(start)
+		data += self.Pack32(count)
+		data += self.PackByte(self.CONFIG["TOE"][0])
+		data += self.PackByte(self.CONFIG["TBP"][0])
+		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
+		data += self.Pack16(len(self.CONFIG["DATA"]))
+		data += self.Pack16(len(self.CONFIG["VCC"]))
+		data += self.Pack16(len(self.CONFIG["GND"]))
+		data += self._pack_pins(self.CONFIG["ADDRESS"])
+		data += self._pack_pins(self.CONFIG["DATA"])
+		data += self._pack_pins(self.CONFIG["VCC"])
+		data += self._pack_pins(self.CONFIG["GND"])
+		data += self.PackBytes(self.CONFIG["CE"])
+		data += self.PackBytes(self.CONFIG["WE"])
+		data += self.PackBytes(self.CONFIG["OE"])
+		data += self.PackBytes(self.CONFIG["BE"])
+		data += self.PackBytes(self.CONFIG["BY"])
+		data += self.PackBytes(self.CONFIG["WP"])
+		data += self.PackBytes(self.CONFIG["RST"])
+		data += self.PackByte(self.CONFIG["SDA"][0])
+		data += self.PackByte(self.CONFIG["CLK"][0])
+		data += self.PackByte(self.CONFIG["SS"][0])
+		data += self.PackByte(self.CONFIG["MISO"][0])
+		data += self.PackByte(self.CONFIG["MOSI"][0])
+		return data
 
 class GPIO(Gumbi):
 	"""
@@ -502,118 +616,22 @@ class Ping(Gumbi):
 
 class ParallelFlash(Gumbi):
 
-	MODE_VALUE = "PARALLEL"
-	CONFIG = {
-		"TOE"		: [0],
-		"ADDRESS"	: [],
-		"DATA"		: [],
-		"VCC"		: [],
-		"GND"		: [],
-		"CE"		: [Gumbi.UNUSED, 0],
-		"WE"		: [Gumbi.UNUSED, 0],
-		"OE"		: [Gumbi.UNUSED, 0],
-		"BE"		: [Gumbi.UNUSED, 0],
-		"BY"		: [Gumbi.UNUSED, 0],
-		"WP"		: [Gumbi.UNUSED, 0],
-		"RST"		: [Gumbi.UNUSED, 0]
-	}
+	MODE = "PARALLEL"
 	
-	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None):
-		if config is None:
-			self.CONFIG["TOE"] = [toe]
-			self.CONFIG["ADDRESS"] = address
-			self.CONFIG["DATA"] = data
-			self.CONFIG["VCC"] = vcc
-			self.CONFIG["GND"] = gnd
-			self.CONFIG["CE"] = ce
-			self.CONFIG["WE"] = we
-			self.CONFIG["OE"] = oe
-			self.CONFIG["BE"] = be
-			self.CONFIG["BY"] = by
-			self.CONFIG["WP"] = wp
-			self.CONFIG["RST"] = rst
-		else:
-			self.ReadConfig(config)
-		
-		self._shift_pins()
+	def __init__(self, config):
+		self.config = Configuration(config, self.MODE)
 
 		Gumbi.__init__(self)
 		self.SetMode(self.PFLASH)
 
-	def _shift_pins(self):
-		self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
-		self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
-		self.CONFIG["VCC"] = self._convert_pin_array(self.CONFIG["VCC"])
-		self.CONFIG["GND"] = self._convert_pin_array(self.CONFIG["GND"])
-		self.CONFIG["CE"] = self._convert_control_pin(self.CONFIG["CE"])
-		self.CONFIG["WE"] = self._convert_control_pin(self.CONFIG["WE"])
-		self.CONFIG["OE"] = self._convert_control_pin(self.CONFIG["OE"])
-		self.CONFIG["BE"] = self._convert_control_pin(self.CONFIG["BE"])
-		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
-		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
-		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
-
-	def _convert_control_pin(self, cp):
-		cpc = (self.UNUSED, 0)
-		if cp is not None and len(cp) > 0:
-			if len(cp) == 1:
-				cpc = (self.Pin2Real(cp[0]), 0)
-			else:
-				cpc = (self.Pin2Real(cp[0]), cp[1])
-		return cpc
-
-	def _convert_pin_array(self, pins):
-		for i in range(0, len(pins)):
-			pins[i] = self.Pin2Real(pins[i])
-		return pins
-
-	def _pack_pins(self, pins):
-		pd = self.PackBytes(pins)
-		pd += self.PackFiller(self.MAX_PINS - len(pins))
-		return pd
-
-	def _struct(self, action, start, count):
-		data = self.PackByte(action)
-		data += self.Pack32(start)
-		data += self.Pack32(count)
-		data += self.PackByte(self.CONFIG["TOE"][0])
-		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
-		data += self.Pack16(len(self.CONFIG["DATA"]))
-		data += self.Pack16(len(self.CONFIG["VCC"]))
-		data += self.Pack16(len(self.CONFIG["GND"]))
-		data += self._pack_pins(self.CONFIG["ADDRESS"])
-		data += self._pack_pins(self.CONFIG["DATA"])
-		data += self._pack_pins(self.CONFIG["VCC"])
-		data += self._pack_pins(self.CONFIG["GND"])
-		data += self.PackBytes(self.CONFIG["CE"])
-		data += self.PackBytes(self.CONFIG["WE"])
-		data += self.PackBytes(self.CONFIG["OE"])
-		data += self.PackBytes(self.CONFIG["BE"])
-		data += self.PackBytes(self.CONFIG["BY"])
-		data += self.PackBytes(self.CONFIG["WP"])
-		data += self.PackBytes(self.CONFIG["RST"])
-		return data
-
-	def ReadConfig(self, config):
-		mode_name = self.ConfigMode(config)
-		if mode_name != self.MODE_VALUE:
-			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.MODE_VALUE))
-
-		for line in open(config).readlines():
-			(key, value) = self._parse_config_line(line)
-			if key is not None and value is not None:
-				if self.CONFIG.has_key(key):
-					self.CONFIG[key] = value
-
 	def ReadFlash(self, start, count):
-		data = self._struct(self.READ, start, count)
-		self.Write(data)
+		self.Write(self.config.Pack(self.READ, start, count))
 		self.ReadAck()
 		self.ReadAck()
 		return self.Read(count)
 
 	def WriteFlash(self, addr, data):
-		self.Write(self._struct(self.WRITE, start, len(data)))
+		self.Write(self.config.Pack(self.WRITE, start, len(data)))
 		self.Write(data)
 		self.ReadAck()
 		return self.ReadAck()
@@ -647,10 +665,9 @@ if __name__ == '__main__':
 #		flash = ParallelFlash(config="config/39SF020.conf")
 #		print "Reading flash..."
 #		flash.StartTimer()
-#		data = flash.ReadFlash(0, 0x40000)
+#		data = flash.ReadFlash(0, 1024)
 #		t = flash.StopTimer()
 #		flash.Close()
-
 #		print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
 #		open("flash.bin", "w").write(data)
 

@@ -1,5 +1,21 @@
 #include "common.h"
 
+void led_init(void)
+{
+	LED_DDR |= (1 << LED_PIN);
+	led_off();
+}
+
+void led_on(void)
+{
+	LED_PORT |= (1 << LED_PIN);
+}
+
+void led_off(void)
+{
+	LED_PORT &= ~(1 << LED_PIN);
+}
+
 /* Send an ACK. */
 void ack(void)
 {
