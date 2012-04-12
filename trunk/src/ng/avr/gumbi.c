@@ -1,6 +1,4 @@
-#include <avr/io.h>
-#include <util/delay.h>
-#include <avr/power.h>
+#include "common.h"
 #include "gumbi.h"
 #include "debug.h"
 #include "mcp23s17.h"
@@ -11,37 +9,22 @@ int main(void)
 {
 	uint8_t mode = 0;
 
-	/* Disable watchdog if enabled by bootloader/fuses */
-	MCUSR &= ~(1 << WDRF);
-	wdt_disable();
-
-	/* Full speed clock */
-	clock_prescale_set(clock_div_1);
-
-	/* Set LED pin as output */
-	DDRD |= (1 << PD5);
-
-	while(1)
-	{
-		PORTD |= (1 << PD5);
-		_delay_ms(1000);
-		PORTD &= ~(1 << PD5);
-		_delay_ms(1000);
-	}
-
 	/* Make sure the entire gconfig structure is zeroed out */
-	memset((void *) pgm_read_word(&gconfig), 0, sizeof(gconfig));
+	memset(&gconfig, 0, sizeof(gconfig));
 
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();
+
+	/* Full speed clock */
+	clock_prescale_set(0);
 
 	/* Initialize USB */
 	usb_init();
 	while(!usb_configured()) { }
 	_delay_ms(1000);
 
-	/* Turn on the LED to show that we're alive */
-	PORTD &= ~(1 << PD5);
+	/* Show that we're alive and ready */
+	//id();
 
 	while(TRUE)
 	{
@@ -61,7 +44,6 @@ void command_handler(uint8_t mode)
 
 	switch(mode)
 	{
-#ifdef DEBUG
 		case PING:
 			handler = &ping;
 			break;
@@ -71,13 +53,6 @@ void command_handler(uint8_t mode)
 		case SPEEDTEST:
 			handler = &speed_test;
 			break;
-		case XFER:
-			handler = &xfer_test;
-			break;
-		case GID:
-			handler = &id;
-			break;
-#endif
 		case PFLASH:
 			handler = &parallel_flash;
 			break;
@@ -87,8 +62,14 @@ void command_handler(uint8_t mode)
 		case GPIO:
 			handler = &gpio;
 			break;
+		case GID:
+			handler = &id;
+			break;
 		case NOP:
 			handler = &nop;
+			break;
+		case XFER:
+			handler = &xfer_test;
 			break;
 		default:
 			break;
@@ -102,8 +83,9 @@ void command_handler(uint8_t mode)
 	}
 	else
 	{
-		/* If the specified mode is unknown/unsupported, send a NACK */
+		/* If the specified mode is unknown/unsupported, send a NACK followed by a reason */
 		nack();
+		write_string("Specified mode not implemented!");
 	}
 
 	return;
