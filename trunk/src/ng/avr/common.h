@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <avrlib/rawhid.h>
 
 #define BOARD_ID "GUMBI v1"
@@ -12,16 +13,19 @@
 #define TRUE 1
 #define FALSE 0
 
-#define ACK "GUMBIACK"
-#define NACK "GUMBINACK"
+#define ACK "A"
+#define NACK "N"
 
 #define BLOCK_SIZE 64
 #define TEST_BYTE 0xFF
 #define XFER_TEST_SIZE 128
 
 #define MAX_PINS 128
+#define MAX_ADDR_PINS 32
+#define MAX_DATA_PINS 16
+#define MAX_MISC_PINS 8
+
 #define MAX_DEVICES 8
-#define MAX_BUS_PINS 32
 #define NUM_REGISTERS 0x16
 #define PINS_PER_DEVICE 16
 #define PINS_PER_REGISTER 8
@@ -109,7 +113,7 @@ struct ctrlpin
 	uint8_t active;
 };
 
-struct parallel
+struct configuration
 {
 	enum actions action;			/* Are we reading? Writing? Erasing? */
 	uint32_t addr;				/* What is the start address? */
@@ -120,10 +124,10 @@ struct parallel
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;
 	uint16_t num_gnd_pins;
-	uint8_t addr_pins[MAX_BUS_PINS];
-	uint8_t data_pins[MAX_BUS_PINS];
-	uint8_t vcc_pins[MAX_BUS_PINS];
-	uint8_t gnd_pins[MAX_BUS_PINS];
+	uint8_t addr_pins[MAX_ADDR_PINS];
+	uint8_t data_pins[MAX_DATA_PINS];
+	uint8_t vcc_pins[MAX_MISC_PINS];
+	uint8_t gnd_pins[MAX_MISC_PINS];
 	struct ctrlpin ce;			/* Chip Enable */
 	struct ctrlpin we;			/* Write Enable */
 	struct ctrlpin oe;			/* Output Enable */
@@ -131,13 +135,14 @@ struct parallel
 	struct ctrlpin by;			/* Ready / Busy */
 	struct ctrlpin wp;			/* Write Protect */
 	struct ctrlpin rst;			/* Reset */
-	uint8_t ss;
+	uint8_t sda;
 	uint8_t clk;
+	uint8_t ss;
 	uint8_t mosi;
 	uint8_t miso;
 } pconfig;
 
-struct config
+struct globals
 {
 	uint8_t num_pins;
 	uint8_t num_io_devices;
@@ -146,12 +151,6 @@ struct config
 	uint8_t buffer[BLOCK_SIZE];
 	uint8_t buffer_size;
 } gconfig;
-
-struct command
-{
-	enum modes mode;
-	struct config configuration;
-};
 
 void ack(void);
 void nack(void);
