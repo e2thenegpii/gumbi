@@ -58,10 +58,6 @@ class RawHID:
 			hid_ret = hid_force_open(self.hid, self.INTERFACE, match, self.CONNECT_RETRIES)
 			if hid_ret == HID_RET_SUCCESS:
 				retval = True
-				
-				self.reset()
-				self.flush()
-
 				if self.verbose:
 					hid_write_identification(sys.stderr, self.hid)
 			else:
@@ -70,24 +66,6 @@ class RawHID:
 			raise Exception("hid_init() failed with error code: %d\n" % hid_ret)
 
 		return retval
-
-	def reset(self):
-		"""
-		Resets the HID interface
-		"""
-		# Reset the HID interface
-		hid_reset_HIDInterface(self.hid)
-
-	def flush(self):
-		"""
-		Flushes any data from the HID receive buffer.
-		"""
-		# Read until a timeout occurs to ensure data is flushed
-		try:
-			while True:
-				self.recv(timeout=100)
-		except:
-			pass
 
 	def close(self):
 		"""
@@ -166,13 +144,9 @@ class Gumbi:
 
 	VID = 0x16C0 
 	PID = 0x0480
-	ACK = "A"
-	NACK = "N"
+	ACK = "GUMBIACK"
+	NACK = "GUMBINACK"
 	MAX_PINS = 128
-	MAX_ADDR_PINS = 32
-	MAX_DATA_PINS = 16
-	MAX_MISC_PINS = 8
-
 	RESET_LEN = 1024
 	UNUSED = 0xFF
 	NULL = "\x00"
@@ -281,9 +255,7 @@ class Gumbi:
 		"""
 		Converts user-supplied pin numbers (index 1) to Gumbi board pin numbers (index 0).
 		"""
-		if pin > 0 and pin <= self.MAX_PINS:
-			pin -= 1
-		return pin
+		return (pin - 1)
 
 	def Pack32(self, value):
 		"""
@@ -391,6 +363,9 @@ class GPIO(Gumbi):
 		Sets the specified pin high.
 		"""
 		self.Write(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
+		print self.ReadText()
+		print self.ReadText()
+		print self.ReadText()
 		self.ReadAck()
 
 	def PinLow(self, pin):
@@ -465,16 +440,10 @@ class SpeedTest(Gumbi):
 		return retval
 
 class TransferTest(Gumbi):
-	"""
-	Performs a two-way transfer test to ensure data is being sent and received properly over the USB interface.
-	"""
 
 	XFER_SIZE = 128
 
 	def __init__(self):
-		"""
-		Class initializer.
-		"""
 		self.data = ''
 		self.count = self.XFER_SIZE
 
@@ -482,54 +451,35 @@ class TransferTest(Gumbi):
 		self.SetMode(self.XFER)
 
 	def _xfer(self):
-		"""
-		Does the actual data transfer, for internal use only.
-		"""
 		self.Write(self.TEST_BYTE * self.count)
 		self.data = self.Read(self.count)
 
 	def Go(self):
-		"""
-		Starts the data transfer test.
-
-		Returns the number of seconds elapsed during the transfer.
-		"""
 		self.StartTimer()
 		self._xfer()
 		return self.StopTimer()
 
 	def Validate(self):
-		"""
-		Validates that the data received back from the transfer was complete and uncorrupted.
-
-		Returns True if data is valid, False if invalid.
-		"""
 		retval = True
 		if len(self.data) >= self.count:
+			print "Got %d bytes of data back" % len(self.data)
 			for i in range(0, self.count):
 				if self.data[i] != self.TEST_BYTE:
+					print "data[%d] == 0x%.2X doesn't match expected byte 0x%.2X" % (i, ord(self.data[i]), ord(self.TEST_BYTE))
 					retval = False
-					break
+					#break
 		else:
+			print "Data len invalid:", len(self.data)
 			retval = False
 
 		return retval
 
 class Info(Gumbi):
-	"""
-	Retrieves human-readable information description strings from the Gumbi board.
-	"""
 
 	def Info(self):
-		"""
-		Gets the current Gumbi board info.
-
-		Returns an array of ASCII description strings received from the Gumbi board.
-		"""
 		data = []
 
 		self.SetMode(self.INFO)
-
 		while True:
 			line = self.ReadText()
 			if line == self.ACK:
@@ -539,40 +489,22 @@ class Info(Gumbi):
 		return data
 
 class Identify(Gumbi):
-	"""
-	Retreives the Gumbi board ID string.
-	"""
 
 	def Identify(self):
-		"""
-		Returns the board ID string obtained from the Gumbi board.
-		"""
 		self.SetMode(self.ID)
 		return self.ReadText()
 
 class Ping(Gumbi):
-	"""
-	Simple ping to ensure the Gumbi board is present on the system.
-	"""
 
 	def Ping(self):
-		"""
-		Returns None on success, throws an exception on failure.
-		"""
 		self.SetMode(self.PING)
-		self.ReadAck()
+		return self.ReadAck()
 
 class ParallelFlash(Gumbi):
 
 	MODE_VALUE = "PARALLEL"
 	CONFIG = {
 		"TOE"		: [0],
-		"TW"		: [0],
-		"SDA"		: [0],
-		"CLK"		: [0],
-		"SS"		: [0],
-		"MISO"		: [0],
-		"MOSI"		: [0],
 		"ADDRESS"	: [],
 		"DATA"		: [],
 		"VCC"		: [],
@@ -586,10 +518,9 @@ class ParallelFlash(Gumbi):
 		"RST"		: [Gumbi.UNUSED, 0]
 	}
 	
-	def __init__(self, config=None, toe=0, tw=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None):
+	def __init__(self, config=None, toe=0, address=[], data=[], vcc=[], gnd=[], ce=None, we=None, oe=None, be=None, by=None, wp=None, rst=None):
 		if config is None:
 			self.CONFIG["TOE"] = [toe]
-			self.CONFIG["TW"] = [tw]
 			self.CONFIG["ADDRESS"] = address
 			self.CONFIG["DATA"] = data
 			self.CONFIG["VCC"] = vcc
@@ -621,11 +552,6 @@ class ParallelFlash(Gumbi):
 		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
 		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
 		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
-		self.CONFIG["SDA"][0] = self.Pin2Real(self.CONFIG["SDA"][0])
-		self.CONFIG["CLK"][0] = self.Pin2Real(self.CONFIG["CLK"][0])
-		self.CONFIG["SS"][0] = self.Pin2Real(self.CONFIG["SS"][0])
-		self.CONFIG["MISO"][0] = self.Pin2Real(self.CONFIG["MISO"][0])
-		self.CONFIG["MOSI"][0] = self.Pin2Real(self.CONFIG["MOSI"][0])
 
 	def _convert_control_pin(self, cp):
 		cpc = (self.UNUSED, 0)
@@ -641,10 +567,9 @@ class ParallelFlash(Gumbi):
 			pins[i] = self.Pin2Real(pins[i])
 		return pins
 
-	def _pack_pins(self, pins, msize):
+	def _pack_pins(self, pins):
 		pd = self.PackBytes(pins)
-		if len(pins) < msize:
-			pd += self.PackFiller(msize - len(pins))
+		pd += self.PackFiller(self.MAX_PINS - len(pins))
 		return pd
 
 	def _struct(self, action, start, count):
@@ -652,15 +577,14 @@ class ParallelFlash(Gumbi):
 		data += self.Pack32(start)
 		data += self.Pack32(count)
 		data += self.PackByte(self.CONFIG["TOE"][0])
-		data += self.PackByte(self.CONFIG["TW"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))
 		data += self.Pack16(len(self.CONFIG["GND"]))
-		data += self._pack_pins(self.CONFIG["ADDRESS"], self.MAX_ADDR_PINS)
-		data += self._pack_pins(self.CONFIG["DATA"], self.MAX_DATA_PINS)
-		data += self._pack_pins(self.CONFIG["VCC"], self.MAX_MISC_PINS)
-		data += self._pack_pins(self.CONFIG["GND"], self.MAX_MISC_PINS)
+		data += self._pack_pins(self.CONFIG["ADDRESS"])
+		data += self._pack_pins(self.CONFIG["DATA"])
+		data += self._pack_pins(self.CONFIG["VCC"])
+		data += self._pack_pins(self.CONFIG["GND"])
 		data += self.PackBytes(self.CONFIG["CE"])
 		data += self.PackBytes(self.CONFIG["WE"])
 		data += self.PackBytes(self.CONFIG["OE"])
@@ -668,11 +592,6 @@ class ParallelFlash(Gumbi):
 		data += self.PackBytes(self.CONFIG["BY"])
 		data += self.PackBytes(self.CONFIG["WP"])
 		data += self.PackBytes(self.CONFIG["RST"])
-		data += self.PackByte(self.CONFIG["SDA"][0])
-		data += self.PackByte(self.CONFIG["CLK"][0])
-		data += self.PackByte(self.CONFIG["SS"][0])
-		data += self.PackByte(self.CONFIG["MOSI"][0])
-		data += self.PackByte(self.CONFIG["MISO"][0])
 		return data
 
 	def ReadConfig(self, config):
