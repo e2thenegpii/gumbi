@@ -9,6 +9,7 @@
 
 void spi_flash(void);
 void spi_eeprom(void);
+uint8_t validate_spi_config(void);
 void soft_spi_init(void);
 void soft_spi_release(void);
 void spi_dump(void);

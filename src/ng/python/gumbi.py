@@ -12,6 +12,9 @@ except Exception, e:
 
 
 class RawHID:
+	"""
+	HID communications class.
+	"""
 
 	READ_ENDPOINT = 0x81
 	WRITE_ENDPOINT = 0x02
@@ -44,9 +47,9 @@ class RawHID:
 		retval = False
 
 		if rep is not None:
-			self.rep = wep
+			self.rep = rep
 		if wep is not None:
-			self.wep = rep
+			self.wep = wep
 
 		hid_ret = hid_init()
 		if hid_ret == HID_RET_SUCCESS:
@@ -150,7 +153,7 @@ class Gumbi:
 	RESET_LEN = 1024
 	UNUSED = 0xFF
 	NULL = "\x00"
-	TEST_BYTE = "\xFF"
+	DUMMY_BYTE = "\xFF"
 
 	TBP_DEFAULT = 25
 	TOE_DEFAULT = 0
@@ -158,8 +161,8 @@ class Gumbi:
 	NOP = 0
 	PFLASH = 1
 	SPIFLASH = 2
-	SPIEEPROM = 3
-	I2CEEPROM = 4
+	SPIPROM = 3
+	I2CPROM = 4
 	PING = 5
 	INFO = 6
 	SPEEDTEST = 7
@@ -186,7 +189,7 @@ class Gumbi:
 		"""
 		self.ts = 0
 		self.num_pins = 0
-		self.hid = RawHID(verbose=True)
+		self.hid = RawHID()
 		if new:
 			self._open()
 
@@ -202,7 +205,7 @@ class Gumbi:
 		"""
 		self.hid.close()
 
-	def _parse_config_line(self, line):
+	def ParseConfigLine(self, line):
 		"""
 		Parses a configuration file line.
 
@@ -319,6 +322,44 @@ class Gumbi:
 		"""
 		self.hid.send(data)
 
+	def ReadChip(self, start, count):
+		"""
+		Reads a number of bytes from the target chip, beginning at the given start address.
+
+		@start - Start address.
+		@count - Number of bytes to read.
+
+		Returns a string of bytes read from the chip.
+		"""
+		self.Write(self.config.Pack(self.READ, start, count))
+		# Receive the ACK indicating the provided configuration is valid
+		self.ReadAck()
+		# Receive the ACK indicating that the specified action is valid
+		self.ReadAck()
+		return self.Read(count)
+
+	def WriteChip(self, start, data):
+		"""
+		Writes a number of bytes to the target chip, beginning at the given start address.
+		NOT CURRENTLY IMPLEMENTED.
+
+		@start - Address to start writing at.
+		@data  - String of data to write.
+
+		Returns True on success, raises and exception on failure.
+		"""
+		self.Write(self.config.Pack(self.WRITE, start, len(data)))
+		self.ReadAck()
+		self.ReadAck()
+		self.Write(data)
+		while True:
+			try:
+				self.ReadAck()
+				break
+			except:
+				pass
+		return True
+
 	def Reset(self):
 		"""
 		Resets the communications stream with the Gumbi board.
@@ -334,12 +375,21 @@ class Gumbi:
 		return self._close()
 
 class PinCount(Gumbi):
+	"""
+	Class used to retrieve the number of available I/O pins on the Gumbi board.
+	"""
 
 	def Count(self):
+		"""
+		Returns the number of available I/O pins on the Gumbi board.
+		"""
 		self.SetMode(self.PINCOUNT)
 		return ord(self.Read()[0])
 
 class Configuration(Gumbi):
+	"""
+	Class responsible for reading config files and building a config data structure to send to the Gumbi board.
+	"""
 
 	CONFIG = {
 		"TOE"		: [Gumbi.TOE_DEFAULT],
@@ -363,25 +413,42 @@ class Configuration(Gumbi):
 		"PINS"		: [0]
 	}
 	
-	def __init__(self, config=None, mode=None):
+	def __init__(self, config, mode, pins=None):
+		"""
+		Class initializer. Must be called BEFORE SetMode so that it can retrieve the current pin count from the Gumbi board.
+
+		@config - Path to the configuration file.
+		@mode   - The expected MODE value in the configuration file.
+		@pins   - Number of available I/O pins on the Gumbi board. If not specified, this is detected automatically.
+		"""
 		self.config = config
 		self.cmode = mode
+		self.num_pins = pins
 		self._parse_config()
 		self.package_pins = 0
 
-		pc = PinCount()
-		self.num_pins = pc.Count()
-		pc.Close()
+		if pins is None:
+			pc = PinCount()
+			self.num_pins = pc.Count()
+			pc.Close()
 
 	def _pin2real(self, pin):
+		"""
+		Converts the pin number in the config file to the physical Gumbi pin number.
+		"""
 		pin = self.Pin2Real(pin)
 
+		# If the number of pins in the target package was specified in the config file,
+		# then treat the pin numbers as relative to the package type.
 		if self.num_pins > 0 and self.package_pins > 0 and pin >= (self.package_pins / 2):
 			pin += (self.num_pins - self.package_pins)
 	
 		return pin
 		
 	def _shift_pins(self):
+		"""
+		Shifts all pin numbers to be the appropriate pin number on the Gumbi board.
+		"""
 		self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
 		self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
 		self.CONFIG["VCC"] = self._convert_pin_array(self.CONFIG["VCC"])
@@ -400,6 +467,9 @@ class Configuration(Gumbi):
 		self.CONFIG["MOSI"][0] = self._pin2real(self.CONFIG["MOSI"][0])
 
 	def _convert_control_pin(self, cp):
+		"""
+		Converts a control pin array to a valid pin offset on the Gumbi board.
+		"""
 		cpc = (self.UNUSED, 0)
 		if cp is not None and len(cp) > 0:
 			if len(cp) == 1:
@@ -409,11 +479,17 @@ class Configuration(Gumbi):
 		return cpc
 
 	def _convert_pin_array(self, pins):
+		"""
+		Converts an array of pin numbers to valid pin numbers on the Gumbi board.
+		"""
 		for i in range(0, len(pins)):
 			pins[i] = self._pin2real(pins[i])
 		return pins
 
 	def _pack_pins(self, pins):
+		"""
+		Packs an array of pins into a data structure.
+		"""
 		pd = self.PackBytes(pins)
 		pd += self.PackFiller(self.MAX_PINS - len(pins))
 		return pd
@@ -427,7 +503,7 @@ class Configuration(Gumbi):
 		Returns the mode on success. Returns None on failure.
 		"""
 		for line in open(self.config).readlines():
-			(key, value) = self._parse_config_line(line)
+			(key, value) = self.ParseConfigLine(line)
 			if key == self.MODE_KEY:
 				return value
 		return None
@@ -441,12 +517,14 @@ class Configuration(Gumbi):
 			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.cmode))
 
 		for line in open(self.config).readlines():
-			(key, value) = self._parse_config_line(line)
+			(key, value) = self.ParseConfigLine(line)
 			if key is not None and value is not None:
 				if self.CONFIG.has_key(key):
 					self.CONFIG[key] = value
-		self.package_pins = ord(self.CONFIG["PINS"][0])
+
+		self.package_pins = self.CONFIG["PINS"][0]
 		self._shift_pins()
+		print self.CONFIG
 
 	def Pack(self, action, start, count):
 		data = self.PackByte(action)
@@ -571,49 +649,69 @@ class SpeedTest(Gumbi):
 		"""
 		retval = True
 		for byte in self.data:
-			if byte != self.TEST_BYTE:
+			if byte != self.DUMMY_BYTE:
 				retval = False
 				break
 		return retval
 
 class TransferTest(Gumbi):
+	"""
+	Test the two-way transfer speed and validates data integrity.
+	"""
 
 	XFER_SIZE = 128
 
 	def __init__(self):
+		"""
+		Class contstructor.
+		"""
 		self.data = ''
-		self.count = self.XFER_SIZE
-
 		Gumbi.__init__(self)
 		self.SetMode(self.XFER)
 
 	def _xfer(self):
-		self.Write(self.TEST_BYTE * self.count)
-		self.data = self.Read(self.count)
+		"""
+		Performs the actual data transfer. For internal use only.
+		"""
+		self.Write(self.DUMMY_BYTE * self.XFER_SIZE)
+		self.data = self.Read(self.XFER_SIZE)
 
 	def Go(self):
+		"""
+		Runs and times the data transfer.
+
+		Returns the number of seconds elapsed during the transfer.
+		"""
 		self.StartTimer()
 		self._xfer()
 		return self.StopTimer()
 
 	def Validate(self):
+		"""
+		Validates the data recieved back from the transfer. Must be called after Go().
+
+		Returns True if data is valid, False if invalid.
+		"""
 		retval = True
-		if len(self.data) >= self.count:
-			print "Got %d bytes of data back" % len(self.data)
-			for i in range(0, self.count):
-				if self.data[i] != self.TEST_BYTE:
-					print "data[%d] == 0x%.2X doesn't match expected byte 0x%.2X" % (i, ord(self.data[i]), ord(self.TEST_BYTE))
+		if len(self.data) >= self.XFER_SIZE:
+			for i in range(0, self.XFER_SIZE):
+				if self.data[i] != self.DUMMY_BYTE:
 					retval = False
-					#break
+					break
 		else:
-			print "Data len invalid:", len(self.data)
 			retval = False
 
 		return retval
 
 class Info(Gumbi):
+	"""
+	Class to retrieve current Gumbi board information.
+	"""
 
 	def Info(self):
+		"""
+		Returns an array of human-readable board information (version, pin count, etc).
+		"""
 		data = []
 
 		self.SetMode(self.INFO)
@@ -626,37 +724,87 @@ class Info(Gumbi):
 		return data
 
 class Identify(Gumbi):
+	"""
+	Class to obtain the Gumbi board ID.
+	"""
 
 	def Identify(self):
+		"""
+		Returns the board ID, as reported by the Gumbi board.
+		"""
 		self.SetMode(self.ID)
 		return self.ReadText()
 
 class Ping(Gumbi):
+	"""
+	Class to perform a ping test to ensure the Gumbi board is operational.
+	"""
 
 	def Ping(self):
+		"""
+		Returns True if the board was successfully pinged. Raises an exception on error.
+		"""
 		self.SetMode(self.PING)
 		return self.ReadAck()
 
 class ParallelFlash(Gumbi):
+	"""
+	Class for interfacing with parallel memory devices.
+	"""
 
-	MODE = "PARALLEL"
+	MODE = "PFLASH"
 	
 	def __init__(self, config):
+		"""
+		Class constructor.
+		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
 		self.SetMode(self.PFLASH)
 
-	def ReadFlash(self, start, count):
-		self.Write(self.config.Pack(self.READ, start, count))
-		self.ReadAck()
-		self.ReadAck()
-		return self.Read(count)
+def SPIFlash(Gumbi):
+	"""
+	Class for interfacing with SPI flash memory devices.
+	"""
+	MODE = "SPIFLASH"
 
-	def WriteFlash(self, addr, data):
-		self.Write(self.config.Pack(self.WRITE, start, len(data)))
-		self.Write(data)
-		self.ReadAck()
-		return self.ReadAck()
+	def __init__(self, config):
+		"""
+		Class constructor.
+		"""
+		self.config = Configuration(config, self.MODE)
+		Gumbi.__init__(self)
+		self.SetMode(self.SPIFLASH)
+
+def SPIEEPROM(Gumbi):
+	"""
+	Class for interfacing with SPI EEPROM devices.
+	"""
+
+	MODE = "SPIEEPROM"
+	
+	def __init__(self, config):
+		"""
+		Class constructor.
+		"""
+		self.config = Configuration(config, self.MODE)
+		Gumbi.__init__(self)
+		self.SetMode(self.SPIPROM)
+
+def I2CEEPROM(Gumbi):
+	"""
+	Class for interfacing with I2C EEPROM devices.
+	"""
+	
+	MODE = "I2CEEPROM"
+
+	def __init__(self, config):
+		"""
+		Class constructor.
+		"""
+		self.config = Configureation(config, self.MODE)
+		Gumbi.__init__(self)
+		self.SetMode(self.I2CPROM)
 
 
 if __name__ == '__main__':
@@ -667,9 +815,9 @@ if __name__ == '__main__':
 			print line
 		info.Close()
 
-		p = PinCount()
-		print "Pin Count: %d" % p.Count()
-		p.Close()
+#		p = PinCount()
+#		print "Pin Count: %d" % p.Count()
+#		p.Close()
 
 #		xfer = TransferTest()
 #		xfer.Go()
@@ -691,11 +839,11 @@ if __name__ == '__main__':
 #		flash = ParallelFlash(config="config/39SF020.conf")
 #		print "Reading flash..."
 #		flash.StartTimer()
-#		data = flash.ReadFlash(0, 1024)
+#		data = flash.ReadChip(0, 1024)
 #		t = flash.StopTimer()
 #		flash.Close()
 #		print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
 #		open("flash.bin", "w").write(data)
 
 #	except Exception, e:
-###		print "Error:", e
+####		print "Error:", e
