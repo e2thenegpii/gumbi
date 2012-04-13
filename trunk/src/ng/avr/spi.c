@@ -2,6 +2,44 @@
 
 void spi_flash(void)
 {
+	soft_spi_init();
+
+	switch(pconfig.action)
+	{
+		case READ:
+			ack();
+			read_spi_flash();
+			break;
+		case WRITE:
+		default:
+			nack();
+			write_string("The specified SPI Flash action is not supported");
+	}
+
+	soft_spi_release();
+}
+
+void spi_eeprom(void)
+{
+	soft_spi_init();
+	
+	switch(pconfig.action)
+	{
+		case READ:
+			ack();
+			read_spi_eeprom();
+			break;
+		case WRITE:
+		default:
+			nack();
+			write_string("The specified SPI EEPROM action is not supported");
+	}
+
+	soft_spi_release();
+}
+
+void soft_spi_init(void)
+{
 	read_data((uint8_t *) &pconfig, sizeof(pconfig));
 	
 	mcp23s17_enable();
@@ -19,19 +57,10 @@ void spi_flash(void)
 	
 	commit_ddr_settings();
 	commit_io_settings();
+}
 
-	switch(pconfig.action)
-	{
-		case READ:
-			ack();
-			read_spi_flash();
-			break;
-		case WRITE:
-		default:
-			nack();
-			write_string("The specified action is not supported!");
-	}
-
+void soft_spi_release(void)
+{
 	mcp23s17_disable();
 }
 
@@ -83,7 +112,7 @@ void soft_spi_write(uint8_t byte)
 	for(i=7; i>=0; i--)
 	{
 		set_pin_immediate(pconfig.clk, 0);
-		set_pin_immediate(pconfig.mosi, (byte & (1 << i)));
+		set_pin_immediate(pconfig.mosi, ((byte & (1 << i)) >> i));
 		set_pin_immediate(pconfig.clk, 1);
 	}
 

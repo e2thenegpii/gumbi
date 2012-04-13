@@ -4,4 +4,6 @@
 #include "common.h"
 #include "mcp23s17.h"
 
+void i2c_eeprom(void);
+
 #endif

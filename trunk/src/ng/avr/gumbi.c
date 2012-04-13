@@ -4,6 +4,7 @@
 #include "mcp23s17.h"
 #include "parallel.h"
 #include "spi.h"
+#include "i2c.h"
 
 int main(void)
 {
@@ -62,6 +63,12 @@ void command_handler(uint8_t mode)
 		case SPIFLASH:
 			handler = &spi_flash;
 			break;
+		case SPIEEPROM:
+			handler = &spi_eeprom;
+			break;
+		case I2CEEPROM:
+			handler = &i2c_eeprom;
+			break;
 		case GPIO:
 			handler = &gpio;
 			break;
@@ -73,6 +80,9 @@ void command_handler(uint8_t mode)
 			break;
 		case XFER:
 			handler = &xfer_test;
+			break;
+		case PINCOUNT:
+			handler = &pin_count;
 			break;
 		default:
 			break;

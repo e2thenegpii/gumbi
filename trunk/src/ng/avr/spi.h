@@ -8,6 +8,9 @@
 #define SPI_READ_COMMAND 0x03
 
 void spi_flash(void);
+void spi_eeprom(void);
+void soft_spi_init(void);
+void soft_spi_release(void);
 void spi_dump(void);
 void read_spi_eeprom(void);
 void read_spi_flash(void);

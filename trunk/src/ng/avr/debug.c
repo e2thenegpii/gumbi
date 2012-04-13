@@ -14,6 +14,12 @@ void ping(void)
 	ack();
 }
 
+/* Handler for PINCOUNT mode. Responds with the number of available I/O pins. */
+void pin_count(void)
+{
+	write_data((void *) &gconfig.num_pins, sizeof(gconfig.num_pins));
+}
+
 /* Handler for INFO mode. Prints out several lines of info, with the last line being an ACK. */
 void info(void)
 {

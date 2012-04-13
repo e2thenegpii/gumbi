@@ -68,7 +68,8 @@ enum modes
 	SPEEDTEST = 7,
 	GPIO = 8,
 	GID = 9,
-	XFER = 10
+	XFER = 10,
+	PINCOUNT = 11
 };
 
 enum actions
