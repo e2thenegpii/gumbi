@@ -1,15 +1,13 @@
 #include "i2c.h"
 
-void soft_i2c_init(void)
+void i2c_eeprom(void)
 {
 	mcp23s17_enable();
+
 	configure_pin_as_output(pconfig.clk);
 	configure_pin_as_output(pconfig.sda);
 	commit_ddr_settings();
-}
 
-void soft_i2c_close(void)
-{
 	mcp23s17_disable();
 }
 

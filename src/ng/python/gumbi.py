@@ -166,6 +166,7 @@ class Gumbi:
 	GPIO = 8
 	GID = 9
 	XFER = 10
+	PINCOUNT = 11
 
 	EXIT = 0
 	READ = 1
@@ -184,6 +185,7 @@ class Gumbi:
 		@new  - Set to False to not open a connection to the Gumbi board.
 		"""
 		self.ts = 0
+		self.num_pins = 0
 		self.hid = RawHID(verbose=True)
 		if new:
 			self._open()
@@ -331,6 +333,12 @@ class Gumbi:
 		"""
 		return self._close()
 
+class PinCount(Gumbi):
+
+	def Count(self):
+		self.SetMode(self.PINCOUNT)
+		return ord(self.Read()[0])
+
 class Configuration(Gumbi):
 
 	CONFIG = {
@@ -352,13 +360,27 @@ class Configuration(Gumbi):
 		"SS"		: [0],
 		"MISO"		: [0],
 		"MOSI"		: [0],
+		"PINS"		: [0]
 	}
 	
 	def __init__(self, config=None, mode=None):
 		self.config = config
 		self.cmode = mode
 		self._parse_config()
+		self.package_pins = 0
 
+		pc = PinCount()
+		self.num_pins = pc.Count()
+		pc.Close()
+
+	def _pin2real(self, pin):
+		pin = self.Pin2Real(pin)
+
+		if self.num_pins > 0 and self.package_pins > 0 and pin >= (self.package_pins / 2):
+			pin += (self.num_pins - self.package_pins)
+	
+		return pin
+		
 	def _shift_pins(self):
 		self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
 		self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
@@ -371,24 +393,24 @@ class Configuration(Gumbi):
 		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
 		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
 		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
-		self.CONFIG["SDA"][0] = self.Pin2Real(self.CONFIG["SDA"][0])
-		self.CONFIG["CLK"][0] = self.Pin2Real(self.CONFIG["CLK"][0])
-		self.CONFIG["SS"][0] = self.Pin2Real(self.CONFIG["SS"][0])
-		self.CONFIG["MISO"][0] = self.Pin2Real(self.CONFIG["MISO"][0])
-		self.CONFIG["MOSI"][0] = self.Pin2Real(self.CONFIG["MOSI"][0])
+		self.CONFIG["SDA"][0] = self._pin2real(self.CONFIG["SDA"][0])
+		self.CONFIG["CLK"][0] = self._pin2real(self.CONFIG["CLK"][0])
+		self.CONFIG["SS"][0] = self._pin2real(self.CONFIG["SS"][0])
+		self.CONFIG["MISO"][0] = self._pin2real(self.CONFIG["MISO"][0])
+		self.CONFIG["MOSI"][0] = self._pin2real(self.CONFIG["MOSI"][0])
 
 	def _convert_control_pin(self, cp):
 		cpc = (self.UNUSED, 0)
 		if cp is not None and len(cp) > 0:
 			if len(cp) == 1:
-				cpc = (self.Pin2Real(cp[0]), 0)
+				cpc = (self._pin2real(cp[0]), 0)
 			else:
-				cpc = (self.Pin2Real(cp[0]), cp[1])
+				cpc = (self._pin2real(cp[0]), cp[1])
 		return cpc
 
 	def _convert_pin_array(self, pins):
 		for i in range(0, len(pins)):
-			pins[i] = self.Pin2Real(pins[i])
+			pins[i] = self._pin2real(pins[i])
 		return pins
 
 	def _pack_pins(self, pins):
@@ -423,6 +445,7 @@ class Configuration(Gumbi):
 			if key is not None and value is not None:
 				if self.CONFIG.has_key(key):
 					self.CONFIG[key] = value
+		self.package_pins = ord(self.CONFIG["PINS"][0])
 		self._shift_pins()
 
 	def Pack(self, action, start, count):
@@ -620,7 +643,6 @@ class ParallelFlash(Gumbi):
 	
 	def __init__(self, config):
 		self.config = Configuration(config, self.MODE)
-
 		Gumbi.__init__(self)
 		self.SetMode(self.PFLASH)
 
@@ -644,6 +666,10 @@ if __name__ == '__main__':
 		for line in info.Info():
 			print line
 		info.Close()
+
+		p = PinCount()
+		print "Pin Count: %d" % p.Count()
+		p.Close()
 
 #		xfer = TransferTest()
 #		xfer.Go()
