@@ -16,7 +16,7 @@
 #define NACK "GUMBINACK"
 
 #define BLOCK_SIZE 64
-#define TEST_BYTE 0xFF
+#define DUMMY_BYTE 0xFF
 #define XFER_TEST_SIZE 128
 
 #define LED_DDR DDRB
@@ -158,7 +158,6 @@ void led_on(void);
 void led_off(void);
 void ack(void);
 void nack(void);
-uint8_t validate_pconfig(void);
 uint8_t is_valid_pin(uint8_t p);
 void write_string(char *string);
 void read_data(uint8_t *buffer, uint32_t count);

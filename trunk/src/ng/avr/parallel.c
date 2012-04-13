@@ -3,10 +3,18 @@
 /* Handles parallel flash commands */
 void parallel_flash(void)
 {
+	uint8_t ok = TRUE;
+
 	/* Read in parallel flash configuration data */
 	read_data((uint8_t *) &pconfig, sizeof(pconfig));
 
-	if(validate_pconfig())
+	/* Validate data pins. Control pins are validated on the fly, as some may or may not be specified, depending on the target chip. */
+	ok &= are_valid_pins(pconfig.addr_pins, pconfig.num_addr_pins);
+	ok &= are_valid_pins(pconfig.data_pins, pconfig.num_data_pins);
+	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
+	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
+
+	if(ok)
 	{
 		/* Acknowledge successful receipt of configuration data */
 		ack();

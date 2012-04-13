@@ -38,7 +38,7 @@ void info(void)
 void speed_test(void)
 {
 	uint32_t i = 0, count = 0;
-	uint8_t byte = TEST_BYTE;
+	uint8_t byte = DUMMY_BYTE;
 
 	read_data((uint8_t *) &count, sizeof(count));
 

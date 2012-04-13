@@ -38,25 +38,49 @@ void spi_eeprom(void)
 	soft_spi_release();
 }
 
+uint8_t validate_spi_config(void)
+{
+	uint8_t ok = TRUE;
+
+	ok &= is_valid_pin(pconfig.clk);
+	ok &= is_valid_pin(pconfig.ss);
+	ok &= is_valid_pin(pconfig.mosi);
+	ok &= is_valid_pin(pconfig.miso);
+	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
+	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
+
+	return ok;
+}
+
 void soft_spi_init(void)
 {
 	read_data((uint8_t *) &pconfig, sizeof(pconfig));
-	
-	mcp23s17_enable();
 
-	configure_pin_as_input(pconfig.miso);
-	configure_pin_as_output(pconfig.mosi);
-	configure_pin_as_output(pconfig.ss);
-	configure_pin_as_output(pconfig.clk);
-	configure_pins_as_outputs(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	configure_pins_as_outputs(pconfig.gnd_pins, pconfig.num_gnd_pins);
-
-	set_pins_high(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	set_pins_low(pconfig.gnd_pins, pconfig.num_gnd_pins);
-	set_pin_high(pconfig.ss);
+	if(validate_spi_config())
+	{
+		ack();	
 	
-	commit_ddr_settings();
-	commit_io_settings();
+		mcp23s17_enable();
+
+		configure_pin_as_input(pconfig.miso);
+		configure_pin_as_output(pconfig.mosi);
+		configure_pin_as_output(pconfig.ss);
+		configure_pin_as_output(pconfig.clk);
+		configure_pins_as_outputs(pconfig.vcc_pins, pconfig.num_vcc_pins);
+		configure_pins_as_outputs(pconfig.gnd_pins, pconfig.num_gnd_pins);
+
+		set_pins_high(pconfig.vcc_pins, pconfig.num_vcc_pins);
+		set_pins_low(pconfig.gnd_pins, pconfig.num_gnd_pins);
+		set_pin_high(pconfig.ss);
+	
+		commit_ddr_settings();
+		commit_io_settings();
+	}
+	else
+	{
+		nack();
+		write_string("Invalid pin configuration");
+	}
 }
 
 void soft_spi_release(void)

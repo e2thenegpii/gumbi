@@ -157,16 +157,3 @@ uint8_t are_valid_pins(uint8_t pins[], uint8_t count)
 
 	return ok;
 }
-
-/* Validate pin arrays in pconfig. Control pins are not validated here. */
-uint8_t validate_pconfig(void)
-{
-	uint8_t ok = TRUE;
-
-	ok &= are_valid_pins(pconfig.addr_pins, pconfig.num_addr_pins);
-	ok &= are_valid_pins(pconfig.data_pins, pconfig.num_data_pins);
-	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
-
-	return ok;
-}
