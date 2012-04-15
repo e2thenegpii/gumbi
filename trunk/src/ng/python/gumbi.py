@@ -133,7 +133,7 @@ class RawHID:
 			hid_ret, packet = hid_interrupt_read(self.hid, self.rep, self.BLOCK_SIZE, timeout)
 
 			if hid_ret != HID_RET_SUCCESS:
-				print "hid_interrupt_read failed with error code 0x%X" % hid_ret
+				raise Exception("hid_interrupt_read failed with error code 0x%X" % hid_ret)
 			else:
 				data += packet
 				rx += len(packet)
@@ -410,8 +410,8 @@ class Configuration(Gumbi):
 		"SS"		: [0],
 		"MISO"		: [0],
 		"MOSI"		: [0],
-		"PINS"		: [0],
 		# These are not part of the config strcture that gets pushed to the Gumbi board
+		"PINS"		: [0],
 		"TDI"		: [0],
 		"TDO"		: [0],
 		"TMS"		: [0]
