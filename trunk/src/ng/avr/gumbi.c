@@ -10,7 +10,7 @@ int main(void)
 {
 	uint8_t mode = 0;
 
-	/* Full speed clock */
+	/* By default, the DIV8 fuse is set. Change it to use the full clock speed. */
 	clock_prescale_set(clock_div_1);
 
 	/* Initialize LED pin(s) */

@@ -14,6 +14,12 @@ void parallel_flash(void)
 	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
 	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
 
+	/* Validate that the number of write commands is sane */
+	if(pconfig.num_write_commands > MAX_WRITE_COMMANDS)
+	{
+		ok = FALSE;
+	}
+
 	if(ok)
 	{
 		/* Acknowledge successful receipt of configuration data */
@@ -64,17 +70,17 @@ void parallel_flash(void)
 		switch(pconfig.action)
 		{
 			case READ:
-				ack();
 				/* When reading, data pins are inputs to us */
 				configure_pins_as_inputs(pconfig.data_pins, pconfig.num_data_pins);
 				commit_ddr_settings();
+				ack();
 				parallel_read();
 				break;
 			case WRITE:
-				ack();
 				/* When writing, data pins are outputs from us */
 				configure_pins_as_outputs(pconfig.data_pins, pconfig.num_data_pins);
 				commit_ddr_settings();
+				ack();
 				parallel_write();
 				break;
 			default:
@@ -272,14 +278,34 @@ void set_address(uint32_t address)
 	commit_address_settings();
 }
 
+/* Set the appropriate pins to represent the given data byte/word */
+void set_data(uint16_t data)
+{
+	uint8_t i = 0;
+
+	for(i=0; i<pconfig.num_data_pins; i++)
+	{
+		if((data | (1 << i)) == data)
+		{
+			set_pin_high(pconfig.data_pins[i]);
+		}
+		else
+		{
+			set_pin_low(pconfig.data_pins[i]);
+		}
+	}
+
+	commit_data_settings();
+}
+
 /* Read in the specified number of bytes from the chip and write them to the UART */
 void parallel_read(void)
 {
+	uint32_t i = 0;
 	uint16_t data = 0;
 	uint8_t read_size = 0;
-	uint32_t i = 0;
 
-	/* This should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
+	/* num_data_pins should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
 	read_size = (pconfig.num_data_pins / 8);
 
 	for(i=0; i<pconfig.count; i+=read_size)
@@ -288,14 +314,12 @@ void parallel_read(void)
 		 * TODO: Try to improve the speed of this code block.
  		 */
 		set_address(pconfig.addr+i);
-		_delay_us(pconfig.toe);
 		output_enable(TRUE);
 		_delay_us(pconfig.toe);
 		data = read_data_pins();
-		_delay_us(pconfig.toe);
 		output_enable(FALSE);
+		_delay_us(pconfig.toe);
 
-		/* TODO: For HID, send data in BLOCK_SIZE byte blocks */
 		buffered_write((uint8_t *) &data, 1);
 		if(read_size > 1)
 		{
@@ -310,7 +334,57 @@ void parallel_read(void)
 /* Read bytes from the UART and write them to the target chip */
 void parallel_write(void)
 {
-	/* TODO: Not implemented yet */
+	uint16_t pbyte = 0;
+	uint8_t write_size = 0;
+	uint32_t i = 0, j = 0, k = 0;
+	uint8_t data[BLOCK_SIZE] = { 0 };
+
+	/* num_data_pins should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
+	write_size = (pconfig.num_data_pins / 8);
+
+	/* We use write_size in the memcpy, so make sure it's sane. */
+	if(write_size <= sizeof(pbyte))
+	{
+		/* Loop until we've written pconfig.count bytes */
+		for(i=0; i<pconfig.count; )
+		{
+			/* Read in the data to be written to the chip */
+			read_data((uint8_t *) &data, sizeof(data));
+
+			/* Loop through this block of data, writing it sequentially to the chip, starting at address pconfig.addr */	
+			for(j=0; i<pconfig.count && j<sizeof(data); i+=write_size, j+=write_size)
+			{
+				/* Get the next byte/word to write */
+				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
+
+				/* Any write operation must be preceeded by a set of commands that prepare the chip for writing */
+				for(k=0; k<pconfig.num_write_commands; k++)
+				{
+					while(is_busy()) { }
+					set_address(pconfig.write_commands[k].addr);
+					set_data(pconfig.write_commands[k].data);
+					write_enable(TRUE);
+					_delay_us(pconfig.toe);
+					write_enable(FALSE);
+					_delay_us(pconfig.tbp);
+				}				
+
+				while(is_busy()) { }
+
+				set_address(pconfig.addr+i);
+				set_data(pbyte);
+
+				write_enable(TRUE);
+				_delay_us(pconfig.toe);
+				write_enable(FALSE);
+				_delay_us(pconfig.tbp);
+			}
+			
+			/* Acknowledge when we've finished processing a block of data so the host knows we're ready for more */	
+			ack();
+		}
+	}
+
 	return;
 }
 
