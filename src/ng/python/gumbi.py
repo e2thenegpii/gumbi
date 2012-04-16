@@ -150,6 +150,7 @@ class Gumbi:
 	ACK = "GUMBIACK"
 	NACK = "GUMBINACK"
 	MAX_PINS = 128
+	MAX_COMMANDS = 16
 	RESET_LEN = 1024
 	UNUSED = 0xFF
 	NULL = "\x00"
@@ -159,7 +160,7 @@ class Gumbi:
 	TOE_DEFAULT = 0
 
 	NOP = 0
-	PFLASH = 1
+	PNORFLASH = 1
 	SPIFLASH = 2
 	SPIPROM = 3
 	I2CPROM = 4
@@ -271,6 +272,15 @@ class Gumbi:
 		Packs an 8-bit value for transmission to the Gumbi board.
 		"""
                 return chr(value)
+
+	def PackDWords(self, data):
+		"""
+		Packs an array of 32-bit values for transmission to the Gumbi board.
+		"""
+		pdata = ''
+		for dword in data:
+			pdata += self.Pack32(dword)
+		return pdata
 
         def PackBytes(self, data):
 		"""
@@ -405,6 +415,7 @@ class Configuration(Gumbi):
 		"BY"		: [Gumbi.UNUSED, 0],
 		"WP"		: [Gumbi.UNUSED, 0],
 		"RST"		: [Gumbi.UNUSED, 0],
+		"WRITE_COMMANDS": [],
 		"SDA"		: [0],
 		"CLK"		: [0],
 		"SS"		: [0],
@@ -498,6 +509,12 @@ class Configuration(Gumbi):
 		pd += self.PackFiller(self.MAX_PINS - len(pins))
 		return pd
 
+	def _pack_write_commands(self):
+		pd = self.PackDWords(self.CONFIG["WRITE_COMMANDS"])
+		# Each command consists of two 4 byte integers, so divide total length by 2
+		pd += self.PackFiller(self.MAX_COMMANDS - (len(self.CONFIG["WRITE_COMMANDS"]) / 2))
+		return pd
+
 	def _config_mode(self):
 		"""
 		Returns the mode specified in a configuration file.
@@ -535,6 +552,7 @@ class Configuration(Gumbi):
 		data += self.Pack32(count)
 		data += self.PackByte(self.CONFIG["TOE"][0])
 		data += self.PackByte(self.CONFIG["TBP"][0])
+		data += self.PackByte(len(self.CONFIG["WRITE_COMMANDS"]))
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))
@@ -543,6 +561,7 @@ class Configuration(Gumbi):
 		data += self._pack_pins(self.CONFIG["DATA"])
 		data += self._pack_pins(self.CONFIG["VCC"])
 		data += self._pack_pins(self.CONFIG["GND"])
+		data += self._pack_write_commands(self.CONFIG["WRITE_COMMANDS"])
 		data += self.PackBytes(self.CONFIG["CE"])
 		data += self.PackBytes(self.CONFIG["WE"])
 		data += self.PackBytes(self.CONFIG["OE"])
@@ -841,7 +860,7 @@ class ParallelFlash(Gumbi):
 	Class for interfacing with parallel memory devices.
 	"""
 
-	MODE = "PFLASH"
+	MODE = "PNORFLASH"
 	
 	def __init__(self, config):
 		"""
@@ -849,7 +868,7 @@ class ParallelFlash(Gumbi):
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
-		self.SetMode(self.PFLASH)
+		self.SetMode(self.PNORFLASH)
 
 def SPIFlash(Gumbi):
 	"""

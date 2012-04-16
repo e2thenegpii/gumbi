@@ -4,7 +4,7 @@ void spi_flash(void)
 {
 	soft_spi_init();
 
-	switch(pconfig.action)
+	switch(hconfig.action)
 	{
 		case READ:
 			ack();
@@ -23,7 +23,7 @@ void spi_eeprom(void)
 {
 	soft_spi_init();
 	
-	switch(pconfig.action)
+	switch(hconfig.action)
 	{
 		case READ:
 			ack();
@@ -42,19 +42,19 @@ uint8_t validate_spi_config(void)
 {
 	uint8_t ok = TRUE;
 
-	ok &= is_valid_pin(pconfig.clk);
-	ok &= is_valid_pin(pconfig.ss);
-	ok &= is_valid_pin(pconfig.mosi);
-	ok &= is_valid_pin(pconfig.miso);
-	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
+	ok &= is_valid_pin(hconfig.clk);
+	ok &= is_valid_pin(hconfig.ss);
+	ok &= is_valid_pin(hconfig.mosi);
+	ok &= is_valid_pin(hconfig.miso);
+	ok &= are_valid_pins(hconfig.vcc_pins, hconfig.num_vcc_pins);
+	ok &= are_valid_pins(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
 	return ok;
 }
 
 void soft_spi_init(void)
 {
-	read_data((uint8_t *) &pconfig, sizeof(pconfig));
+	read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
 	if(validate_spi_config())
 	{
@@ -62,16 +62,16 @@ void soft_spi_init(void)
 	
 		mcp23s17_enable();
 
-		configure_pin_as_input(pconfig.miso);
-		configure_pin_as_output(pconfig.mosi);
-		configure_pin_as_output(pconfig.ss);
-		configure_pin_as_output(pconfig.clk);
-		configure_pins_as_outputs(pconfig.vcc_pins, pconfig.num_vcc_pins);
-		configure_pins_as_outputs(pconfig.gnd_pins, pconfig.num_gnd_pins);
+		configure_pin_as_input(hconfig.miso);
+		configure_pin_as_output(hconfig.mosi);
+		configure_pin_as_output(hconfig.ss);
+		configure_pin_as_output(hconfig.clk);
+		configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
+		configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
-		set_pins_high(pconfig.vcc_pins, pconfig.num_vcc_pins);
-		set_pins_low(pconfig.gnd_pins, pconfig.num_gnd_pins);
-		set_pin_high(pconfig.ss);
+		set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
+		set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
+		set_pin_high(hconfig.ss);
 	
 		commit_ddr_settings();
 		commit_io_settings();
@@ -93,7 +93,7 @@ void spi_dump(void)
 	uint32_t i = 0;
 	uint8_t byte = 0;
 
-	for(i=0; i<pconfig.count; i++)
+	for(i=0; i<hconfig.count; i++)
 	{
 		byte = soft_spi_read();
 		buffered_write((uint8_t *) &byte, 1);
@@ -104,29 +104,29 @@ void spi_dump(void)
 
 void read_spi_eeprom(void)
 {
-	set_pin_immediate(pconfig.ss, 0);
+	set_pin_immediate(hconfig.ss, 0);
 
 	soft_spi_write(SPI_READ_COMMAND);
-	soft_spi_write((uint8_t) (pconfig.addr >> 8));
-	soft_spi_write((uint8_t) (pconfig.addr));
+	soft_spi_write((uint8_t) (hconfig.addr >> 8));
+	soft_spi_write((uint8_t) (hconfig.addr));
 
 	spi_dump();
 
-	set_pin_immediate(pconfig.ss, 1);
+	set_pin_immediate(hconfig.ss, 1);
 }
 
 void read_spi_flash(void)
 {
-	set_pin_immediate(pconfig.ss, 0);
+	set_pin_immediate(hconfig.ss, 0);
 	
 	soft_spi_write(SPI_READ_COMMAND);
-	soft_spi_write((uint8_t) (pconfig.addr >> 16));
-	soft_spi_write((uint8_t) (pconfig.addr >> 8));
-	soft_spi_write((uint8_t) (pconfig.addr));
+	soft_spi_write((uint8_t) (hconfig.addr >> 16));
+	soft_spi_write((uint8_t) (hconfig.addr >> 8));
+	soft_spi_write((uint8_t) (hconfig.addr));
 
 	spi_dump();
 
-	set_pin_immediate(pconfig.ss, 1);
+	set_pin_immediate(hconfig.ss, 1);
 }
 
 void soft_spi_write(uint8_t byte)
@@ -135,28 +135,28 @@ void soft_spi_write(uint8_t byte)
 
 	for(i=7; i>=0; i--)
 	{
-		set_pin_immediate(pconfig.clk, 0);
-		set_pin_immediate(pconfig.mosi, ((byte & (1 << i)) >> i));
-		set_pin_immediate(pconfig.clk, 1);
+		set_pin_immediate(hconfig.clk, 0);
+		set_pin_immediate(hconfig.mosi, ((byte & (1 << i)) >> i));
+		set_pin_immediate(hconfig.clk, 1);
 	}
 
-	set_pin_immediate(pconfig.clk, 0);
+	set_pin_immediate(hconfig.clk, 0);
 }
 
 uint8_t soft_spi_read(void)
 {
 	uint8_t data = 0, i = 0;
 
-	set_pin_immediate(pconfig.clk, 0);
+	set_pin_immediate(hconfig.clk, 0);
 
 	for(i=7; i>=0; i++)
 	{
-		set_pin_immediate(pconfig.clk, 1);
-		if(get_pin(pconfig.miso))
+		set_pin_immediate(hconfig.clk, 1);
+		if(get_pin(hconfig.miso))
 		{
 			data |= (1 << i);
 		}
-		set_pin_immediate(pconfig.clk, 0);
+		set_pin_immediate(hconfig.clk, 0);
 	}
 
 	return data;
