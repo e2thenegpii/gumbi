@@ -61,7 +61,7 @@ enum registers
 enum modes
 {
 	NOP = 0,
-	PFLASH = 1,
+	PNORFLASH = 1,
 	SPIFLASH = 2,
 	SPIEEPROM = 3,
 	I2CEEPROM = 4,
@@ -123,7 +123,7 @@ struct confdata
 	uint32_t count;				/* How many bytes? */
 	uint8_t toe;				/* How long to sleep when latching pins (uS) */
 	uint8_t tbp;				/* Byte program time (uS) */
-	uint8_t num_write_commands;		/* Data/address commands to send when writing to a parallel flash chip */
+	uint8_t num_write_commands;		/* Data/address commands to send when writing to a parallel NOR flash chip */
 	uint16_t num_addr_pins;
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;
@@ -145,7 +145,7 @@ struct confdata
 	uint8_t ss;
 	uint8_t mosi;
 	uint8_t miso;
-} pconfig;
+} hconfig;
 
 struct config
 {

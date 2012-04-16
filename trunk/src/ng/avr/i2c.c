@@ -4,12 +4,12 @@ void i2c_eeprom(void)
 {
 	uint8_t ok = TRUE;
 
-	read_data((uint8_t *) &pconfig, sizeof(pconfig));
+	read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
-	ok &= is_valid_pin(pconfig.sda);
-	ok &= is_valid_pin(pconfig.clk);
-	ok &= are_valid_pins(pconfig.vcc_pins, pconfig.num_vcc_pins);
-	ok &= are_valid_pins(pconfig.gnd_pins, pconfig.num_gnd_pins);
+	ok &= is_valid_pin(hconfig.sda);
+	ok &= is_valid_pin(hconfig.clk);
+	ok &= are_valid_pins(hconfig.vcc_pins, hconfig.num_vcc_pins);
+	ok &= are_valid_pins(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
 	if(ok)
 	{
@@ -17,21 +17,21 @@ void i2c_eeprom(void)
 
 		mcp23s17_enable();
 
-		configure_pin_as_output(pconfig.clk);
-		configure_pin_as_output(pconfig.sda);
-		configure_pins_as_outputs(pconfig.vcc_pins, pconfig.num_vcc_pins);
-		configure_pins_as_outputs(pconfig.gnd_pins, pconfig.num_gnd_pins);
+		configure_pin_as_output(hconfig.clk);
+		configure_pin_as_output(hconfig.sda);
+		configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
+		configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
 		commit_ddr_settings();
 
-		set_pin_high(pconfig.clk);
-		set_pin_high(pconfig.sda);
+		set_pin_high(hconfig.clk);
+		set_pin_high(hconfig.sda);
 		commit_io_settings();
 
-		set_pins_high(pconfig.vcc_pins, pconfig.num_vcc_pins);
-		set_pins_low(pconfig.gnd_pins, pconfig.num_gnd_pins);
+		set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
+		set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
 		commit_io_settings();
 
-		switch(pconfig.action)
+		switch(hconfig.action)
 		{
 			case READ:
 				ack();
@@ -54,34 +54,34 @@ void i2c_eeprom(void)
 
 void soft_i2c_start(void)
 {
-	set_pin_immediate(pconfig.clk, 1);
-	set_pin_immediate(pconfig.sda, 1);
-	set_pin_immediate(pconfig.sda, 0);
+	set_pin_immediate(hconfig.clk, 1);
+	set_pin_immediate(hconfig.sda, 1);
+	set_pin_immediate(hconfig.sda, 0);
 }
 
 void soft_i2c_stop(void)
 {
-	set_pin_immediate(pconfig.clk, 1);
-	set_pin_immediate(pconfig.sda, 0);
-	set_pin_immediate(pconfig.sda, 1);
+	set_pin_immediate(hconfig.clk, 1);
+	set_pin_immediate(hconfig.sda, 0);
+	set_pin_immediate(hconfig.sda, 1);
 }
 
 void soft_i2c_write(uint8_t byte)
 {
 	uint8_t i = 0;
 
-	configure_pin_immediate(pconfig.sda, 'w');
+	configure_pin_immediate(hconfig.sda, 'w');
 
 	for(i=7; i>=0; i--)
 	{
-		set_pin_immediate(pconfig.clk, 0);
-		set_pin_immediate(pconfig.sda, ((byte & (1 << i)) >> i));
-		set_pin_immediate(pconfig.clk, 1);
-		set_pin_immediate(pconfig.clk, 0);
+		set_pin_immediate(hconfig.clk, 0);
+		set_pin_immediate(hconfig.sda, ((byte & (1 << i)) >> i));
+		set_pin_immediate(hconfig.clk, 1);
+		set_pin_immediate(hconfig.clk, 0);
 	}
 
 	/* A read is always preceeded by at least one write. Make sure the SDA pin is configured as an input after every write. */	
-	configure_pin_immediate(pconfig.sda, 'r');
+	configure_pin_immediate(hconfig.sda, 'r');
 }
 
 uint8_t soft_i2c_read(void)
@@ -90,9 +90,9 @@ uint8_t soft_i2c_read(void)
 
 	for(i=7; i>=0; i--)
 	{
-		set_pin_immediate(pconfig.clk, 0);
-		set_pin_immediate(pconfig.clk, 1);
-		if(get_pin(pconfig.sda))
+		set_pin_immediate(hconfig.clk, 0);
+		set_pin_immediate(hconfig.clk, 1);
+		if(get_pin(hconfig.sda))
 		{
 			byte |= (1 << i);
 		}
@@ -105,7 +105,7 @@ void read_i2c_eeprom(void)
 {
 	uint32_t i = 0;
 
-	for(i=0; i<pconfig.count; i++)
+	for(i=0; i<hconfig.count; i++)
 	{
 		/* TODO: Do the actual read. Also need to implement N/ACK support. */
 	}
