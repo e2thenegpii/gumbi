@@ -25,6 +25,8 @@
 
 #define MAX_PINS 128
 #define MAX_DEVICES 8
+#define MAX_WRITE_COMMANDS 16
+
 #define PINS_PER_DEVICE 16
 #define PINS_PER_REGISTER 8
 #define NUM_REGISTERS 0x16
@@ -102,6 +104,12 @@ struct device
 	uint8_t port[NUM_REGISTERS];
 };
 
+struct addr_data
+{
+	uint32_t addr;
+	uint32_t data;
+};
+
 struct ctrlpin
 {
 	uint8_t pin;
@@ -115,6 +123,7 @@ struct confdata
 	uint32_t count;				/* How many bytes? */
 	uint8_t toe;				/* How long to sleep when latching pins (uS) */
 	uint8_t tbp;				/* Byte program time (uS) */
+	uint8_t num_write_commands;		/* Data/address commands to send when writing to a parallel flash chip */
 	uint16_t num_addr_pins;
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;
@@ -123,6 +132,7 @@ struct confdata
 	uint8_t data_pins[MAX_PINS];
 	uint8_t vcc_pins[MAX_PINS];
 	uint8_t gnd_pins[MAX_PINS];
+	struct addr_data write_commands[MAX_WRITE_COMMANDS];
 	struct ctrlpin ce;			/* Chip Enable */
 	struct ctrlpin we;			/* Write Enable */
 	struct ctrlpin oe;			/* Output Enable */
