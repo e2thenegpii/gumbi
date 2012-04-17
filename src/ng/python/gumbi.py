@@ -352,7 +352,10 @@ class Gumbi:
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
-		return self.Read(count)
+		data = self.Read(count)
+		# Receive the final ACK indicating that the read operation is complete
+		self.ReadAck()
+		return data
 
 	def WriteChip(self, start, data):
 		"""
