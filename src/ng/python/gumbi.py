@@ -226,12 +226,18 @@ class Gumbi:
 					try:
 						value[i] = int(value[i])
 					except:
-						pass
+						try:
+							value[i] = int(value[i], 16)
+						except:
+							pass
 			else:
 				try:
 					value = [int(value)]
 				except:
-					pass
+					try:
+						value = [int(value, 16)]
+					except:
+						pass
 		return (key, value)
 
 	def StartTimer(self):
@@ -368,6 +374,7 @@ class Gumbi:
 				break
 			except:
 				pass
+		print "The Write was ACKd!!"
 		return True
 
 	def Reset(self):
@@ -511,8 +518,8 @@ class Configuration(Gumbi):
 
 	def _pack_write_commands(self):
 		pd = self.PackDWords(self.CONFIG["WRITE_COMMANDS"])
-		# Each command consists of two 4 byte integers, so divide total length by 2
-		pd += self.PackFiller(self.MAX_COMMANDS - (len(self.CONFIG["WRITE_COMMANDS"]) / 2))
+		# Each command consists of two 4 byte integers
+		pd += self.PackFiller((self.MAX_COMMANDS * 8) - len(self.CONFIG["WRITE_COMMANDS"]))
 		return pd
 
 	def _config_mode(self):
@@ -531,7 +538,7 @@ class Configuration(Gumbi):
 
 	def _parse_config(self):
 		"""
-		Packs the configuration data into a string of bytes suitable for transmission to the Gumbi board.
+		Parses the specified configuration file.
 		"""
 		mode_name = self._config_mode()
 		if mode_name != self.cmode:
@@ -546,6 +553,9 @@ class Configuration(Gumbi):
 		self.package_pins = self.CONFIG["PINS"][0]
 
 	def Pack(self, action, start, count):
+		"""
+		Packs the configuration data into a string of bytes suitable for transmission to the Gumbi board.
+		"""
 		self._shift_pins()
 		data = self.PackByte(action)
 		data += self.Pack32(start)
@@ -561,7 +571,7 @@ class Configuration(Gumbi):
 		data += self._pack_pins(self.CONFIG["DATA"])
 		data += self._pack_pins(self.CONFIG["VCC"])
 		data += self._pack_pins(self.CONFIG["GND"])
-		data += self._pack_write_commands(self.CONFIG["WRITE_COMMANDS"])
+		data += self._pack_write_commands()
 		data += self.PackBytes(self.CONFIG["CE"])
 		data += self.PackBytes(self.CONFIG["WE"])
 		data += self.PackBytes(self.CONFIG["OE"])
@@ -574,6 +584,7 @@ class Configuration(Gumbi):
 		data += self.PackByte(self.CONFIG["SS"][0])
 		data += self.PackByte(self.CONFIG["MISO"][0])
 		data += self.PackByte(self.CONFIG["MOSI"][0])
+		print "PACKED DATA LENGTH::::::::::::: ", len(data)
 		return data
 
 class GPIO(Gumbi):
@@ -944,14 +955,16 @@ if __name__ == '__main__':
 #		time.sleep(10)
 #		gpio.Close()
 
-#		flash = ParallelFlash(config="config/39SF020.conf")
-#		print "Reading flash..."
-#		flash.StartTimer()
-#		data = flash.ReadChip(0, 1024)
-#		t = flash.StopTimer()
-#		flash.Close()
-#		print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
-#		open("flash.bin", "w").write(data)
+		flash = ParallelFlash(config="config/39SF020.conf")
+#		print "Writing flash..."
+#		flash.WriteChip(0, "\xcc")
+		print "Reading flash..."
+		flash.StartTimer()
+		data = flash.ReadChip(0, 1024)
+		t = flash.StopTimer()
+		flash.Close()
+		print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
+		open("flash.bin", "w").write(data)
 
 #	except Exception, e:
 ####		print "Error:", e

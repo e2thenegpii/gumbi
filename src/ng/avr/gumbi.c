@@ -2,7 +2,7 @@
 #include "gumbi.h"
 #include "debug.h"
 #include "mcp23s17.h"
-#include "parallel-nor.h"
+#include "parallel.h"
 #include "spi.h"
 #include "i2c.h"
 
@@ -57,8 +57,8 @@ void command_handler(uint8_t mode)
 		case SPEEDTEST:
 			handler = &speed_test;
 			break;
-		case PNORFLASH:
-			handler = &parallel_nor_flash;
+		case PFLASH:
+			handler = &parallel_flash;
 			break;
 		case SPIFLASH:
 			handler = &spi_flash;

@@ -1,7 +1,7 @@
-#include "parallel-nor.h"
+#include "parallel.h"
 
 /* Handles parallel NOR flash commands */
-void parallel_nor_flash(void)
+void parallel_flash(void)
 {
 	uint8_t ok = TRUE;
 

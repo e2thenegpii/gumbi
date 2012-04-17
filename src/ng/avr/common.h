@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <avr/io.h>
 #include <avrlib/rawhid.h>
@@ -61,7 +62,7 @@ enum registers
 enum modes
 {
 	NOP = 0,
-	PNORFLASH = 1,
+	PFLASH = 1,
 	SPIFLASH = 2,
 	SPIEEPROM = 3,
 	I2CEEPROM = 4,
@@ -156,12 +157,6 @@ struct config
 	uint8_t buffer[BLOCK_SIZE];
 	uint8_t buffer_size;
 } gconfig;
-
-struct command
-{
-	enum modes mode;
-	struct config configuration;
-};
 
 void led_init(void);
 void led_on(void);
