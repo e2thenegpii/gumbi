@@ -15,7 +15,7 @@ void parallel_flash(void)
 	ok &= are_valid_pins(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
 	/* Validate that the number of write commands is sane */
-	if(hconfig.num_write_commands > MAX_WRITE_COMMANDS)
+	if(hconfig.num_commands > MAX_COMMANDS)
 	{
 		ok = FALSE;
 	}
@@ -358,11 +358,14 @@ void parallel_write(void)
 				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
 
 				/* Any write operation must be preceeded by a set of commands that prepare the chip for writing */
-				for(k=0; k<hconfig.num_write_commands; k++)
+				for(k=0; k<hconfig.num_commands; )
 				{
 					while(is_busy()) { }
-					set_address(hconfig.write_commands[k].addr);
-					set_data(hconfig.write_commands[k].data);
+
+					/* Commands are in the form <addr><data><addr><data>... */
+					set_address(hconfig.commands[k++]);
+					set_data(hconfig.commands[k++]);
+
 					write_enable(TRUE);
 					_delay_us(hconfig.toe);
 					write_enable(FALSE);
