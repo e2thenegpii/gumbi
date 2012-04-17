@@ -168,30 +168,38 @@ uint8_t is_busy(void)
 /* Only commit settings to those devices/registers that correspond with the provided list of pins */
 void commit_targeted_settings(uint8_t pins[], uint32_t count)
 {
-	uint8_t i = 0;
 	struct device updates[MAX_DEVICES];
+	uint8_t i = 0, device = 0, port = 0;
 
 	memset((void *) &updates, 0, sizeof(updates));
 
-	/* Mark all I/O chips and registers that need to be updated */
+	/* Update only the I/O chips and registers that need to be updated */
 	for(i=0; i<count; i++)
 	{
-		updates[gconfig.pins[pins[i]].addr].port[gconfig.pins[pins[i]].reg] = 1;		
-	}
-	updates[gconfig.pins[hconfig.oe.pin].addr].port[gconfig.pins[hconfig.oe.pin].reg] = 1;
+		device = gconfig.pins[pins[i]].addr;
+		port = gconfig.pins[pins[i]].reg;
 
-	/* Update only the registers on the I/O chips that have address pins assigned to them */
+		if(updates[device].port[port] == 0)
+		{
+			commit_settings(device, port);
+			updates[device].port[port] = 1;
+		}
+	}
+
+	/* Update only the registers on the I/O chips that have address pins assigned to them 
 	for(i=0; i<gconfig.num_io_devices; i++)
 	{
 		if(updates[i].port[GPIOA] == 1)
 		{
 			commit_settings(i, GPIOA);
 		}
-		else if(updates[i].port[GPIOB] == 1)
+		
+		if(updates[i].port[GPIOB] == 1)
 		{
 			commit_settings(i, GPIOB);
 		}
 	}
+	*/
 }
 
 /* Update all registers on all I/O chips that have address pins assigned to them */
@@ -314,6 +322,14 @@ void parallel_read(void)
 		 * TODO: Try to improve the speed of this code block.
  		 */
 		set_address(hconfig.addr+i);
+		
+		/* DEBUG 
+		uint8_t buf[BLOCK_SIZE] = { 0 };
+		snprintf((char *) &buf, sizeof(buf), "Address set: 0x%lX", hconfig.addr+i);
+		write_string((char *) &buf);
+		read_data((uint8_t *) &buf, sizeof(buf));
+		*/
+
 		output_enable(TRUE);
 		_delay_us(hconfig.toe);
 		data = read_data_pins();
@@ -338,6 +354,7 @@ void parallel_write(void)
 	uint8_t write_size = 0;
 	uint32_t i = 0, j = 0, k = 0;
 	uint8_t data[BLOCK_SIZE] = { 0 };
+	uint8_t buf[BLOCK_SIZE] = { 0 };
 
 	/* num_data_pins should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
 	write_size = (hconfig.num_data_pins / 8);
@@ -362,21 +379,35 @@ void parallel_write(void)
 				{
 					while(is_busy()) { }
 
+					snprintf((char *) &buf, sizeof(buf), "Sending command 0x%lX: 0x%lX", hconfig.commands[k], hconfig.commands[k+1]);
+					write_string((char *) &buf);
+
+					output_enable(TRUE);
+					write_enable(FALSE);
+					_delay_us(hconfig.toe);
+
 					/* Commands are in the form <addr><data><addr><data>... */
 					set_address(hconfig.commands[k++]);
 					set_data(hconfig.commands[k++]);
 
+					output_enable(FALSE);
 					write_enable(TRUE);
 					_delay_us(hconfig.toe);
-					write_enable(FALSE);
-					_delay_us(hconfig.tbp);
 				}				
 
 				while(is_busy()) { }
 
+				snprintf((char *) &buf, sizeof(buf), "Sending data 0x%lX: 0x%X", hconfig.addr, pbyte);
+				write_string((char *) &buf);
+
+				output_enable(TRUE);
+				write_enable(FALSE);
+				_delay_us(hconfig.toe);
+
 				set_address(hconfig.addr+i);
 				set_data(pbyte);
 
+				output_enable(FALSE);
 				write_enable(TRUE);
 				_delay_us(hconfig.toe);
 				write_enable(FALSE);
