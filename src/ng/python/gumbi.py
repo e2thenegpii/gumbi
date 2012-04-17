@@ -352,6 +352,15 @@ class Gumbi:
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
+#		print "Reading text..."
+#		while True:
+#			try:
+#				print self.ReadText()
+#				sleep(1)
+#			except KeyboardInterrupt:
+#				self.Write("\x00" * 64)
+#			except:
+#				pass
 		data = self.Read(count)
 		# Receive the final ACK indicating that the read operation is complete
 		self.ReadAck()
@@ -368,16 +377,23 @@ class Gumbi:
 		Returns True on success, raises and exception on failure.
 		"""
 		self.Write(self.config.Pack(self.WRITE, start, len(data)))
+		# Receive the ACK indicating the provided configuration is valid
 		self.ReadAck()
+		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
+		
 		self.Write(data)
 		while True:
 			try:
-				self.ReadAck()
-				break
+				text = self.ReadText()
+				print text
+				if text == self.ACK:
+					break
 			except:
 				pass
-		print "The Write was ACKd!!"
+		
+		# Receive the final ACK indicating that the read operation is complete
+		self.ReadAck()
 		return True
 
 	def Reset(self):
@@ -978,8 +994,11 @@ if __name__ == '__main__':
 #		gpio.Close()
 
 		flash = ParallelFlash(config="config/39SF020.conf")
-#		print "Writing flash..."
-#		flash.WriteChip(0, "\xcc")
+		print "Writing flash..."
+		flash.WriteChip(0, "\xcc")
+		flash.Close()
+
+		flash = ParallelFlash(config="config/39SF020.conf")
 		print "Reading flash..."
 		flash.StartTimer()
 		data = flash.ReadChip(0, 1024)
