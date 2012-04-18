@@ -1,19 +1,24 @@
 #include "spi.h"
 
+/* TODO: Add action to select/deselect SPI slave */
+
 /* SPI action handler */
 void spi(void)
 {
 	uint8_t loop = TRUE;
 
+	/* Initialize the I/O expansion chips */
 	mcp23s17_init();
 
 	while(loop)
 	{
+		/* Read in config data from the host */
 		read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
+		/* Make sure the config data is sane */
 		if(validate_spi_config())
 		{
-			/* Acknoledge the receipt of valid config data */
+			/* Acknowledge the receipt of valid config data */
 			ack();
 
 			/* Configure SPI pins */
@@ -69,26 +74,31 @@ void spi(void)
 	mcp23s17_disable();
 }
 
+/* De/activates the SS pin */
 void ss_active(uint8_t tf)
 {
 	set_control_pin(hconfig.ss, tf);
 }
 
+/* De/activates the CLK pin */
 void clk_active(uint8_t tf)
 {
 	set_control_pin(hconfig.clk, tf);
 }
 
+/* De/activates the MOSI pin */
 void mosi_active(uint8_t tf)
 {
 	set_control_pin(hconfig.mosi, tf);
 }
 
+/* De/activates the MISO pin */
 void miso_active(uint8_t tf)
 {
 	set_control_pin(hconfig.miso, tf);
 }
 
+/* Validate the SPI-specific configuration settings */
 uint8_t validate_spi_config(void)
 {
 	uint8_t ok = TRUE;
@@ -103,6 +113,7 @@ uint8_t validate_spi_config(void)
 	return ok;
 }
 
+/* Write one byte, MSB first */
 void soft_spi_write_byte(uint8_t byte)
 {
 	uint8_t i = 0;
@@ -115,30 +126,30 @@ void soft_spi_write_byte(uint8_t byte)
 	}
 }
 
+/* Read one byte, MSB first */
 uint8_t soft_spi_read_byte(void)
 {
 	uint8_t data = 0, i = 0;
 
 	for(i=7; i>=0; i++)
 	{
-		ss_active(TRUE);
-
 		if(get_pin(hconfig.miso.pin))
 		{
 			data |= (1 << i);
 		}
-
-		ss_active(FALSE);
 	}
 
 	return data;
 }
 
+/* Read bytes from the target SPI chip */
 void spi_read(void)
 {
 	uint32_t i = 0;
 	uint8_t byte = 0;
 
+	ss_active(TRUE);
+	
 	for(i=0; i<hconfig.count; i++)
 	{
 		byte = soft_spi_read_byte();
@@ -146,23 +157,33 @@ void spi_read(void)
 	}
 
 	flush_buffer();
+
+	ss_active(TRUE);
 }
 
+/* Write bytes to the target SPI chip */
 void spi_write(void)
 {
 	uint8_t j = 0;
 	uint32_t i = 0;
 	uint8_t buf[BLOCK_SIZE] = { 0 };
 
+	ss_active(TRUE);
+
 	for(i=0; i<hconfig.count; )
 	{
+		/* Read data from host */
 		read_data((uint8_t *) &buf, sizeof(buf));
 
+		/* Write data to SPI chip */
 		for(j=0; j<sizeof(buf) && i<hconfig.count; j++, i++)
 		{
 			soft_spi_write_byte(buf[j]);
 		}
 
+		/* Acknowledge that we're done processing this block of data so the host knows to send more */
 		ack();
 	}
+	
+	ss_active(TRUE);
 }
