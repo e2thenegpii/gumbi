@@ -6,7 +6,7 @@
 #include "common.h"
 #include "mcp23s17.h"
 
-void parallel_flash(void);
+void parallel(void);
 void set_control_pin(struct ctrlpin p, uint8_t tf);
 void output_enable(uint8_t tf);
 void write_enable(uint8_t tf);
@@ -16,7 +16,8 @@ void byte_enable(uint8_t tf);
 void commit_targeted_settings(uint8_t pins[], uint32_t count);
 void commit_address_settings(void);
 void commit_data_settings(void);
-uint16_t read_data_pins(void);
+uint16_t readi_data_pins(void);
+void write_data_to_addr(uint32_t address, uint16_t data);
 void set_address(uint32_t address);
 void set_data(uint16_t data);
 void parallel_read(void);

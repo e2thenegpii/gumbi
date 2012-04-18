@@ -26,7 +26,7 @@
 
 #define MAX_PINS 128
 #define MAX_DEVICES 8
-#define MAX_COMMANDS 16
+#define MAX_COMMANDS 32
 
 #define PINS_PER_DEVICE 16
 #define PINS_PER_REGISTER 8
@@ -62,7 +62,7 @@ enum registers
 enum modes
 {
 	NOP = 0,
-	PFLASH = 1,
+	PARALLEL = 1,
 	SPIFLASH = 2,
 	SPIEEPROM = 3,
 	I2CEEPROM = 4,
@@ -80,9 +80,8 @@ enum actions
 	EXIT = 0,
 	READ = 1,
 	WRITE = 2,
-	ERASE = 3,
-	HIGH = 4,
-	LOW = 5
+	HIGH = 3,
+	LOW = 4
 };
 
 struct pin

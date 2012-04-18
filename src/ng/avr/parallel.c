@@ -1,104 +1,118 @@
 #include "parallel.h"
 
-/* Handles parallel NOR flash commands */
-void parallel_flash(void)
+/* Handles parallel interface commands */
+void parallel(void)
 {
-	uint8_t ok = TRUE;
+	uint8_t ok = TRUE, loop = TRUE;
 
-	/* Read in parallel flash configuration data */
-	read_data((uint8_t *) &hconfig, sizeof(hconfig));
+	/* Initialize the I/O expansion chips */
+	mcp23s17_enable();
 
-	/* Validate data pins. Control pins are validated on the fly, as some may or may not be specified, depending on the target chip. */
-	ok &= are_valid_pins(hconfig.addr_pins, hconfig.num_addr_pins);
-	ok &= are_valid_pins(hconfig.data_pins, hconfig.num_data_pins);
-	ok &= are_valid_pins(hconfig.vcc_pins, hconfig.num_vcc_pins);
-	ok &= are_valid_pins(hconfig.gnd_pins, hconfig.num_gnd_pins);
-
-	/* Validate that the number of write commands is sane */
-	if(hconfig.num_commands > MAX_COMMANDS)
+	while(loop)
 	{
-		ok = FALSE;
-	}
+		/* Read in parallel configuration data */
+		read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
-	if(ok)
-	{
-		/* Acknowledge successful receipt of configuration data */
-		ack();
-
-		/* Initialize SPI and the MCP23S17 chips */
-		mcp23s17_enable();
-
-		/* Configure all address, Vcc and GND pins as outputs */
-		configure_pins_as_outputs(hconfig.addr_pins, hconfig.num_addr_pins);
-		configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
-		configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
-
-		/* Set control pins as outputs */
-		configure_pin_as_output(hconfig.oe.pin);
-		configure_pin_as_output(hconfig.we.pin);
-		configure_pin_as_output(hconfig.ce.pin);
-		configure_pin_as_output(hconfig.be.pin);
-		configure_pin_as_output(hconfig.rst.pin);
-
-		/* Set the busy/ready pin as an input */
-		configure_pin_as_input(hconfig.by.pin);
-
-		/* If we have more than 8 data pins, enable word-size data access */
-		if(hconfig.num_data_pins > 8)
+		/* Validate that the number of operational commands is sane */
+		if(hconfig.num_commands > MAX_COMMANDS)
 		{
-			byte_enable(FALSE);
+			ok = FALSE;
 		}
 		else
 		{
-			byte_enable(TRUE);
+			ok = TRUE;
 		}
-	
-		/* Enable the target chip while disabling output and writing */
-		reset_enable(FALSE);
-		write_enable(FALSE);
-		output_enable(FALSE);
-		chip_enable(TRUE);
-	
-		/* Supply power to the target chip */
-		set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
-		set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
-	
-		/* Commit settings */
-		commit_ddr_settings();
-		commit_io_settings();
-	
-		switch(hconfig.action)
+
+		/* Validate I/O pins. Control pins are validated on the fly, as some may or may not be specified, depending on the target chip. */
+		ok &= are_valid_pins(hconfig.addr_pins, hconfig.num_addr_pins);
+		ok &= are_valid_pins(hconfig.data_pins, hconfig.num_data_pins);
+		ok &= are_valid_pins(hconfig.vcc_pins, hconfig.num_vcc_pins);
+		ok &= are_valid_pins(hconfig.gnd_pins, hconfig.num_gnd_pins);
+
+		if(ok)
 		{
-			case READ:
-				/* When reading, data pins are inputs to us */
-				configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
-				commit_ddr_settings();
-				ack();
-				parallel_read();
-				break;
-			case WRITE:
-				/* When writing, data pins are outputs from us */
-				configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
-				commit_ddr_settings();
-				ack();
-				parallel_write();
-				break;
-			default:
-				nack();
-				write_string("The specified action is not supported");
-				break;
+			/* Acknowledge successful receipt of valid configuration data */
+			ack();
+
+			/* Configure all address, Vcc and GND pins as outputs */
+			configure_pins_as_outputs(hconfig.addr_pins, hconfig.num_addr_pins);
+			configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
+			configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
+
+			/* Set control pins as outputs */
+			configure_pin_as_output(hconfig.oe.pin);
+			configure_pin_as_output(hconfig.we.pin);
+			configure_pin_as_output(hconfig.ce.pin);
+			configure_pin_as_output(hconfig.be.pin);
+			configure_pin_as_output(hconfig.rst.pin);
+
+			/* Set the busy/ready pin as an input */
+			configure_pin_as_input(hconfig.by.pin);
+
+			/* If we have more than 8 data pins, enable word-size data access */
+			if(hconfig.num_data_pins > 8)
+			{
+				byte_enable(FALSE);
+			}
+			else
+			{
+				byte_enable(TRUE);
+			}
+	
+			/* Enable the target chip while disabling output and writing */
+			reset_enable(FALSE);
+			write_enable(FALSE);
+			output_enable(FALSE);
+			chip_enable(TRUE);
+		
+			/* Supply power to the target chip */
+			set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
+			set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
+	
+			/* Commit settings */
+			commit_ddr_settings();
+			commit_io_settings();
+	
+			switch(hconfig.action)
+			{
+				case READ:
+					/* When reading, data pins are inputs to us */
+					configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
+					commit_ddr_settings();
+					/* Acknowledge receipt of the action */
+					ack();
+					parallel_read();
+					break;
+				case WRITE:
+					/* When writing, data pins are outputs from us */
+					configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
+					commit_ddr_settings();
+					/* Acknowledge receipt of the action */
+					ack();
+					parallel_write();
+					break;
+				case EXIT:
+					loop = FALSE;
+					/* Acknowledge receipt of the action */
+					ack();
+					break;
+				default:
+					/* Bad action specified, respond with NACK and a reason string */
+					nack();
+					write_string("The specified action is not supported");
+					break;
+			}
 		}
-
-		mcp23s17_disable();
-
-		/* Final ACK indicates the parallel flash operation is complete */
-		ack();
+		else
+		{
+			/* Band configuration specified, send a NACK and a reason */
+			nack();
+			write_string("Invalid configuration");
+		}
 	}
-	else
-	{
-		nack();
-		write_string("Invalid pin configuration");
-	}
+	
+	/* Disable the I/O expansion chips */	
+	mcp23s17_disable();
 
 	return;
 }
@@ -185,21 +199,6 @@ void commit_targeted_settings(uint8_t pins[], uint32_t count)
 			updates[device].port[port] = 1;
 		}
 	}
-
-	/* Update only the registers on the I/O chips that have address pins assigned to them 
-	for(i=0; i<gconfig.num_io_devices; i++)
-	{
-		if(updates[i].port[GPIOA] == 1)
-		{
-			commit_settings(i, GPIOA);
-		}
-		
-		if(updates[i].port[GPIOB] == 1)
-		{
-			commit_settings(i, GPIOB);
-		}
-	}
-	*/
 }
 
 /* Update all registers on all I/O chips that have address pins assigned to them */
@@ -271,19 +270,22 @@ void set_address(uint32_t address)
 {
 	uint8_t i = 0;
 
-	for(i=0; i<hconfig.num_addr_pins; i++)
+	if(hconfig.num_addr_pins > 0)
 	{
-		if((address | (1 << i)) == address)
+		for(i=0; i<hconfig.num_addr_pins; i++)
 		{
-			set_pin_high(hconfig.addr_pins[i]);
+			if((address | (1 << i)) == address)
+			{
+				set_pin_high(hconfig.addr_pins[i]);
+			}
+			else
+			{
+				set_pin_low(hconfig.addr_pins[i]);
+			}
 		}
-		else
-		{
-			set_pin_low(hconfig.addr_pins[i]);
-		}
-	}
 	
-	commit_address_settings();
+		commit_address_settings();
+	}
 }
 
 /* Set the appropriate pins to represent the given data byte/word */
@@ -291,51 +293,102 @@ void set_data(uint16_t data)
 {
 	uint8_t i = 0;
 
-	for(i=0; i<hconfig.num_data_pins; i++)
+	if(hconfig.num_data_pins > 0)
 	{
-		if((data | (1 << i)) == data)
+		for(i=0; i<hconfig.num_data_pins; i++)
 		{
-			set_pin_high(hconfig.data_pins[i]);
+			if((data | (1 << i)) == data)
+			{
+				set_pin_high(hconfig.data_pins[i]);
+			}
+			else
+			{
+				set_pin_low(hconfig.data_pins[i]);
+			}
+		}
+
+		commit_data_settings();
+	}
+}
+
+/* Returns the data size, in bytes, based on the number of data pins specified in hconfig */
+uint8_t data_size(void)
+{
+	uint8_t size = 0;
+
+	if(hconfig.num_data_pins > 0)
+	{
+		if(hconfig.num_data_pins <= 8)
+		{
+			size = 1;
 		}
 		else
 		{
-			set_pin_low(hconfig.data_pins[i]);
+			size = 2;
 		}
 	}
 
-	commit_data_settings();
+	return size;
 }
 
-/* Read in the specified number of bytes from the chip and write them to the UART */
+/* Writes the given data to the specified address on the target chip */
+void write_data_to_addr(uint32_t address, uint16_t data)
+{
+	/* DEBUG */
+	uint8_t buf[BLOCK_SIZE] = { 0 };
+	snprintf((char *) &buf, sizeof(buf), "0x%lX = 0x%X", address, data);
+	write_string((char *) &buf);
+	/* END DEBUG */
+
+	/* Wait until the target chip is ready to receive commands */
+	while(is_busy()) { }
+
+
+	/* Set the address and data lines  */
+	set_address(address);
+	set_data(data);
+	
+	/* Assert the write enable pin and wait for the chip to read the address pins */
+	write_enable(TRUE);
+	_delay_us(hconfig.toe);
+					
+	/* Release the write enable pin and wait for the chip to read the data pins */
+	write_enable(FALSE);
+	_delay_us(hconfig.toe);
+}
+
+/* Read in the specified number of bytes from the chip and send them back to the host */
 void parallel_read(void)
 {
 	uint32_t i = 0;
 	uint16_t data = 0;
-	uint8_t read_size = 0;
+	uint8_t read_size = data_size();
 
-	/* num_data_pins should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
-	read_size = (hconfig.num_data_pins / 8);
+	/* Read operations may need to be preceeded by a set of commands that prepare the chip for reading */
+	for(i=0; i<hconfig.num_commands; i+=2)
+	{
+		/* Commands are stored in the format: <addr>:<data>,<addr>:<data>... */
+		write_data_to_addr(hconfig.commands[i], hconfig.commands[i+1]);
+	}
 
 	for(i=0; i<hconfig.count; i+=read_size)
 	{
-		/* 
-		 * TODO: Try to improve the speed of this code block.
- 		 */
-		set_address(hconfig.addr+i);
-		
-		/* DEBUG 
-		uint8_t buf[BLOCK_SIZE] = { 0 };
-		snprintf((char *) &buf, sizeof(buf), "Address set: 0x%lX", hconfig.addr+i);
-		write_string((char *) &buf);
-		read_data((uint8_t *) &buf, sizeof(buf));
-		*/
+		/* Wait until the target chip is not busy */
+		while(is_busy()) { }
 
+		/* Set the appropriate address pins and assert the output enable line */
+		set_address(hconfig.addr+i);
 		output_enable(TRUE);
+
+		/* Wait for the output to become active, then read data off the data pins */
 		_delay_us(hconfig.toe);
 		data = read_data_pins();
+
+		/* Release the output enable line, and wait for the output be be deactivated */
 		output_enable(FALSE);
 		_delay_us(hconfig.toe);
 
+		/* Use buffered writes here to ensure data is sent as efficiently as possible */
 		buffered_write((uint8_t *) &data, 1);
 		if(read_size > 1)
 		{
@@ -344,20 +397,17 @@ void parallel_read(void)
 		}
 	}
 
+	/* Make sure all data from the buffered_write() calls is flushed back to the host */
 	flush_buffer();
 }
 
-/* Read bytes from the UART and write them to the target chip */
+/* Read bytes from the host and write them to the target chip */
 void parallel_write(void)
 {
 	uint16_t pbyte = 0;
-	uint8_t write_size = 0;
 	uint32_t i = 0, j = 0, k = 0;
 	uint8_t data[BLOCK_SIZE] = { 0 };
-	uint8_t buf[BLOCK_SIZE] = { 0 };
-
-	/* num_data_pins should be either 8 or 16. We're trusting the data structure passed from the PC to adhere to this limitation. */
-	write_size = (hconfig.num_data_pins / 8);
+	uint8_t write_size = data_size();
 
 	/* We use write_size in the memcpy, so make sure it's sane. */
 	if(write_size <= sizeof(pbyte))
@@ -374,39 +424,15 @@ void parallel_write(void)
 				/* Get the next byte/word to write */
 				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
 
-				output_enable(FALSE);
-				write_enable(FALSE);
-
-				/* Any write operation must be preceeded by a set of commands that prepare the chip for writing */
-				for(k=0; k<hconfig.num_commands; )
+				/* Write operations may need to be preceeded by a set of commands that prepare the chip for writing */
+				for(k=0; k<hconfig.num_commands; k+=2)
 				{
-					while(is_busy()) { }
-
-					snprintf((char *) &buf, sizeof(buf), "Sending command 0x%lX: 0x%lX", hconfig.commands[k], hconfig.commands[k+1]);
-					write_string((char *) &buf);
-
-					/* Commands are in the form <addr><data><addr><data>... */
-					set_address(hconfig.commands[k++]);
-					set_data(hconfig.commands[k++]);
-
-					write_enable(TRUE);
-					_delay_us(hconfig.toe);
-					write_enable(FALSE);
+					/* Commands are stored in the format: <addr>:<data>,<addr>:<data>... */
+					write_data_to_addr(hconfig.commands[k], hconfig.commands[k+1]);
 				}				
 
-				while(is_busy()) { }
-
-				snprintf((char *) &buf, sizeof(buf), "Sending data 0x%lX: 0x%X", hconfig.addr, pbyte);
-				write_string((char *) &buf);
-
-				_delay_us(hconfig.toe);
-
-				set_address(hconfig.addr+i);
-				set_data(pbyte);
-
-				write_enable(TRUE);
-				_delay_us(hconfig.toe);
-				write_enable(FALSE);
+				/* Write the specified byte/word to the next address, then wait for the write to complete */
+				write_data_to_addr(hconfig.addr+i, pbyte);
 				_delay_us(hconfig.tbp);
 			}
 			
