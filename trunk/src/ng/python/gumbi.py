@@ -150,7 +150,7 @@ class Gumbi:
 	ACK = "GUMBIACK"
 	NACK = "GUMBINACK"
 	MAX_PINS = 128
-	MAX_COMMANDS = 16
+	MAX_COMMANDS = 32
 	RESET_LEN = 1024
 	UNUSED = 0xFF
 	NULL = "\x00"
@@ -175,9 +175,8 @@ class Gumbi:
 	EXIT = 0
 	READ = 1
 	WRITE = 2
-	ERASE = 3
-	HIGH = 4
-	LOW = 5
+	HIGH = 3
+	LOW = 4
 
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
@@ -200,6 +199,13 @@ class Gumbi:
 		"""
 		self.hid.open(self.VID, self.PID)
 
+	def _exit(self):
+		"""
+		Exits the Gumbi board from GPIO mode.
+		"""
+		self.Write(self.PackBytes([self.EXIT, 0]))
+		self.ReadAck()
+
 	def _close(self):
 		"""
 		Closes the connection with the Gumbi board.
@@ -219,7 +225,7 @@ class Gumbi:
 		if '=' in line:
 			(key, value) = line.split('=', 1)
 			key = key.strip().upper()
-			value = value.strip().upper()
+			value = value.strip().upper().replace(";", ",")
 			if ',' in value:
 				value = value.split(',')
 				for i in range(0, len(value)):
@@ -348,23 +354,13 @@ class Gumbi:
 		Returns a string of bytes read from the chip.
 		"""
 		self.Write(self.config.Pack(self.READ, start, count))
+		
 		# Receive the ACK indicating the provided configuration is valid
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
-#		print "Reading text..."
-#		while True:
-#			try:
-#				print self.ReadText()
-#				sleep(1)
-#			except KeyboardInterrupt:
-#				self.Write("\x00" * 64)
-#			except:
-#				pass
-		data = self.Read(count)
-		# Receive the final ACK indicating that the read operation is complete
-		self.ReadAck()
-		return data
+		
+		return self.Read(count)
 
 	def WriteChip(self, start, data):
 		"""
@@ -381,8 +377,11 @@ class Gumbi:
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
-		
+	
+		# TODO: Send data 64 bytes at a time until all data is sent	
 		self.Write(data)
+
+		# DEBUG
 		while True:
 			try:
 				text = self.ReadText()
@@ -391,9 +390,8 @@ class Gumbi:
 					break
 			except:
 				pass
-		
-		# Receive the final ACK indicating that the read operation is complete
-		self.ReadAck()
+		#END DEBUG
+
 		return True
 
 	def Reset(self):
@@ -408,6 +406,7 @@ class Gumbi:
 		"""
 		Closes the connection with the Gumbi board.
 		"""
+		self._exit()
 		return self._close()
 
 class PinCount(Gumbi):
@@ -441,17 +440,14 @@ class Configuration(Gumbi):
 		"BY"		: [Gumbi.UNUSED, 0],
 		"WP"		: [Gumbi.UNUSED, 0],
 		"RST"		: [Gumbi.UNUSED, 0],
-		"WRITE"		: [],
+		"COMMANDS"	: [],
 		"SDA"		: [0],
 		"CLK"		: [0],
 		"SS"		: [0],
 		"MISO"		: [0],
 		"MOSI"		: [0],
 		# These are not part of the config strcture that gets pushed to the Gumbi board
-		"PINS"		: [0],
-		"TDI"		: [0],
-		"TDO"		: [0],
-		"TMS"		: [0]
+		"PINS"		: [0]
 	}
 	
 	def __init__(self, config, mode, pins=None):
@@ -565,14 +561,27 @@ class Configuration(Gumbi):
 		for line in open(self.config).readlines():
 			(key, value) = self.ParseConfigLine(line)
 			if key is not None and value is not None:
-				if self.CONFIG.has_key(key):
-					self.CONFIG[key] = value
+				self.CONFIG[key] = value
 
 		self.package_pins = self.CONFIG["PINS"][0]
 
-	def Pack(self, action, start, count):
+	def SetCommand(self, commands):
+		"""
+		Sets the list of commands to execute prior to running an action.
+		"""
+		if commands is not None and self.CONFIG.has_key(commands):
+			self.CONFIG["COMMANDS"] = self.CONFIG[commands]
+
+	def Pack(self, action, start, count, commands=[]):
 		"""
 		Packs the configuration data into a string of bytes suitable for transmission to the Gumbi board.
+		
+		@action   - Action (READ, WRITE, EXIT, etc).
+		@start    - Start address.
+		@count    - Number of bytes.
+		@commands - A list of commands to write to the chip prior to performing the action.
+
+		Returns a packed data string.
 		"""
 		self._shift_pins()
 		data = self.PackByte(action)
@@ -584,12 +593,12 @@ class Configuration(Gumbi):
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))
 		data += self.Pack16(len(self.CONFIG["GND"]))
-		data += self.PackByte(len(self.CONFIG["WRITE"]))
+		data += self.PackByte(len(self.CONFIG["COMMANDS"]))
 		data += self._pack_pins(self.CONFIG["ADDRESS"])
 		data += self._pack_pins(self.CONFIG["DATA"])
 		data += self._pack_pins(self.CONFIG["VCC"])
 		data += self._pack_pins(self.CONFIG["GND"])
-		data += self._pack_commands(self.CONFIG["WRITE"])
+		data += self._pack_commands(self.CONFIG["COMMANDS"])
 		data += self.PackBytes(self.CONFIG["CE"])
 		data += self.PackBytes(self.CONFIG["WE"])
 		data += self.PackBytes(self.CONFIG["OE"])
@@ -668,13 +677,6 @@ class GPIO(Gumbi):
 		for pin in pins:
 			data.append(self.ReadPin(pin))
 		return data
-
-	def Close(self):
-		"""
-		Exits GPIO mode, closes the Gumbi board connection.
-		"""
-		self._exit()
-		self._close()
 
 class JTAG(GPIO):
 	"""
@@ -909,7 +911,7 @@ class ParallelFlash(Gumbi):
 	Class for interfacing with parallel memory devices.
 	"""
 
-	MODE = "PFLASH"
+	MODE = "PARALLEL"
 	
 	def __init__(self, config):
 		"""
@@ -917,7 +919,25 @@ class ParallelFlash(Gumbi):
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
-		self.SetMode(self.PFLASH)
+		self.SetMode(self.PARALLEL)
+
+	def id(self):
+		self.config.SetCommand("ID")
+		data = self.ReadChip(0x00, 2)
+		vendor = ord(data[0])
+		product = ord(data[1])
+		return (vendor, product)
+
+	def read(self, address, count):
+		return self.ReadChip(address, count)
+
+	def write(self, address, data):
+		self.config.SetCommand("WRITE")
+		return self.WriteChip(address, data)
+
+	def erase(self):
+		self.config.SetCommand("ERASE")
+		self.WriteChip(0x00, "\xFF")
 
 def SPIFlash(Gumbi):
 	"""

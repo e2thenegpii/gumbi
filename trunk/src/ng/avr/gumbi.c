@@ -57,8 +57,8 @@ void command_handler(uint8_t mode)
 		case SPEEDTEST:
 			handler = &speed_test;
 			break;
-		case PFLASH:
-			handler = &parallel_flash;
+		case PARALLEL:
+			handler = &parallel;
 			break;
 		case SPIFLASH:
 			handler = &spi_flash;
