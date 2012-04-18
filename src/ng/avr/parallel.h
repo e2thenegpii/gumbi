@@ -7,7 +7,6 @@
 #include "mcp23s17.h"
 
 void parallel(void);
-void set_control_pin(struct ctrlpin p, uint8_t tf);
 void output_enable(uint8_t tf);
 void write_enable(uint8_t tf);
 void chip_enable(uint8_t tf);

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "mcp23s17.h"
 
 void led_init(void)
 {
@@ -156,4 +157,20 @@ uint8_t are_valid_pins(uint8_t pins[], uint8_t count)
 	}
 
 	return ok;
+}
+
+/* Sets the specified control pin to active (tf = TRUE) or inactive (tf = FALSE) state */
+void set_control_pin(struct ctrlpin p, uint8_t tf)
+{
+	if(is_valid_pin(p.pin))
+	{
+		if(tf)
+		{
+			set_pin_immediate(p.pin, p.active);
+		}
+		else
+		{
+			set_pin_immediate(p.pin, ~p.active);
+		}
+	}
 }
