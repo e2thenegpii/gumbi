@@ -225,7 +225,8 @@ class Gumbi:
 		if '=' in line:
 			(key, value) = line.split('=', 1)
 			key = key.strip().upper()
-			value = value.strip().upper().replace(";", ",")
+			# Multple value delimiters are: ',', ';', ':'
+			value = value.strip().upper().replace(";", ",").replace(":", ",")
 			if ',' in value:
 				value = value.split(',')
 				for i in range(0, len(value)):
