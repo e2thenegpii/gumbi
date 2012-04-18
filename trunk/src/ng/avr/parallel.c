@@ -117,22 +117,6 @@ void parallel(void)
 	return;
 }
 
-/* Sets the specified control pin to active (tf = TRUE) or inactive (tf = FALSE) state */
-void set_control_pin(struct ctrlpin p, uint8_t tf)
-{
-	if(is_valid_pin(p.pin))
-	{
-		if(tf)
-		{
-			set_pin_immediate(p.pin, p.active);
-		}
-		else
-		{
-			set_pin_immediate(p.pin, ~p.active);
-		}
-	}
-}
-
 /* Set the output enable pin */
 void output_enable(uint8_t tf)
 {

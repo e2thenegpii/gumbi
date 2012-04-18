@@ -60,14 +60,11 @@ void command_handler(uint8_t mode)
 		case PARALLEL:
 			handler = &parallel;
 			break;
-		case SPIFLASH:
-			handler = &spi_flash;
+		case SPI:
+			handler = &spi;
 			break;
-		case SPIEEPROM:
-			handler = &spi_eeprom;
-			break;
-		case I2CEEPROM:
-			handler = &i2c_eeprom;
+		case I2C:
+			handler = &i2c;
 			break;
 		case GPIO:
 			handler = &gpio;

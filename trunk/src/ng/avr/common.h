@@ -63,16 +63,15 @@ enum modes
 {
 	NOP = 0,
 	PARALLEL = 1,
-	SPIFLASH = 2,
-	SPIEEPROM = 3,
-	I2CEEPROM = 4,
-	PING = 5,
-	INFO = 6,
-	SPEEDTEST = 7,
-	GPIO = 8,
-	GID = 9,
-	XFER = 10,
-	PINCOUNT = 11
+	SPI = 2,
+	I2C = 3,
+	PING = 4,
+	INFO = 5,
+	SPEEDTEST = 6,
+	GPIO = 7,
+	GID = 8,
+	XFER = 9,
+	PINCOUNT = 10
 };
 
 enum actions
@@ -134,11 +133,11 @@ struct confdata
 	struct ctrlpin by;			/* Ready / Busy */
 	struct ctrlpin wp;			/* Write Protect */
 	struct ctrlpin rst;			/* Reset */
-	uint8_t sda;
-	uint8_t clk;
-	uint8_t ss;
-	uint8_t mosi;
-	uint8_t miso;
+	struct ctrlpin sda;			/* Data pin (I2C) */
+	struct ctrlpin clk;			/* Clock pin (I2C/SPI) */
+	struct ctrlpin ss;			/* Slave select pin (SPI) */
+	struct ctrlpin mosi;			/* Master Out Slave In */
+	struct ctrlpin miso;			/* Master In Slave Out */
 } hconfig;
 
 struct config
@@ -157,6 +156,7 @@ void led_off(void);
 void ack(void);
 void nack(void);
 uint8_t is_valid_pin(uint8_t p);
+void set_control_pin(struct ctrlpin p, uint8_t tf);
 void write_string(char *string);
 void read_data(uint8_t *buffer, uint32_t count);
 void write_data(uint8_t *buffer, uint32_t count);

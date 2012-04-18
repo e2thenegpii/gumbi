@@ -442,11 +442,11 @@ class Configuration(Gumbi):
 		"WP"		: [Gumbi.UNUSED, 0],
 		"RST"		: [Gumbi.UNUSED, 0],
 		"COMMANDS"	: [],
-		"SDA"		: [0],
-		"CLK"		: [0],
-		"SS"		: [0],
-		"MISO"		: [0],
-		"MOSI"		: [0],
+		"SDA"		: [Gumbi.UNUSED, 0],
+		"CLK"		: [Gumbi.UNUSED, 0],
+		"SS"		: [Gumbi.UNUSED, 0],
+		"MISO"		: [Gumbi.UNUSED, 0],
+		"MOSI"		: [Gumbi.UNUSED, 0],
 		# These are not part of the config strcture that gets pushed to the Gumbi board
 		"PINS"		: [0]
 	}
@@ -498,11 +498,11 @@ class Configuration(Gumbi):
 		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
 		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
 		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
-		self.CONFIG["SDA"][0] = self._pin2real(self.CONFIG["SDA"][0])
-		self.CONFIG["CLK"][0] = self._pin2real(self.CONFIG["CLK"][0])
-		self.CONFIG["SS"][0] = self._pin2real(self.CONFIG["SS"][0])
-		self.CONFIG["MISO"][0] = self._pin2real(self.CONFIG["MISO"][0])
-		self.CONFIG["MOSI"][0] = self._pin2real(self.CONFIG["MOSI"][0])
+		self.CONFIG["SDA"] = self._convert_control_pin(self.CONFIG["SDA"])
+		self.CONFIG["CLK"] = self._convert_control_pin(self.CONFIG["CLK"])
+		self.CONFIG["SS"] = self._convert_control_pin(self.CONFIG["SS"])
+		self.CONFIG["MISO"] = self._convert_control_pin(self.CONFIG["MISO"])
+		self.CONFIG["MOSI"] = self._convert_control_pin(self.CONFIG["MOSI"])
 
 	def _convert_control_pin(self, cp):
 		"""
@@ -607,11 +607,11 @@ class Configuration(Gumbi):
 		data += self.PackBytes(self.CONFIG["BY"])
 		data += self.PackBytes(self.CONFIG["WP"])
 		data += self.PackBytes(self.CONFIG["RST"])
-		data += self.PackByte(self.CONFIG["SDA"][0])
-		data += self.PackByte(self.CONFIG["CLK"][0])
-		data += self.PackByte(self.CONFIG["SS"][0])
-		data += self.PackByte(self.CONFIG["MISO"][0])
-		data += self.PackByte(self.CONFIG["MOSI"][0])
+		data += self.PackBytes(self.CONFIG["SDA"])
+		data += self.PackBytes(self.CONFIG["CLK"])
+		data += self.PackBytes(self.CONFIG["SS"])
+		data += self.PackBytes(self.CONFIG["MISO"])
+		data += self.PackBytes(self.CONFIG["MOSI"])
 		return data
 
 class GPIO(Gumbi):
