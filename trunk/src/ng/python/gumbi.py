@@ -993,10 +993,10 @@ if __name__ == '__main__':
 #		time.sleep(10)
 #		gpio.Close()
 
-		flash = ParallelFlash(config="config/39SF020.conf")
-		print "Writing flash..."
-		flash.WriteChip(0, "\xcc")
-		flash.Close()
+#		flash = ParallelFlash(config="config/39SF020.conf")
+#		print "Writing flash..."
+#		flash.WriteChip(0, "\xcc")
+#		flash.Close()
 
 		flash = ParallelFlash(config="config/39SF020.conf")
 		print "Reading flash..."

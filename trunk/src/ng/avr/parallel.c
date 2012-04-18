@@ -374,6 +374,9 @@ void parallel_write(void)
 				/* Get the next byte/word to write */
 				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
 
+				output_enable(FALSE);
+				write_enable(FALSE);
+
 				/* Any write operation must be preceeded by a set of commands that prepare the chip for writing */
 				for(k=0; k<hconfig.num_commands; )
 				{
@@ -382,17 +385,13 @@ void parallel_write(void)
 					snprintf((char *) &buf, sizeof(buf), "Sending command 0x%lX: 0x%lX", hconfig.commands[k], hconfig.commands[k+1]);
 					write_string((char *) &buf);
 
-					output_enable(TRUE);
-					write_enable(FALSE);
-					_delay_us(hconfig.toe);
-
 					/* Commands are in the form <addr><data><addr><data>... */
 					set_address(hconfig.commands[k++]);
 					set_data(hconfig.commands[k++]);
 
-					output_enable(FALSE);
 					write_enable(TRUE);
 					_delay_us(hconfig.toe);
+					write_enable(FALSE);
 				}				
 
 				while(is_busy()) { }
@@ -400,14 +399,11 @@ void parallel_write(void)
 				snprintf((char *) &buf, sizeof(buf), "Sending data 0x%lX: 0x%X", hconfig.addr, pbyte);
 				write_string((char *) &buf);
 
-				output_enable(TRUE);
-				write_enable(FALSE);
 				_delay_us(hconfig.toe);
 
 				set_address(hconfig.addr+i);
 				set_data(pbyte);
 
-				output_enable(FALSE);
 				write_enable(TRUE);
 				_delay_us(hconfig.toe);
 				write_enable(FALSE);
