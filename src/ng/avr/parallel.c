@@ -10,6 +10,7 @@ void parallel(void)
 
 	while(loop)
 	{
+		loop = FALSE;
 		/* Read in parallel configuration data */
 		read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
@@ -34,8 +35,9 @@ void parallel(void)
 			/* Acknowledge successful receipt of valid configuration data */
 			ack();
 
-			/* Configure all address, Vcc and GND pins as outputs */
+			/* Configure all address, data, Vcc and GND pins as outputs */
 			configure_pins_as_outputs(hconfig.addr_pins, hconfig.num_addr_pins);
+			configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
 			configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
 			configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
@@ -76,25 +78,19 @@ void parallel(void)
 			switch(hconfig.action)
 			{
 				case READ:
-					/* When reading, data pins are inputs to us */
-					configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
-					commit_ddr_settings();
 					/* Acknowledge receipt of the action */
 					ack();
 					parallel_read();
 					break;
 				case WRITE:
-					/* When writing, data pins are outputs from us */
-					configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
-					commit_ddr_settings();
 					/* Acknowledge receipt of the action */
 					ack();
 					parallel_write();
 					break;
 				case EXIT:
-					loop = FALSE;
 					/* Acknowledge receipt of the action */
 					ack();
+					loop = FALSE;
 					break;
 				default:
 					/* Bad action specified, respond with NACK and a reason string */
@@ -327,15 +323,16 @@ void write_data_to_addr(uint32_t address, uint16_t data)
 	/* Wait until the target chip is ready to receive commands */
 	while(is_busy()) { }
 
-
-	/* Set the address and data lines  */
+	/* Set the address lines  */
 	set_address(address);
-	set_data(data);
 	
 	/* Assert the write enable pin and wait for the chip to read the address pins */
 	write_enable(TRUE);
 	_delay_us(hconfig.toe);
-					
+	
+	/* Set the data lines */				
+	set_data(data);
+
 	/* Release the write enable pin and wait for the chip to read the data pins */
 	write_enable(FALSE);
 	_delay_us(hconfig.toe);
@@ -354,6 +351,9 @@ void parallel_read(void)
 		/* Commands are stored in the format: <addr>:<data>,<addr>:<data>... */
 		write_data_to_addr(hconfig.commands[i], hconfig.commands[i+1]);
 	}
+			
+	/* Make sure data pins are set as inputs */
+	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
 
 	for(i=0; i<hconfig.count; i+=read_size)
 	{
