@@ -245,50 +245,39 @@ uint16_t read_data_pins(void)
 	return data;
 }
 
-/* Set the appropriate pins to represent the given address */
-void set_address(uint32_t address)
+/* Set the appropriate pins to represent the given data */
+void set_pins(uint32_t data, uint8_t pins[], uint8_t num_pins)
 {
 	uint8_t i = 0;
 
-	if(hconfig.num_addr_pins > 0)
+	if(num_pins > 0)
 	{
-		for(i=0; i<hconfig.num_addr_pins; i++)
-		{
-			if((address | (1 << i)) == address)
-			{
-				set_pin_high(hconfig.addr_pins[i]);
-			}
-			else
-			{
-				set_pin_low(hconfig.addr_pins[i]);
-			}
-		}
-	
-		commit_address_settings();
-	}
-}
-
-/* Set the appropriate pins to represent the given data byte/word */
-void set_data(uint16_t data)
-{
-	uint8_t i = 0;
-
-	if(hconfig.num_data_pins > 0)
-	{
-		for(i=0; i<hconfig.num_data_pins; i++)
+		for(i=0; i<num_pins; i++)
 		{
 			if((data | (1 << i)) == data)
 			{
-				set_pin_high(hconfig.data_pins[i]);
+				set_pin_high(pins[i]);
 			}
 			else
 			{
-				set_pin_low(hconfig.data_pins[i]);
+				set_pin_low(pins[i]);
 			}
 		}
-
-		commit_data_settings();
 	}
+}
+
+/* Set the address pins to represent the given address */
+void set_address(uint32_t address)
+{
+	set_pins(address, hconfig.address_pins, hconfig.num_addr_pins);
+	commit_address_settings();
+}
+
+/* Set the data pins to represent the given data byte/word */
+void set_data(uint16_t data)
+{
+	set_pins((uint32_t) data, hconfig.data_pins, hconfig.num_data_pins);
+	commit_data_settings();
 }
 
 /* Returns the data size, in bytes, based on the number of data pins specified in hconfig */
@@ -325,6 +314,7 @@ void write_data_to_addr(uint32_t address, uint16_t data)
 
 	/* Set the address lines  */
 	set_address(address);
+	_delay_us(hconfig.toe);
 	
 	/* Assert the write enable pin and wait for the chip to read the address pins */
 	write_enable(TRUE);
@@ -332,6 +322,7 @@ void write_data_to_addr(uint32_t address, uint16_t data)
 	
 	/* Set the data lines */				
 	set_data(data);
+	_delay_us(hconfig.toe);
 
 	/* Release the write enable pin and wait for the chip to read the data pins */
 	write_enable(FALSE);
