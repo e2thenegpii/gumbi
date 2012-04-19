@@ -17,11 +17,11 @@ def bits2pins(value, pins):
 def wait(msg):
 	print msg
 
-	try:
-		while True:
-			sleep(1)
-	except:
-		pass
+#	try:
+#		while True:
+#			sleep(1)
+#	except:
+#		pass
 
 vdd = 32
 we = 31

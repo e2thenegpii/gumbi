@@ -55,8 +55,7 @@ def addrdata(byte, address):
 addrdata(0xaa, 0x5555)
 addrdata(0x55, 0x2aaa)
 addrdata(0xa0, 0x5555)
-addrdata(0x00, 0x0000)
+addrdata(0x66, 0x0003)
 sleep(1)
-io.PinLow(we)
 
 io.Close()

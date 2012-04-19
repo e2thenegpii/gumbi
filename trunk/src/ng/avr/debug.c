@@ -91,7 +91,6 @@ void gpio(void)
 				break;
 			case EXIT:
 				loop = FALSE;
-				ack();
 				break;
 			default:
 				nack();

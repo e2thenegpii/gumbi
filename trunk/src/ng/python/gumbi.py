@@ -160,17 +160,16 @@ class Gumbi:
 	TOE_DEFAULT = 0
 
 	NOP = 0
-	PFLASH = 1
-	SPIFLASH = 2
-	SPIPROM = 3
-	I2CPROM = 4
-	PING = 5
-	INFO = 6
-	SPEEDTEST = 7
-	GPIO = 8
-	GID = 9
-	XFER = 10
-	PINCOUNT = 11
+	PARALLEL = 1
+	SPI = 2
+	I2CPROM = 3
+	PING = 4
+	INFO = 5
+	SPEEDTEST = 6
+	GPIO = 7
+	GID = 8
+	XFER = 9
+	PINCOUNT = 10
 
 	EXIT = 0
 	READ = 1
@@ -203,8 +202,7 @@ class Gumbi:
 		"""
 		Exits the Gumbi board from GPIO mode.
 		"""
-		self.Write(self.PackBytes([self.EXIT, 0]))
-		self.ReadAck()
+		self.WriteBytes(self.PackBytes([self.EXIT, 0]))
 
 	def _close(self):
 		"""
@@ -316,7 +314,9 @@ class Gumbi:
 		"""
 		line = self.ReadText() 
 		if line != self.ACK:
-			print "Instead of ack, I got:", line
+			print "Instead of ack, I got:"
+			for i in line:
+				print "0x%X" % ord(i)
 			raise Exception(self.ReadText())
 		return True
 
@@ -324,28 +324,28 @@ class Gumbi:
 		"""
 		Puts the Gumbi board in the specified mode.
 		"""
-		self.Write(self.PackByte(mode))
+		self.WriteBytes(self.PackByte(mode))
 		self.ReadAck()
 
 	def ReadText(self):
 		"""
 		Reads and returns a new-line terminated string from the Gumbi board.
 		"""
-		return self.Read().strip(self.NULL)
+		return self.ReadBytes().strip(self.NULL)
 
-	def Read(self, n=None):
+	def ReadBytes(self, n=None):
 		"""
 		Reads n bytes of data from the Gumbi board. Default n == 1.
 		"""
 		return self.hid.recv(n)
 
-	def Write(self, data):
+	def WriteBytes(self, data):
 		"""
 		Sends data to the Gumbi board and verifies acknowledgement.
 		"""
 		self.hid.send(data)
 
-	def ReadChip(self, start, count):
+	def Read(self, start, count):
 		"""
 		Reads a number of bytes from the target chip, beginning at the given start address.
 
@@ -354,16 +354,18 @@ class Gumbi:
 
 		Returns a string of bytes read from the chip.
 		"""
-		self.Write(self.config.Pack(self.READ, start, count))
-		
+		self.WriteBytes(self.config.Pack(self.READ, start, count))
+	
+		# Receive the ACK indicating that the command was accepted	
+		self.ReadAck()
 		# Receive the ACK indicating the provided configuration is valid
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
-		
-		return self.Read(count)
+	
+		return self.ReadBytes(count)
 
-	def WriteChip(self, start, data):
+	def Write(self, start, data):
 		"""
 		Writes a number of bytes to the target chip, beginning at the given start address.
 		NOT CURRENTLY IMPLEMENTED.
@@ -373,14 +375,15 @@ class Gumbi:
 
 		Returns True on success, raises and exception on failure.
 		"""
-		self.Write(self.config.Pack(self.WRITE, start, len(data)))
+		self.WriteBytes(self.config.Pack(self.WRITE, start, len(data)))
 		# Receive the ACK indicating the provided configuration is valid
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
+		self.ReadAck()
 	
 		# TODO: Send data 64 bytes at a time until all data is sent	
-		self.Write(data)
+		self.WriteBytes(data)
 
 		# DEBUG
 		while True:
@@ -420,7 +423,7 @@ class PinCount(Gumbi):
 		Returns the number of available I/O pins on the Gumbi board.
 		"""
 		self.SetMode(self.PINCOUNT)
-		return ord(self.Read()[0])
+		return ord(self.ReadBytes()[0])
 
 class Configuration(Gumbi):
 	"""
@@ -572,6 +575,7 @@ class Configuration(Gumbi):
 		"""
 		if commands is not None and self.CONFIG.has_key(commands):
 			self.CONFIG["COMMANDS"] = self.CONFIG[commands]
+		print "COMMANDS:", self.CONFIG["COMMANDS"]
 
 	def Pack(self, action, start, count, commands=[]):
 		"""
@@ -630,14 +634,14 @@ class GPIO(Gumbi):
 		"""
 		Exits the Gumbi board from GPIO mode.
 		"""
-		self.Write(self.PackBytes([self.EXIT, 0]))
+		self.WriteBytes(self.PackBytes([self.EXIT, 0]))
 		self.ReadAck()
 
 	def PinHigh(self, pin):
 		"""
 		Sets the specified pin high.
 		"""
-		self.Write(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
+		self.WriteBytes(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
 		self.ReadAck()
 
 	def PinsHigh(self, pins):
@@ -651,7 +655,7 @@ class GPIO(Gumbi):
 		"""
 		Sets the specified pin low.
 		"""
-		self.Write(self.PackBytes([self.LOW, self.Pin2Real(pin)]))
+		self.WriteBytes(self.PackBytes([self.LOW, self.Pin2Real(pin)]))
 		self.ReadAck()
 
 	def PinsLow(self, pins):
@@ -666,8 +670,8 @@ class GPIO(Gumbi):
 		Reads and returns the value of the specified pin.
 		High == 1, Low == 0.
 		"""
-		self.Write(self.PackBytes([self.READ, self.Pin2Real(pin)]))
-		return ord(self.Read()[0])
+		self.WriteBytes(self.PackBytes([self.READ, self.Pin2Real(pin)]))
+		return ord(self.ReadBytes()[0])
 
 	def ReadPins(self, pins):
 		"""
@@ -787,8 +791,8 @@ class SpeedTest(Gumbi):
 		"""
 		Sends the byte count and reads the data. For internal use only.
 		"""
-		self.Write(self.Pack32(self.count))
-		self.data = self.Read(self.count)
+		self.WriteBytes(self.Pack32(self.count))
+		self.data = self.ReadBytes(self.count)
 
 	def Go(self):
 		"""
@@ -833,8 +837,8 @@ class TransferTest(Gumbi):
 		"""
 		Performs the actual data transfer. For internal use only.
 		"""
-		self.Write(self.DUMMY_BYTE * self.XFER_SIZE)
-		self.data = self.Read(self.XFER_SIZE)
+		self.WriteBytes(self.DUMMY_BYTE * self.XFER_SIZE)
+		self.data = self.ReadBytes(self.XFER_SIZE)
 
 	def Go(self):
 		"""
@@ -922,23 +926,16 @@ class ParallelFlash(Gumbi):
 		Gumbi.__init__(self)
 		self.SetMode(self.PARALLEL)
 
-	def id(self):
-		self.config.SetCommand("ID")
-		data = self.ReadChip(0x00, 2)
-		vendor = ord(data[0])
-		product = ord(data[1])
-		return (vendor, product)
-
 	def read(self, address, count):
-		return self.ReadChip(address, count)
+		return self.Read(address, count)
 
 	def write(self, address, data):
 		self.config.SetCommand("WRITE")
-		return self.WriteChip(address, data)
+		return self.Write(address, data)
 
 	def erase(self):
 		self.config.SetCommand("ERASE")
-		self.WriteChip(0x00, "\xFF")
+		self.Write(0x00, "\xFF")
 
 def SPIFlash(Gumbi):
 	"""
@@ -988,10 +985,10 @@ def I2CEEPROM(Gumbi):
 if __name__ == '__main__':
 #	try:
 
-		info = Info()
-		for line in info.Info():
-			print line
-		info.Close()
+#		info = Info()
+#		for line in info.Info():
+#			print line
+#		info.Close()
 
 #		p = PinCount()
 #		print "Pin Count: %d" % p.Count()
@@ -1014,19 +1011,22 @@ if __name__ == '__main__':
 #		time.sleep(10)
 #		gpio.Close()
 
-#		flash = ParallelFlash(config="config/39SF020.conf")
-#		print "Writing flash..."
-#		flash.WriteChip(0, "\xcc")
-#		flash.Close()
+		erase = False
 
-		flash = ParallelFlash(config="config/39SF020.conf")
-		print "Reading flash..."
-		flash.StartTimer()
-		data = flash.ReadChip(0, 1024)
-		t = flash.StopTimer()
-		flash.Close()
-		print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
-		open("flash.bin", "w").write(data)
+		if erase:
+			flash = ParallelFlash(config="config/39SF020.conf")
+			print "Erasing flash..."
+			flash.erase()
+			flash.Close()
+		else:
+			flash = ParallelFlash(config="config/39SF020.conf")
+			print "Reading flash..."
+			flash.StartTimer()
+			data = flash.Read(0, 1024)
+			t = flash.StopTimer()
+			flash.Close()
+			print "Read 0x%X bytes of flash data in %f seconds" % (len(data), t)
+			open("flash.bin", "w").write(data)
 
 #	except Exception, e:
 ####		print "Error:", e
