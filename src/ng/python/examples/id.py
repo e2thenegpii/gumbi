@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from gumbi import *
+from gpio import *
 from time import sleep
 
 def bits2pins(value, pins):
