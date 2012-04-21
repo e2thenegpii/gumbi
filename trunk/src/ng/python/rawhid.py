@@ -10,7 +10,7 @@ class RawHID:
 	INTERFACE = 0
 
 	BLOCK_SIZE = 64
-	TIMEOUT = 1000 # milliseconds
+	TIMEOUT = 100000 # milliseconds
 	CONNECT_RETRIES = 3
 
 	def __init__(self, verbose=False):
