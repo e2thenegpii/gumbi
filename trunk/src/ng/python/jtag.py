@@ -1,4 +1,5 @@
-from gpio import *
+from gumbi import *
+from modes import GPIO
 
 class JTAG(GPIO):
 	"""

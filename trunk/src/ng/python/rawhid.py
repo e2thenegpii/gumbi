@@ -10,7 +10,7 @@ class RawHID:
 	INTERFACE = 0
 
 	BLOCK_SIZE = 64
-	TIMEOUT = 10000 # milliseconds
+	TIMEOUT = 1000 # milliseconds
 	CONNECT_RETRIES = 3
 
 	def __init__(self, verbose=False):
@@ -19,7 +19,6 @@ class RawHID:
 		self.rep = self.READ_ENDPOINT
 		self.wep = self.WRITE_ENDPOINT
 
-	# TODO: Need to flush USB data for the device once it's opened so old data doesn't screw us up
 	def open(self, vid, pid, rep=None, wep=None):
 		"""
 		Initialize libhid and connect to USB device.
@@ -58,6 +57,16 @@ class RawHID:
 			raise Exception("hid_init() failed with error code: %d\n" % hid_ret)
 
 		return retval
+
+	def flush(self):
+		"""
+		Flushes the HID receive data.
+		"""
+		try:
+			while True:
+				self.recv()
+		except:
+			return
 
 	def close(self):
 		"""

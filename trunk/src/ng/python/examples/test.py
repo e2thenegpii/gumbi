@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from gpio import *
+from gumbi import *
+from modes import GPIO
 from time import sleep
 
 def bits2pins(value, pins):
