@@ -21,9 +21,5 @@ data1 = pflash.ReadChip(0, 1024)
 data2 = pflash.ReadChip(0, 1024)
 pflash.Close()
 
-if data1 == data2:
-	print "Yay!"
-else:
-	print "Fuck!"
-
 open("flash.bin", "w").write(data1)
+open("flash2.bin", "w").write(data2)

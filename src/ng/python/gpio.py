@@ -12,6 +12,12 @@ class GPIO(Gumbi):
 		Gumbi.__init__(self)
 		self.SetMode(self.GPIO)
 
+	def _exit(self):
+		"""
+		Exits GPIO mode.
+		"""
+		self.WriteBytes(self.PackBytes([self.EXIT, 0]))
+
 	def PinHigh(self, pin):
 		"""
 		Sets the specified pin high.
