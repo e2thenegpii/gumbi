@@ -10,7 +10,6 @@ void parallel(void)
 
 	while(loop)
 	{
-		loop = FALSE;
 		/* Read in parallel configuration data */
 		read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
@@ -246,7 +245,7 @@ uint16_t read_data_pins(void)
 }
 
 /* Set the appropriate pins to represent the given data */
-void set_pins(uint32_t data, uint8_t pins[], uint8_t num_pins)
+void data2pins(uint32_t data, uint8_t pins[], uint8_t num_pins)
 {
 	uint8_t i = 0;
 
@@ -269,14 +268,14 @@ void set_pins(uint32_t data, uint8_t pins[], uint8_t num_pins)
 /* Set the address pins to represent the given address */
 void set_address(uint32_t address)
 {
-	set_pins(address, hconfig.address_pins, hconfig.num_addr_pins);
+	data2pins(address, hconfig.addr_pins, hconfig.num_addr_pins);
 	commit_address_settings();
 }
 
 /* Set the data pins to represent the given data byte/word */
 void set_data(uint16_t data)
 {
-	set_pins((uint32_t) data, hconfig.data_pins, hconfig.num_data_pins);
+	data2pins((uint32_t) data, hconfig.data_pins, hconfig.num_data_pins);
 	commit_data_settings();
 }
 
@@ -303,28 +302,18 @@ uint8_t data_size(void)
 /* Writes the given data to the specified address on the target chip */
 void write_data_to_addr(uint32_t address, uint16_t data)
 {
-	/* DEBUG */
-	uint8_t buf[BLOCK_SIZE] = { 0 };
-	snprintf((char *) &buf, sizeof(buf), "0x%lX = 0x%X", address, data);
-	write_string((char *) &buf);
-	/* END DEBUG */
-
 	/* Wait until the target chip is ready to receive commands */
 	while(is_busy()) { }
 
-	/* Set the address lines  */
+	/* Setup the address and data lines  */
 	set_address(address);
-	_delay_us(hconfig.toe);
-	
-	/* Assert the write enable pin and wait for the chip to read the address pins */
-	write_enable(TRUE);
-	_delay_us(hconfig.toe);
-	
-	/* Set the data lines */				
 	set_data(data);
 	_delay_us(hconfig.toe);
 
-	/* Release the write enable pin and wait for the chip to read the data pins */
+	/* Toggle the write enable pin */
+	write_enable(TRUE);
+	_delay_us(hconfig.toe);
+	
 	write_enable(FALSE);
 	_delay_us(hconfig.toe);
 }
@@ -345,6 +334,7 @@ void parallel_read(void)
 			
 	/* Make sure data pins are set as inputs */
 	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
+	commit_ddr_settings();
 
 	for(i=0; i<hconfig.count; i+=read_size)
 	{
@@ -393,7 +383,7 @@ void parallel_write(void)
 			/* Read in the data to be written to the chip */
 			read_data((uint8_t *) &data, sizeof(data));
 
-			/* Loop through this block of data, writing it sequentially to the chip, starting at address hconfig.addr */	
+			/* Loop through this block of data, writing it sequentially to the chip, starting at address hconfig.addr */
 			for(j=0; i<hconfig.count && j<sizeof(data); i+=write_size, j+=write_size)
 			{
 				/* Get the next byte/word to write */
@@ -410,8 +400,8 @@ void parallel_write(void)
 				write_data_to_addr(hconfig.addr+i, pbyte);
 				_delay_us(hconfig.tbp);
 			}
-			
-			/* Acknowledge when we've finished processing a block of data so the host knows we're ready for more */	
+
+			/* Acknowledge when we've finished processing a block of data so the host knows we're ready for more */
 			ack();
 		}
 	}

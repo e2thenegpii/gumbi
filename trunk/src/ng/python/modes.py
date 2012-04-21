@@ -14,19 +14,14 @@ class Parallel(Gumbi):
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
 		self.SetMode(self.PARALLEL)
+	
+	def _exit(self):
+		"""
+		Exit parallel mode.
+		"""
+		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
 
-	def ReadChip(self, address, count):
-		return self.Read(address, count)
-
-	def WriteChip(self, address, data):
-		self.config.SetCommand("WRITE")
-		return self.Write(address, data)
-
-	def EraseChip(self):
-		self.config.SetCommand("ERASE")
-		self.Write(0x00, "\xFF")
-
-def SPI(Gumbi):
+class SPI(Gumbi):
 	"""
 	Class for interfacing with SPI devices.
 	"""
@@ -40,7 +35,13 @@ def SPI(Gumbi):
 		Gumbi.__init__(self)
 		self.SetMode(self.SPI)
 
-def I2C(Gumbi):
+	def _exit(self):
+		"""
+		Exit SPI mode.
+		"""
+		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
+
+class I2C(Gumbi):
 	"""
 	Class for interfacing with I2C devices.
 	"""
@@ -54,4 +55,11 @@ def I2C(Gumbi):
 		self.config = Configureation(config, self.MODE)
 		Gumbi.__init__(self)
 		self.SetMode(self.I2C)
+
+	def _exit(self):
+		"""
+		Exit I2C mode.
+		"""
+		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
+
 

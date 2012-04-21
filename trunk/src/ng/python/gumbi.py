@@ -63,50 +63,16 @@ class Gumbi:
 
 	def _exit(self):
 		"""
-		Exits the Gumbi board from GPIO mode.
+		Place holder _exit method. This should be overridden by the subclass so that the
+		appropriate exit message may be sent to exit the given mode implemented by the subclass.
 		"""
-		self.WriteBytes(self.PackBytes([self.EXIT, 0]))
+		return None
 
 	def _close(self):
 		"""
 		Closes the connection with the Gumbi board.
 		"""
 		self.hid.close()
-
-	def ParseConfigLine(self, line):
-		"""
-		Parses a configuration file line.
-
-		@line - A line from the configuration file.
-
-		Returns the (key, value) pair from the line.
-		"""
-		key = value = None
-		line = line.split('#')[0]
-		if '=' in line:
-			(key, value) = line.split('=', 1)
-			key = key.strip().upper()
-			# Multple value delimiters are: ',', ';', ':'
-			value = value.strip().upper().replace(";", ",").replace(":", ",")
-			if ',' in value:
-				value = value.split(',')
-				for i in range(0, len(value)):
-					try:
-						value[i] = int(value[i])
-					except:
-						try:
-							value[i] = int(value[i], 16)
-						except:
-							pass
-			else:
-				try:
-					value = [int(value)]
-				except:
-					try:
-						value = [int(value, 16)]
-					except:
-						pass
-		return (key, value)
 
 	def StartTimer(self):
 		"""
@@ -219,8 +185,6 @@ class Gumbi:
 		"""
 		self.WriteBytes(self.config.Pack(self.READ, start, count))
 	
-		# Receive the ACK indicating that the command was accepted	
-		self.ReadAck()
 		# Receive the ACK indicating the provided configuration is valid
 		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
@@ -241,8 +205,6 @@ class Gumbi:
 		self.WriteBytes(self.config.Pack(self.WRITE, start, len(data)))
 		# Receive the ACK indicating the provided configuration is valid
 		self.ReadAck()
-		# Receive the ACK indicating the provided configuration is valid
-		self.ReadAck()
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
 	
@@ -251,6 +213,13 @@ class Gumbi:
 		self.ReadAck()
 
 		return True
+
+	def PinCount(self):
+		"""
+		Returns the number of available I/O pins on the Gumbi board.
+		"""
+		self.SetMode(self.PINCOUNT)
+		return ord(self.ReadBytes()[0])
 
 	def Reset(self):
 		"""
@@ -266,13 +235,6 @@ class Gumbi:
 		"""
 		self._exit()
 		return self._close()
-
-	def PinCount(self):
-		"""
-		Returns the number of available I/O pins on the Gumbi board.
-		"""
-		self.SetMode(self.PINCOUNT)
-		return ord(self.ReadBytes()[0])
 
 
 class Configuration(Gumbi):
@@ -317,9 +279,47 @@ class Configuration(Gumbi):
 		self.num_pins = pins
 		self._parse_config()
 		self.package_pins = 0
+		self.pins_shifted = False
 
 		if self.num_pins is None:
+			Gumbi.__init__(self)
 			self.num_pins = self.PinCount()
+			self.Close()
+
+	def ParseConfigLine(self, line):
+		"""
+		Parses a configuration file line.
+
+		@line - A line from the configuration file.
+
+		Returns the (key, value) pair from the line.
+		"""
+		key = value = None
+		line = line.split('#')[0]
+		if '=' in line:
+			(key, value) = line.split('=', 1)
+			key = key.strip().upper()
+			# Multple value delimiters are: ',', ';', ':'
+			value = value.strip().upper().replace(";", ",").replace(":", ",")
+			if ',' in value:
+				value = value.split(',')
+				for i in range(0, len(value)):
+					try:
+						value[i] = int(value[i])
+					except:
+						try:
+							value[i] = int(value[i], 16)
+						except:
+							pass
+			else:
+				try:
+					value = [int(value)]
+				except:
+					try:
+						value = [int(value, 16)]
+					except:
+						pass
+		return (key, value)
 
 	def _pin2real(self, pin):
 		"""
@@ -338,22 +338,24 @@ class Configuration(Gumbi):
 		"""
 		Shifts all pin numbers to be the appropriate pin number on the Gumbi board.
 		"""
-		self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
-		self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
-		self.CONFIG["VCC"] = self._convert_pin_array(self.CONFIG["VCC"])
-		self.CONFIG["GND"] = self._convert_pin_array(self.CONFIG["GND"])
-		self.CONFIG["CE"] = self._convert_control_pin(self.CONFIG["CE"])
-		self.CONFIG["WE"] = self._convert_control_pin(self.CONFIG["WE"])
-		self.CONFIG["OE"] = self._convert_control_pin(self.CONFIG["OE"])
-		self.CONFIG["BE"] = self._convert_control_pin(self.CONFIG["BE"])
-		self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
-		self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
-		self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
-		self.CONFIG["SDA"] = self._convert_control_pin(self.CONFIG["SDA"])
-		self.CONFIG["CLK"] = self._convert_control_pin(self.CONFIG["CLK"])
-		self.CONFIG["SS"] = self._convert_control_pin(self.CONFIG["SS"])
-		self.CONFIG["MISO"] = self._convert_control_pin(self.CONFIG["MISO"])
-		self.CONFIG["MOSI"] = self._convert_control_pin(self.CONFIG["MOSI"])
+		if not self.pins_shifted:
+			self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
+			self.CONFIG["DATA"] = self._convert_pin_array(self.CONFIG["DATA"])
+			self.CONFIG["VCC"] = self._convert_pin_array(self.CONFIG["VCC"])
+			self.CONFIG["GND"] = self._convert_pin_array(self.CONFIG["GND"])
+			self.CONFIG["CE"] = self._convert_control_pin(self.CONFIG["CE"])
+			self.CONFIG["WE"] = self._convert_control_pin(self.CONFIG["WE"])
+			self.CONFIG["OE"] = self._convert_control_pin(self.CONFIG["OE"])
+			self.CONFIG["BE"] = self._convert_control_pin(self.CONFIG["BE"])
+			self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
+			self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
+			self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
+			self.CONFIG["SDA"] = self._convert_control_pin(self.CONFIG["SDA"])
+			self.CONFIG["CLK"] = self._convert_control_pin(self.CONFIG["CLK"])
+			self.CONFIG["SS"] = self._convert_control_pin(self.CONFIG["SS"])
+			self.CONFIG["MISO"] = self._convert_control_pin(self.CONFIG["MISO"])
+			self.CONFIG["MOSI"] = self._convert_control_pin(self.CONFIG["MOSI"])
+			self.pins_shifted = True
 
 	def _convert_control_pin(self, cp):
 		"""
@@ -423,9 +425,8 @@ class Configuration(Gumbi):
 		"""
 		if commands is not None and self.CONFIG.has_key(commands):
 			self.CONFIG["COMMANDS"] = self.CONFIG[commands]
-		print "COMMANDS:", self.CONFIG["COMMANDS"]
 
-	def Pack(self, action, start, count, commands=[]):
+	def Pack(self, action, start, count):
 		"""
 		Packs the configuration data into a string of bytes suitable for transmission to the Gumbi board.
 		

@@ -1,8 +1,11 @@
 #include "debug.h"
 #include "mcp23s17.h"
+#include <util/delay.h>
 
+/* Handler for NOP mode. Do nothing. */
 void nop(void) { }
 
+/* Handler for ID mode. Return the board ID string */
 void id(void)
 {
 	write_string(BOARD_ID);
@@ -63,8 +66,8 @@ void xfer_test(void)
 /* Handler for GPIO test mode. */
 void gpio(void)
 {
-	uint8_t loop = TRUE, c = 0;
 	struct io cmd = { 0 };
+	uint8_t loop = TRUE, c = 0;
 
 	mcp23s17_enable();
 
