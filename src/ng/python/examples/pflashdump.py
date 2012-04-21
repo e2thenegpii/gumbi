@@ -12,14 +12,14 @@ class ParallelFlash(Parallel):
                 return self.Write(address, data)
 
         def EraseChip(self):
+		# Erasing doesn't work, may need to use GPIO or add an action to the AVR code
                 self.config.SetCommand("ERASE")
                 self.Write(0x00, "\xFF")
 
+if __name__ == "__main__":
+	pflash = ParallelFlash(config="config/39SF020.conf")
+	pflash.WriteChip(0, "\xca\xcb\xcc")
+	data = pflash.ReadChip(0, 1024)
+	pflash.Close()
 
-pflash = ParallelFlash(config="config/39SF020.conf")
-data1 = pflash.ReadChip(0, 1024)
-data2 = pflash.ReadChip(0, 1024)
-pflash.Close()
-
-open("flash.bin", "w").write(data1)
-open("flash2.bin", "w").write(data2)
+	open("flash.bin", "w").write(data)
