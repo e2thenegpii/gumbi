@@ -29,6 +29,20 @@ void nack(void)
 	write_string(NACK);
 }
 
+/* Delay for x number of seconds */
+void sleep(uint8_t seconds)
+{
+	uint8_t i = 0, j = 0;
+
+	for(i=0; i<seconds; i++)
+	{
+		for(j=0; j<10; j++)
+		{
+			_delay_ms(100);
+		}
+	}
+}
+
 /* Read size bytes of data into buffer from USB HID endpoint */
 void read_data(uint8_t *buffer, uint32_t size)
 {

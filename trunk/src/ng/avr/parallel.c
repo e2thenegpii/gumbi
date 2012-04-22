@@ -300,16 +300,6 @@ uint8_t data_size(void)
 	return size;
 }
 
-void sleep(uint8_t time)
-{
-	uint8_t i = 0;
-
-	for(i=0; i<time; i++)
-	{
-		_delay_ms(1000);
-	}
-}
-
 /* Writes the given data to the specified address on the target chip */
 void write_data_to_addr(uint32_t address, uint16_t data)
 {
@@ -340,7 +330,7 @@ void execute_commands(void)
 		write_data_to_addr(hconfig.commands[i], hconfig.commands[i+1]);
 	}
 
-	_delay_us(hconfig.cmd_delay);
+	sleep(hconfig.cmd_delay);
 }
 
 /* Read in the specified number of bytes from the chip and send them back to the host */

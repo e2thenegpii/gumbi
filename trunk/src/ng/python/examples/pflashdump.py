@@ -4,8 +4,8 @@ from modes import Parallel
 
 class ParallelFlash(Parallel):
 
-	# Default chip erase time in uS
-	DEFAULT_TSCE = 10000000
+	# Default chip erase time in seconds
+	DEFAULT_TSCE = 1
 
 	def ReadChip(self, address, count):
 		"""
@@ -39,8 +39,6 @@ class ParallelFlash(Parallel):
 		"""
                 self.config.SetCommand("ERASE")
 
-		#TODO: The maximum possible TSCE delay is only a few seconds.
-		#      Need a wrapper in the AVR code to handle londer delays for chip erases.
 		try:
 			self.config.CONFIG["CMDELAY"] = self.config.CONFIG["TSCE"]
 		except:
