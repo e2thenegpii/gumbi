@@ -18,6 +18,7 @@ class Gumbi:
 	UNUSED = 0xFF
 	NULL = "\x00"
 	DUMMY_BYTE = "\xFF"
+	BLOCK_SIZE = 64
 
 	TBP_DEFAULT = 25
 	TOE_DEFAULT = 0
@@ -52,7 +53,7 @@ class Gumbi:
 		"""
 		self.ts = 0
 		self.num_pins = 0
-		self.hid = RawHID()
+		self.hid = RawHID(bs=self.BLOCK_SIZE)
 		if new:
 			self._open()
 
@@ -209,9 +210,20 @@ class Gumbi:
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
 	
-		# TODO: Send data 64 bytes at a time until all data is sent	
-		self.WriteBytes(data)
-		self.ReadAck()
+		# Even though the RawHID class will chunk data into BLOCK_SIZE chunks for us,
+		# we do it ourselves in order to wait for the ACK after each block is processed.
+		tx = 0
+		while tx < len(data):
+			self.WriteBytes(data[tx:tx+self.BLOCK_SIZE])
+
+			# Wait for an ACK, ignoring timeout exceptions (writes could take a while)
+			while True:
+				try:
+					self.ReadAck()
+					tx += self.BLOCK_SIZE
+					break
+				except:
+					continue
 
 		return True
 
