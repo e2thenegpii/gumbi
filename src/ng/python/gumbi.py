@@ -39,6 +39,7 @@ class Gumbi:
 	WRITE = 2
 	HIGH = 3
 	LOW = 4
+	COMMAND = 5
 
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
@@ -214,6 +215,15 @@ class Gumbi:
 
 		return True
 
+	def ExecuteCommands(self):
+		"""
+		Runs the commands listed in self.config.CONFIG["COMMANDS"] without any further actions.
+		"""
+		self.WriteBytes(self.config.Pack(self.COMMAND, 0, 0))
+		self.ReadAck()
+		self.ReadAck()
+		return True
+
 	def PinCount(self):
 		"""
 		Returns the number of available I/O pins on the Gumbi board.
@@ -257,6 +267,7 @@ class Configuration(Gumbi):
 		"WP"		: [Gumbi.UNUSED, 0],
 		"RST"		: [Gumbi.UNUSED, 0],
 		"COMMANDS"	: [],
+		"CMDELAY"	: [0],
 		"SDA"		: [Gumbi.UNUSED, 0],
 		"CLK"		: [Gumbi.UNUSED, 0],
 		"SS"		: [Gumbi.UNUSED, 0],
@@ -443,6 +454,7 @@ class Configuration(Gumbi):
 		data += self.Pack32(count)
 		data += self.PackByte(self.CONFIG["TOE"][0])
 		data += self.PackByte(self.CONFIG["TBP"][0])
+		data += self.Pack32(self.CONFIG["CMDELAY"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))

@@ -61,6 +61,6 @@ addrdata(0x55, 0x2aaa)
 addrdata(0x10, 0x5555)
 
 sleep(1)
-io.PinLow(we)
+#io.PinLow(we)
 
 io.Close()

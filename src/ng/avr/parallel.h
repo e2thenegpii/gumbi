@@ -17,6 +17,7 @@ void commit_address_settings(void);
 void commit_data_settings(void);
 uint16_t read_data_pins(void);
 void write_data_to_addr(uint32_t address, uint16_t data);
+void execute_commands(void);
 void data2pins(uint32_t data, uint8_t pins[], uint8_t num_pins);
 void set_address(uint32_t address);
 void set_data(uint16_t data);
