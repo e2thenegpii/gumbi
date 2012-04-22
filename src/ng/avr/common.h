@@ -7,6 +7,7 @@
 #include <string.h>
 #include <avr/io.h>
 #include <avrlib/rawhid.h>
+#include <util/delay.h>
 
 #define BOARD_ID "GUMBI v1"
 
@@ -117,7 +118,7 @@ struct confdata
 	uint32_t count;				/* How many bytes? */
 	uint8_t toe;				/* How long to sleep when latching pins (uS) */
 	uint8_t tbp;				/* Byte program time (uS) */
-	uint32_t cmd_delay;			/* Period to delay (in uS) after writing commands listed in hconfig.commands */
+	uint8_t cmd_delay;			/* Period to delay (in seconds) after writing commands listed in hconfig.commands */
 	uint16_t num_addr_pins;
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;
@@ -157,6 +158,7 @@ void led_on(void);
 void led_off(void);
 void ack(void);
 void nack(void);
+void sleep(uint8_t seconds);
 uint8_t is_valid_pin(uint8_t p);
 void set_control_pin(struct ctrlpin p, uint8_t tf);
 void write_string(char *string);

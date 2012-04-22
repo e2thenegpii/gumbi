@@ -454,7 +454,7 @@ class Configuration(Gumbi):
 		data += self.Pack32(count)
 		data += self.PackByte(self.CONFIG["TOE"][0])
 		data += self.PackByte(self.CONFIG["TBP"][0])
-		data += self.Pack32(self.CONFIG["CMDELAY"][0])
+		data += self.PackByte(self.CONFIG["CMDELAY"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
 		data += self.Pack16(len(self.CONFIG["VCC"]))
