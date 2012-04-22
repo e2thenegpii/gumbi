@@ -77,17 +77,18 @@ void parallel(void)
 			switch(hconfig.action)
 			{
 				case READ:
-					/* Acknowledge receipt of the action */
 					ack();
 					parallel_read();
 					break;
 				case WRITE:
-					/* Acknowledge receipt of the action */
 					ack();
 					parallel_write();
 					break;
+				case COMMAND:
+					ack();
+					execute_commands();
+					break;
 				case EXIT:
-					/* Acknowledge receipt of the action */
 					ack();
 					loop = FALSE;
 					break;
@@ -328,6 +329,20 @@ void write_data_to_addr(uint32_t address, uint16_t data)
 	_delay_us(hconfig.toe);
 }
 
+/* Execute the address/data commands listed in hconfig.commands */
+void execute_commands(void)
+{
+	uint8_t i = 0;
+
+	for(i=0; i<hconfig.num_commands; i+=2)
+	{
+		/* Commands are stored in the format: <addr>:<data>,<addr>:<data>... */
+		write_data_to_addr(hconfig.commands[i], hconfig.commands[i+1]);
+	}
+
+	_delay_us(hconfig.cmd_delay);
+}
+
 /* Read in the specified number of bytes from the chip and send them back to the host */
 void parallel_read(void)
 {
@@ -336,12 +351,8 @@ void parallel_read(void)
 	uint8_t read_size = data_size();
 
 	/* Read operations may need to be preceeded by a set of commands that prepare the chip for reading */
-	for(i=0; i<hconfig.num_commands; i+=2)
-	{
-		/* Commands are stored in the format: <addr>:<data>,<addr>:<data>... */
-		write_data_to_addr(hconfig.commands[i], hconfig.commands[i+1]);
-	}
-			
+	execute_commands();
+	
 	/* Make sure data pins are set as inputs */
 	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
 	commit_ddr_settings();
@@ -380,7 +391,7 @@ void parallel_read(void)
 void parallel_write(void)
 {
 	uint16_t pbyte = 0;
-	uint32_t i = 0, j = 0, k = 0;
+	uint32_t i = 0, j = 0;
 	uint8_t data[BLOCK_SIZE] = { 0 };
 	uint8_t write_size = data_size();
 
@@ -400,11 +411,7 @@ void parallel_write(void)
 				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
 
 				/* Write operations may need to be preceeded by a set of commands that prepare the chip for writing */
-				for(k=0; k<hconfig.num_commands; k+=2)
-				{
-					/* Commands are stored in the format: <addr>:<data>,<addr>:<data>... */
-					write_data_to_addr(hconfig.commands[k], hconfig.commands[k+1]);
-				}				
+				execute_commands();
 
 				/* Write the specified byte/word to the next address, then wait for the write to complete */
 				write_data_to_addr(hconfig.addr+i, pbyte);

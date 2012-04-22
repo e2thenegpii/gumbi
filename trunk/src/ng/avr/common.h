@@ -80,7 +80,8 @@ enum actions
 	READ = 1,
 	WRITE = 2,
 	HIGH = 3,
-	LOW = 4
+	LOW = 4,
+	COMMAND = 5
 };
 
 struct pin
@@ -116,6 +117,7 @@ struct confdata
 	uint32_t count;				/* How many bytes? */
 	uint8_t toe;				/* How long to sleep when latching pins (uS) */
 	uint8_t tbp;				/* Byte program time (uS) */
+	uint32_t cmd_delay;			/* Period to delay (in uS) after writing commands listed in hconfig.commands */
 	uint16_t num_addr_pins;
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;

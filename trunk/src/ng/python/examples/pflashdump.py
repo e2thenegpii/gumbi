@@ -4,6 +4,9 @@ from modes import Parallel
 
 class ParallelFlash(Parallel):
 
+	# Default chip erase time in uS
+	DEFAULT_TSCE = 10000000
+
 	def ReadChip(self, address, count):
                 return self.Read(address, count)
 
@@ -12,13 +15,21 @@ class ParallelFlash(Parallel):
                 return self.Write(address, data)
 
         def EraseChip(self):
-		# Erasing doesn't work, may need to use GPIO or add an action to the AVR code
                 self.config.SetCommand("ERASE")
-                self.Write(0x00, "\xFF")
+
+		try:
+			self.config.CONFIG["CMDELAY"] = self.config.CONFIG["TSCE"]
+		except:
+			self.config.CONFIG["CMDELAY"] = [self.DEFAULT_TSCE]
+
+		# TODO: Why does ExecuteCommands need to be invoked twice for the erase to work?
+		self.ExecuteCommands()
+		self.ExecuteCommands()
+
+		return True
 
 if __name__ == "__main__":
 	pflash = ParallelFlash(config="config/39SF020.conf")
-	pflash.WriteChip(0, "\xca\xcb\xcc")
 	data = pflash.ReadChip(0, 1024)
 	pflash.Close()
 
