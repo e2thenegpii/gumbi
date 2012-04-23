@@ -4,7 +4,9 @@
 /* Handler for GPIO mode. */
 void gpio(void)
 {
-	uint8_t loop = TRUE, i = 0, c = 0;
+	uint8_t loop = TRUE, i = 0, index = 0;
+	uint8_t errbuf[BLOCK_SIZE] = { 0 };
+	uint8_t rx[BLOCK_SIZE] = { 0 };
 
 	mcp23s17_enable();
 
@@ -26,20 +28,27 @@ void gpio(void)
 					break;
 				case READ:
 					configure_pin_immediate(hgpio.cmd[i].pin, 'r');
-					c = get_pin(hgpio.cmd[i].pin);
-					write_data((uint8_t *) &c, 1);
+					rx[index++] = get_pin(hgpio.cmd[i].pin);
+					//write_data((uint8_t *) &c, 1);
 					break;
 				case EXIT:
 					loop = FALSE;
 					break;
 				default:
+					snprintf((char *) &errbuf, sizeof(errbuf), "The specified GPIO action 0x%X (%d/%d) is not supported", hgpio.cmd[i].action, i, hgpio.num_cmd);
 					nack();
-					write_string("The specified GPIO action is not supported");
+					write_string((char *) &errbuf);
 					break;
 			}
 		}
 
 		ack();
+
+		if(index > 0)
+		{
+			write_data((uint8_t *) &rx, index);
+			index = 0;
+		}
 	}
 	
 	mcp23s17_disable();

@@ -97,9 +97,9 @@ class GPIO(Gumbi):
 		Builds a command from the specified command code and pin number.
 		Buffers data if buffer is set to True.
 		"""
-		self.BUFFER += self.PackBytes(cmd, pin)
+		self.BUFFER += self.PackBytes([cmd, pin])
 
-		if not buffer or len(self.BUFFER) == MAX_GPIO_BUFFER:
+		if not buffer or len(self.BUFFER) == self.MAX_GPIO_BUFFER:
 			self.FlushBuffer()
 
 	def _exit(self):
@@ -112,7 +112,7 @@ class GPIO(Gumbi):
 		"""
 		Flushes the GPIO data buffer.
 		"""
-		if len(self.BUFFER) > 0):
+		if len(self.BUFFER) > 0:
 			repeat = 0
 			num_cmd = len(self.BUFFER) / 2
 
@@ -153,9 +153,8 @@ class GPIO(Gumbi):
 		Reads and returns the value of the specified pin.
 		High == 1, Low == 0.
 		"""
-		self.WriteBytes(self.PackBytes([self.READ, self.Pin2Real(pin)]))
+		self._build_command(self.READ, self.Pin2Real(pin))
 		data = ord(self.ReadBytes()[0])
-		ReadAck()
 		return data
 
 	def ReadPins(self, pins):
@@ -164,8 +163,22 @@ class GPIO(Gumbi):
 		High == 1, Low == 0.
 		"""
 		data = []
-		for pin in pins:
-			data.append(self.ReadPin(pin))
+		rx = ''
+		i = 0
+
+		self.FlushBuffer()
+
+		while i < len(pins):
+			for pin in pins[i:i+self.MAX_GPIO_COMMANDS]:
+				self._build_command(self.READ, self.Pin2Real(pins[i]), True)
+				i += 1
+
+			self.FlushBuffer()
+			rx += self.ReadBytes(len(pins))
+
+		for i in range(0, len(pins)):
+			data.append(ord(rx[i]))
+
 		return data
 
 class JTAG(GPIO):
