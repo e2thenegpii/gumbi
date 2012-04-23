@@ -180,9 +180,14 @@ uint8_t is_high(uint8_t p)
 /* Returns 1 if the specified pin is configured as an output, 0 if configured as an input */
 uint8_t is_output(uint8_t p)
 {
-	uint8_t ddr = pin_ddr_port(p);
+	uint8_t ret = 0, ddr = pin_ddr_port(p);
+	
+	if(((gconfig.chips[gconfig.pins[p].addr].port[ddr] & (1 << gconfig.pins[p].bit)) >> gconfig.pins[p].bit) == 0)
+	{
+		ret = 1;
+	}
 
-	return ((gconfig.chips[gconfig.pins[p].addr].port[ddr] & (1 << gconfig.pins[p].bit)) >> gconfig.pins[p].bit);
+	return ret;
 }
 
 /* Get the status of a specific pin. Returns 1 for high, 0 for low. */

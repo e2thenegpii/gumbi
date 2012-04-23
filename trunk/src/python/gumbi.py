@@ -151,9 +151,7 @@ class Gumbi:
 		"""
 		line = self.ReadText() 
 		if line != self.ACK:
-			print "Instead of ack, I got:"
-			for i in line:
-				print "0x%X" % ord(i)
+			print "Instead of ack, I got:", line
 			raise Exception(self.ReadText())
 		return True
 
@@ -443,7 +441,7 @@ class Configuration(Gumbi):
 		Parses the specified configuration file.
 		"""
 		mode_name = self._config_mode()
-		if mode_name != self.cmode:
+		if mode_name is not None and mode_name != self.cmode:
 			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.cmode))
 
 		if self.config and self.config is not None:
