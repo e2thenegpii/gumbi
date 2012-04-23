@@ -82,7 +82,9 @@ enum actions
 	WRITE = 2,
 	HIGH = 3,
 	LOW = 4,
-	COMMAND = 5
+	COMMAND = 5,
+	START = 6,
+	STOP = 7
 };
 
 struct pin
@@ -119,6 +121,7 @@ struct confdata
 	uint8_t toe;				/* How long to sleep when latching pins (uS) */
 	uint8_t tbp;				/* Byte program time (uS) */
 	uint8_t cmd_delay;			/* Period to delay (in seconds) after writing commands listed in hconfig.commands */
+	uint8_t reconfigure;			/* Re-configure I/O pins (TRUE/FALSE) */
 	uint16_t num_addr_pins;
 	uint16_t num_data_pins;
 	uint16_t num_vcc_pins;

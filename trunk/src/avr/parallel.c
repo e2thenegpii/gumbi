@@ -3,7 +3,7 @@
 /* Handles parallel interface commands */
 void parallel(void)
 {
-	uint8_t ok = TRUE, loop = TRUE;
+	uint8_t ok = TRUE, loop = TRUE, configured = TRUE;
 
 	/* Initialize the I/O expansion chips */
 	mcp23s17_enable();
@@ -34,45 +34,51 @@ void parallel(void)
 			/* Acknowledge successful receipt of valid configuration data */
 			ack();
 
-			/* Configure all address, data, Vcc and GND pins as outputs */
-			configure_pins_as_outputs(hconfig.addr_pins, hconfig.num_addr_pins);
-			configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
-			configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
-			configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
-
-			/* Set control pins as outputs */
-			configure_pin_as_output(hconfig.oe.pin);
-			configure_pin_as_output(hconfig.we.pin);
-			configure_pin_as_output(hconfig.ce.pin);
-			configure_pin_as_output(hconfig.be.pin);
-			configure_pin_as_output(hconfig.rst.pin);
-
-			/* Set the busy/ready pin as an input */
-			configure_pin_as_input(hconfig.by.pin);
-
-			/* If we have more than 8 data pins, enable word-size data access */
-			if(hconfig.num_data_pins > 8)
+			if(!configured || hconfig.reconfigure)
 			{
-				byte_enable(FALSE);
-			}
-			else
-			{
-				byte_enable(TRUE);
-			}
+				/* Configure all address, data, Vcc and GND pins as outputs */
+				configure_pins_as_outputs(hconfig.addr_pins, hconfig.num_addr_pins);
+				configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
+				configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
+				configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
+
+				/* Set control pins as outputs */
+				configure_pin_as_output(hconfig.oe.pin);
+				configure_pin_as_output(hconfig.we.pin);
+				configure_pin_as_output(hconfig.ce.pin);
+				configure_pin_as_output(hconfig.be.pin);
+				configure_pin_as_output(hconfig.rst.pin);
+
+				/* Set the busy/ready pin as an input */
+				configure_pin_as_input(hconfig.by.pin);
 	
-			/* Enable the target chip while disabling output and writing */
-			reset_enable(FALSE);
-			write_enable(FALSE);
-			output_enable(FALSE);
-			chip_enable(TRUE);
+				/* If we have more than 8 data pins, enable word-size data access */
+				if(hconfig.num_data_pins > 8)
+				{
+					byte_enable(FALSE);
+				}
+				else
+				{
+					byte_enable(TRUE);
+				}
+	
+				/* Enable the target chip while disabling output and writing */
+				reset_enable(FALSE);
+				write_enable(FALSE);
+				output_enable(FALSE);
+				chip_enable(TRUE);
 		
-			/* Supply power to the target chip */
-			set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
-			set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
+				/* Supply power to the target chip */
+				set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
+				set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
 	
-			/* Commit settings */
-			commit_ddr_settings();
-			commit_io_settings();
+				/* Commit settings */
+				commit_ddr_settings();
+				commit_io_settings();
+
+				/* Set the configured flag */
+				configured = TRUE;
+			}
 	
 			switch(hconfig.action)
 			{
