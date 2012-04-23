@@ -7,7 +7,7 @@ class Parallel(Gumbi):
 
 	MODE = "PARALLEL"
 	
-	def __init__(self, config):
+	def __init__(self, config=None):
 		"""
 		Class constructor.
 		"""
@@ -29,7 +29,7 @@ class SPI(Gumbi):
 	"""
 	MODE = "SPI"
 
-	def __init__(self, config):
+	def __init__(self, config=None):
 		"""
 		Class constructor.
 		"""
@@ -52,11 +52,11 @@ class I2C(Gumbi):
 	
 	MODE = "I2C"
 
-	def __init__(self, config):
+	def __init__(self, config=None):
 		"""
 		Class constructor.
 		"""
-		self.config = Configureation(config, self.MODE)
+		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
 		self.SetMode(self.I2C)
 
@@ -73,12 +73,23 @@ class GPIO(Gumbi):
 	Class to provide raw read/write access to all I/O pins.
 	"""
 
-	def __init__(self):
+	MODE = "GPIO"
+
+	def __init__(self, config=None):
 		"""
 		Class constructor.
 		"""
+		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
 		self.SetMode(self.GPIO)
+		self._set_conf_pins()
+
+	def _set_conf_pins(self):
+		"""
+		Sets the Vcc and GND pins specified in the config file.
+		"""
+		self.PinsHigh(self.config.CONFIG["VCC"])
+		self.PinsLow(self.config.CONFIG["GND"])
 
 	def _exit(self):
 		"""

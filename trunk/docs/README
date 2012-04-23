@@ -1,0 +1,35 @@
+ABOUT
+
+	Gumbi is a Python-powered interface to the real world, providing 64 (expandable to 128) 
+	I/O pins controlled via USB.
+
+	Gumbi is useful for controlling, interfacing and prototyping many different devices and chips. 
+	A small sample of possibilities include:
+
+		o LED displays
+		o Reverse engineering JTAG
+		o Reading and writing parallel and serial flash chips	
+		o Reading and writing SRAM chips
+		o Controlling RF synthesizers
+		o In circuit emulation for Zilog Z80 CPUs
+
+API
+
+	The Gumbi API includes pre-built interfaces for popular serial protocols, such as I2C, SPI and JTAG,
+	as well as a generic parallel interface. Additionally, a GPIO module provides raw read and write 
+	access to each I/O pin on the Gumbi board.
+
+	The API and Python classes are easy to use and easy to extend. Here's an example of using the GPIO
+	class to read and write I/O pins on the Gumbi board:
+
+		from gumbi import GPIO
+
+		io = GPIO()
+		io.PinHigh(1)
+		io.PinLow(2)
+		print "Pin 3 status:", io.ReadPin(3)
+		io.Close()
+
+HARDWARE
+	
+	The Gumbi hardware consists of 
