@@ -1,12 +1,12 @@
 ABOUT
 
-	Gumbi is a Python-powered interface to the real world, providing 64 (expandable to 128) 
-	I/O pins controlled via USB.
+	Gumbi is a Python-powered interface to the real world, providing 64 (expandable to 128) I/O pins,
+	controlled via USB.
 
-	Gumbi is useful for controlling, interfacing and prototyping many different devices and chips. 
+	Gumbi is useful for controlling, interfacing and prototyping many different devices, ICs and hardware. 
 	A small sample of possibilities include:
 
-		o LED displays
+		o Controlling LED/LCD displays
 		o Reverse engineering JTAG
 		o Reading and writing parallel and serial flash chips	
 		o Reading and writing SRAM chips
@@ -32,4 +32,21 @@ API
 
 HARDWARE
 	
-	The Gumbi hardware consists of 
+	The Gumbi hardware consists of an AVR microcontroller which registers itself with the host computer
+	as a generic USB Human Interface Device. The microcontroller acts as an interface between the host 
+	computer and the 16 bit I/O expansion chips on the Gumbi board. 
+
+	Although the Gumbi board uses four I/O expansion chips with a total of 64 I/O pins, it can support 
+	up to eight expansion chips providing 128 I/O pins. Additional expansion chips are easily added via
+	the expansion/ICSP connector, and are automatically detected when the board is powered on. This allows
+	users to add additional I/O pins without needing to modify any code or firmware.
+
+FIRMWARE
+
+	The firmware for the AVR microcontroller is freely available and can be easily upgraded via USB; no 
+	additional hardware or programmers are needed. To put the microcontroller into program mode, short 
+	the 'PROGRAM' jumper on the Gumbi board and press the reset button. You can then download new firmware
+	to the microcontroller using Atmel's FLIP software, or the open source dfu-programmer utility. To
+	take the microcontroller out of program mode, remove the PROGRAM jumper and press the reset button.
+
+

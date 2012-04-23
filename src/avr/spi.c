@@ -1,11 +1,9 @@
 #include "spi.h"
 
-/* TODO: Add action to select/deselect SPI slave */
-
 /* SPI action handler */
 void spi(void)
 {
-	uint8_t loop = TRUE;
+	uint8_t loop = TRUE, configured = FALSE;
 
 	/* Initialize the I/O expansion chips */
 	mcp23s17_init();
@@ -21,39 +19,54 @@ void spi(void)
 			/* Acknowledge the receipt of valid config data */
 			ack();
 
-			/* Configure SPI pins */
-			configure_pin_as_input(hconfig.miso.pin);
-			configure_pin_as_output(hconfig.mosi.pin);
-			configure_pin_as_output(hconfig.ss.pin);
-			configure_pin_as_output(hconfig.clk.pin);
+			/* Do we need to configure the I/O pins? */
+			if(!configured || hconfig.reconfigure)
+			{
+				/* Configure SPI pins */
+				configure_pin_as_input(hconfig.miso.pin);
+				configure_pin_as_output(hconfig.mosi.pin);
+				configure_pin_as_output(hconfig.ss.pin);
+				configure_pin_as_output(hconfig.clk.pin);
 
-			/* Put all SPI pins in their idle states  */
-			ss_active(FALSE);
-			clk_active(FALSE);
-			mosi_active(FALSE);
-			miso_active(FALSE);
+				/* Put all SPI pins in their idle states  */
+				ss_active(FALSE);
+				clk_active(FALSE);
+				mosi_active(FALSE);
+				miso_active(FALSE);
 
-			/* Configure Vcc and GND pins */
-			configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
-			configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
+				/* Configure Vcc and GND pins */
+				configure_pins_as_outputs(hconfig.vcc_pins, hconfig.num_vcc_pins);
+				configure_pins_as_outputs(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
-			/* Set Vcc pins high, GND pins low */
-			set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
-			set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
+				/* Set Vcc pins high, GND pins low */
+				set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
+				set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
 
-			/* Commit the above direction and output settings */
-			commit_ddr_settings();
-			commit_io_settings();
+				/* Commit the above direction and output settings */
+				commit_ddr_settings();
+				commit_io_settings();
+
+				/* Set configured flag */
+				configured = TRUE;
+			}
 
 			switch(hconfig.action)
 			{
 				case READ:
 					ack();
-					spi_read();
+					soft_spi_read();
 					break;
 				case WRITE:
 					ack();
-					spi_write();
+					soft_spi_write();
+					break;
+				case START:
+					ack();
+					ss_active(TRUE);
+					break;
+				case STOP:
+					ack();
+					ss_active(FALSE);
 					break;
 				case EXIT:
 					ack();
@@ -143,13 +156,11 @@ uint8_t soft_spi_read_byte(void)
 }
 
 /* Read bytes from the target SPI chip */
-void spi_read(void)
+void soft_spi_read(void)
 {
 	uint32_t i = 0;
 	uint8_t byte = 0;
 
-	ss_active(TRUE);
-	
 	for(i=0; i<hconfig.count; i++)
 	{
 		byte = soft_spi_read_byte();
@@ -157,18 +168,14 @@ void spi_read(void)
 	}
 
 	flush_buffer();
-
-	ss_active(TRUE);
 }
 
 /* Write bytes to the target SPI chip */
-void spi_write(void)
+void soft_spi_write(void)
 {
 	uint8_t j = 0;
 	uint32_t i = 0;
 	uint8_t buf[BLOCK_SIZE] = { 0 };
-
-	ss_active(TRUE);
 
 	for(i=0; i<hconfig.count; )
 	{
@@ -184,6 +191,4 @@ void spi_write(void)
 		/* Acknowledge that we're done processing this block of data so the host knows to send more */
 		ack();
 	}
-	
-	ss_active(TRUE);
 }
