@@ -28,6 +28,7 @@
 #define MAX_PINS 128
 #define MAX_DEVICES 8
 #define MAX_COMMANDS 32
+#define MAX_GPIO_COMMANDS 31
 
 #define PINS_PER_DEVICE 16
 #define PINS_PER_REGISTER 8
@@ -145,6 +146,13 @@ struct confdata
 	struct ctrlpin mosi;			/* Master Out Slave In */
 	struct ctrlpin miso;			/* Master In Slave Out */
 } hconfig;
+
+struct gpiodata
+{
+	uint8_t num_cmd;
+	uint8_t repeat;				/* Currently not used. */
+	struct io cmd[MAX_GPIO_COMMANDS];
+} hgpio;
 
 struct config
 {

@@ -1,6 +1,4 @@
 #include "debug.h"
-#include "mcp23s17.h"
-#include <util/delay.h>
 
 /* Handler for NOP mode. Do nothing. */
 void nop(void) { }
@@ -61,49 +59,4 @@ void xfer_test(void)
 	read_data((uint8_t *) &buf, sizeof(buf));
 	buffered_write((uint8_t *) &buf, sizeof(buf));
 	flush_buffer();
-}
-
-/* Handler for GPIO test mode. */
-void gpio(void)
-{
-	struct io cmd = { 0 };
-	uint8_t loop = TRUE, c = 0;
-
-	mcp23s17_enable();
-
-	while(loop)
-	{
-		read_data((uint8_t *) &cmd, sizeof(cmd));
-		
-		switch(cmd.action)
-		{
-			case HIGH:
-				configure_pin_immediate(cmd.pin, 'w');
-				set_pin_immediate(cmd.pin, 1);
-				ack();
-				break;
-			case LOW:
-				configure_pin_immediate(cmd.pin, 'w');
-				set_pin_immediate(cmd.pin, 0);
-				ack();
-				break;
-			case READ:
-				configure_pin_immediate(cmd.pin, 'r');
-				c = get_pin(cmd.pin);
-				write_data((uint8_t *) &c, 1);
-				break;
-			case EXIT:
-				loop = FALSE;
-				ack();
-				break;
-			default:
-				nack();
-				write_string("The specified GPIO action is not supported");
-				break;
-		}
-	}
-	
-	mcp23s17_disable();
-
-	return;
 }

@@ -1,6 +1,7 @@
 #include "common.h"
 #include "gumbi.h"
 #include "debug.h"
+#include "gpio.h"
 #include "mcp23s17.h"
 #include "parallel.h"
 #include "spi.h"

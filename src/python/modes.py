@@ -74,6 +74,7 @@ class GPIO(Gumbi):
 	"""
 
 	MODE = "GPIO"
+	BUFFER = ""
 
 	def __init__(self, config=None):
 		"""
@@ -91,40 +92,61 @@ class GPIO(Gumbi):
 		self.PinsHigh(self.config.CONFIG["VCC"])
 		self.PinsLow(self.config.CONFIG["GND"])
 
+	def _build_command(self, cmd, pin, buffer=False):
+		"""
+		Builds a command from the specified command code and pin number.
+		Buffers data if buffer is set to True.
+		"""
+		self.BUFFER += self.PackBytes(cmd, pin)
+
+		if not buffer or len(self.BUFFER) == MAX_GPIO_BUFFER:
+			self.FlushBuffer()
+
 	def _exit(self):
 		"""
 		Exits GPIO mode.
 		"""
-		self.WriteBytes(self.PackBytes([self.EXIT, 0]))
-		self.ReadAck()
+		self._build_command(self.EXIT, 0)
 
-	def PinHigh(self, pin):
+	def FlushBuffer(self):
+		"""
+		Flushes the GPIO data buffer.
+		"""
+		if len(self.BUFFER) > 0):
+			repeat = 0
+			num_cmd = len(self.BUFFER) / 2
+
+			data = self.PackBytes([num_cmd, repeat]) + self.BUFFER
+			self.BUFFER = ""
+		
+			self.WriteBytes(data)
+			self.ReadAck()
+
+	def PinHigh(self, pin, buffer=False):
 		"""
 		Sets the specified pin high.
 		"""
-		self.WriteBytes(self.PackBytes([self.HIGH, self.Pin2Real(pin)]))
-		self.ReadAck()
+		self._build_command(self.HIGH, self.Pin2Real(pin), buffer)
 
-	def PinsHigh(self, pins):
+	def PinsHigh(self, pins, buffer=False):
 		"""
 		Sets the specified pins high.
 		"""
 		for pin in pins:
-			self.PinHigh(pin)
+			self.PinHigh(pin, buffer)
 
-	def PinLow(self, pin):
+	def PinLow(self, pin, buffer=False):
 		"""
 		Sets the specified pin low.
 		"""
-		self.WriteBytes(self.PackBytes([self.LOW, self.Pin2Real(pin)]))
-		self.ReadAck()
+		self._build_command(self.LOW, self.Pin2Real(pin), buffer)
 
-	def PinsLow(self, pins):
+	def PinsLow(self, pins, buffer=False):
 		"""
 		Sets the specified pins low.
 		"""
 		for pin in pins:
-			self.PinLow(pin)
+			self.PinLow(pin, buffer)
 
 	def ReadPin(self, pin):
 		"""
@@ -132,7 +154,9 @@ class GPIO(Gumbi):
 		High == 1, Low == 0.
 		"""
 		self.WriteBytes(self.PackBytes([self.READ, self.Pin2Real(pin)]))
-		return ord(self.ReadBytes()[0])
+		data = ord(self.ReadBytes()[0])
+		ReadAck()
+		return data
 
 	def ReadPins(self, pins):
 		"""
