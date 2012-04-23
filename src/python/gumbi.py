@@ -5,7 +5,9 @@ from rawhid import RawHID
 	
 class Gumbi:
 	"""
-	Primary gumbi class. All other classes that interact with the Gumbi board should be subclassed from this.
+	This is the primary Python class used to interface with the Gumbi board and handles 
+	the communication with the hardware. In most cases you will not need to interface with 
+	this class directly, but rather through a subclass.
 	"""
 
 	VID = 0xFFFF
@@ -261,7 +263,10 @@ class Gumbi:
 
 class Configuration(Gumbi):
 	"""
-	Class responsible for reading config files and building a config data structure to send to the Gumbi board.
+	This class parses configuration files that can be used by Gumbi based code and applications, and
+	builds the command structure that is sent to the Gumbi hardware. 
+
+	If used, this class instance should be called prior to invoking Gumbi.SetMode().
 	"""
 
 	CONFIG = {
@@ -421,10 +426,11 @@ class Configuration(Gumbi):
 
 		Returns the mode on success. Returns None on failure.
 		"""
-		for line in open(self.config).readlines():
-			(key, value) = self.ParseConfigLine(line)
-			if key == self.MODE_KEY:
-				return value
+		if self.config and self.config is not None:
+			for line in open(self.config).readlines():
+				(key, value) = self.ParseConfigLine(line)
+				if key == self.MODE_KEY:
+					return value
 		return None
 
 	def _parse_config(self):
@@ -435,10 +441,11 @@ class Configuration(Gumbi):
 		if mode_name != self.cmode:
 			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.cmode))
 
-		for line in open(self.config).readlines():
-			(key, value) = self.ParseConfigLine(line)
-			if key is not None and value is not None:
-				self.CONFIG[key] = value
+		if self.config and self.config is not None:
+			for line in open(self.config).readlines():
+				(key, value) = self.ParseConfigLine(line)
+				if key is not None and value is not None:
+					self.CONFIG[key] = value
 
 		self.package_pins = self.CONFIG["PINS"][0]
 
