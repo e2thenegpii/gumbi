@@ -3,7 +3,7 @@
 /* Handles parallel interface commands */
 void parallel(void)
 {
-	uint8_t ok = TRUE, loop = TRUE, configured = TRUE;
+	uint8_t ok = TRUE, loop = TRUE, configured = FALSE;
 
 	/* Initialize the I/O expansion chips */
 	mcp23s17_enable();
@@ -34,7 +34,7 @@ void parallel(void)
 			/* Acknowledge successful receipt of valid configuration data */
 			ack();
 
-			if(!configured || hconfig.reconfigure)
+			if(configured == FALSE || hconfig.reconfigure)
 			{
 				/* Configure all address, data, Vcc and GND pins as outputs */
 				configure_pins_as_outputs(hconfig.addr_pins, hconfig.num_addr_pins);
