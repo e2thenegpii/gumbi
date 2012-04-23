@@ -154,6 +154,37 @@ uint8_t read_register(uint8_t addr, uint8_t reg)
 	return value;
 }
 
+/* Returns the DDR port for a specified I/O pin */
+uint8_t pin_ddr_port(uint8_t p)
+{
+	uint8_t ddr = 0;
+
+	if(gconfig.pins[p].reg == GPIOA)
+	{
+		ddr = IODIRA;
+	}
+	else
+	{
+		ddr = IODIRB;
+	}
+
+	return ddr;
+}
+
+/* Returns 1 if the specified output pin is high, 0 if low */
+uint8_t is_high(uint8_t p)
+{
+	return ((gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] & (1 << gconfig.pins[p].bit)) >> gconfig.pins[p].bit);
+}
+
+/* Returns 1 if the specified pin is configured as an output, 0 if configured as an input */
+uint8_t is_output(uint8_t p)
+{
+	uint8_t ddr = pin_ddr_port(p);
+
+	return ((gconfig.chips[gconfig.pins[p].addr].port[ddr] & (1 << gconfig.pins[p].bit)) >> gconfig.pins[p].bit);
+}
+
 /* Get the status of a specific pin. Returns 1 for high, 0 for low. */
 uint8_t get_pin(uint8_t p)
 {
@@ -183,7 +214,7 @@ uint8_t set_pin_high(uint8_t p)
 {	
 	uint8_t ok = FALSE;
 
-	if(is_valid_pin(p))
+	if(is_valid_pin(p) && !is_high(p))
 	{
 		gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] |= (1 << gconfig.pins[p].bit);
 		ok = TRUE;
@@ -197,7 +228,7 @@ uint8_t set_pin_low(uint8_t p)
 {
 	uint8_t ok = FALSE;
 
-	if(is_valid_pin(p))
+	if(is_valid_pin(p) && is_high(p))
 	{
 		gconfig.chips[gconfig.pins[p].addr].port[gconfig.pins[p].reg] &= ~(1 << gconfig.pins[p].bit);
 		ok = TRUE;
@@ -241,31 +272,21 @@ void set_pin_immediate(uint8_t p, uint8_t hl)
 /* Configure a pin as an input (rw = 'r') or an output (rw = 'w') */
 uint8_t configure_pin(uint8_t p, uint8_t rw)
 {
-	uint8_t ddr = 0xFF, ok = FALSE;
+	uint8_t ddr = 0, ok = FALSE;
 
 	if(is_valid_pin(p))
 	{
-		if(gconfig.pins[p].reg == GPIOA)
-		{
-			ddr = IODIRA;
-		}
-		else if(gconfig.pins[p].reg == GPIOB)
-		{
-			ddr = IODIRB;
-		}
+		ddr = pin_ddr_port(p);
 
-		if(ddr != 0xFF)
-		{	
-			if(rw == 'r')
-			{
-				gconfig.chips[gconfig.pins[p].addr].port[ddr] |= (1 << gconfig.pins[p].bit);
-				ok = TRUE;
-			}
-			else if(rw == 'w')
-			{
-				gconfig.chips[gconfig.pins[p].addr].port[ddr] &= ~(1 << gconfig.pins[p].bit);
-				ok = TRUE;
-			}
+		if(rw == 'r' && is_output(p))
+		{
+			gconfig.chips[gconfig.pins[p].addr].port[ddr] |= (1 << gconfig.pins[p].bit);
+			ok = TRUE;
+		}
+		else if(rw == 'w' && !is_output(p))
+		{
+			gconfig.chips[gconfig.pins[p].addr].port[ddr] &= ~(1 << gconfig.pins[p].bit);
+			ok = TRUE;
 		}
 	}
 
@@ -279,15 +300,7 @@ void configure_pin_immediate(uint8_t pin, uint8_t rw)
 
 	if(configure_pin(pin, rw))
 	{
-		if(gconfig.pins[pin].reg == GPIOA)
-		{
-			ddr = IODIRA;
-		}
-		else
-		{
-			ddr = IODIRB;
-		}
-
+		ddr = pin_ddr_port(pin);
 		commit_settings(gconfig.pins[pin].addr, ddr);
 	}
 }
