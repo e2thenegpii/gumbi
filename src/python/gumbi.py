@@ -368,37 +368,38 @@ class Configuration(Gumbi):
 		GND		A list of pins that need to be pulled low to ground.	[]
 
 		CE		The chip enable pin, and its active state (0 is		[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is asserted
+				when activating a chip in parallel mode.
 
 		WE		The write enable pin, and its active state (0 is	[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is asserted
+				when writing data to a chip in parallel mode.
 
 		RE		The read enable pin, and its active state (0 is		[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is asserted
+				when reading data from a chip in parallel mode.
 
 
 		OE		The output enable pin, and its active state (0 is	[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is asserted
+				when reading data from a chip in parallel mode.
 
 		BE		The byte enable pin, and its active state (0 is		[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is asserted
+				if the number of defined data pins is less than or
+				equal to 8 in parallel mode.
 
 		BY		The chip busy pin, and its active state (0 is		[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is polled
+				before sending commands to chips in parallel mode.
 
 		WP		The write protect pin, and its active state (0 is	[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is deasserted
+				in parallel mode.
 
 		RST		The chip reset pin, and its active state (0 is		[255, 0]
-				active low, 1 is active high). Primarily used for
-				parallel mode.
+				active low, 1 is active high). This pin is deasserted
+				in parallel mode.
 
 		COMMANDS	A list of commands to be executed prior to a read	[]
 				or write opration. The commands will vary based on
