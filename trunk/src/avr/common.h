@@ -65,15 +65,13 @@ enum modes
 {
 	NOP = 0,
 	PARALLEL = 1,
-	SPI = 2,
-	I2C = 3,
-	PING = 4,
-	INFO = 5,
-	SPEEDTEST = 6,
-	GPIO = 7,
-	GID = 8,
-	XFER = 9,
-	PINCOUNT = 10
+	PING = 2,
+	INFO = 3,
+	SPEEDTEST = 4,
+	GPIO = 5,
+	GID = 6,
+	XFER = 7,
+	PINCOUNT = 8
 };
 
 enum actions
@@ -83,9 +81,7 @@ enum actions
 	WRITE = 2,
 	HIGH = 3,
 	LOW = 4,
-	COMMAND = 5,
-	START = 6,
-	STOP = 7
+	COMMAND = 5
 };
 
 struct pin
@@ -135,16 +131,12 @@ struct confdata
 	uint32_t commands[MAX_COMMANDS];	/* Data/address commands to send when writing to parallel chips */
 	struct ctrlpin ce;			/* Chip Enable */
 	struct ctrlpin we;			/* Write Enable */
+	struct ctrlpin re;			/* Read Enable */
 	struct ctrlpin oe;			/* Output Enable */
 	struct ctrlpin be;			/* Byte Enable */
 	struct ctrlpin by;			/* Ready / Busy */
 	struct ctrlpin wp;			/* Write Protect */
 	struct ctrlpin rst;			/* Reset */
-	struct ctrlpin sda;			/* Data pin (I2C) */
-	struct ctrlpin clk;			/* Clock pin (I2C/SPI) */
-	struct ctrlpin ss;			/* Slave select pin (SPI) */
-	struct ctrlpin mosi;			/* Master Out Slave In */
-	struct ctrlpin miso;			/* Master In Slave Out */
 } hconfig;
 
 struct gpiodata

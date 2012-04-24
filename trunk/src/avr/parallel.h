@@ -9,6 +9,7 @@
 void parallel(void);
 void output_enable(uint8_t tf);
 void write_enable(uint8_t tf);
+void read_enable(uint8_t tf);
 void chip_enable(uint8_t tf);
 void reset_enable(uint8_t tf);
 void byte_enable(uint8_t tf);

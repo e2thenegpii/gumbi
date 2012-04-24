@@ -4,8 +4,6 @@
 #include "gpio.h"
 #include "mcp23s17.h"
 #include "parallel.h"
-#include "spi.h"
-#include "i2c.h"
 
 int main(void)
 {
@@ -60,12 +58,6 @@ void command_handler(uint8_t mode)
 			break;
 		case PARALLEL:
 			handler = &parallel;
-			break;
-		case SPI:
-			handler = &spi;
-			break;
-		case I2C:
-			handler = &i2c;
 			break;
 		case GPIO:
 			handler = &gpio;

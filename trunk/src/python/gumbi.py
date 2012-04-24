@@ -33,15 +33,13 @@ class Gumbi:
 
 	NOP = 0
 	PARALLEL = 1
-	SPI = 2
-	I2C = 3
-	PING = 4
-	INFO = 5
-	SPEEDTEST = 6
-	GPIO = 7
-	GID = 8
-	XFER = 9
-	PINCOUNT = 10
+	PING = 2
+	INFO = 3
+	SPEEDTEST = 4
+	GPIO = 5
+	GID = 6
+	XFER = 7
+	PINCOUNT = 8
 
 	EXIT = 0
 	READ = 1
@@ -49,8 +47,6 @@ class Gumbi:
 	HIGH = 3
 	LOW = 4
 	COMMAND = 5
-	START = 6
-	STOP = 7
 
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
@@ -379,6 +375,10 @@ class Configuration(Gumbi):
 				active low, 1 is active high). Primarily used for
 				parallel mode.
 
+		RE		The read enable pin, and its active state (0 is		[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
 
 		OE		The output enable pin, and its active state (0 is	[255, 0]
 				active low, 1 is active high). Primarily used for
@@ -411,23 +411,6 @@ class Configuration(Gumbi):
 				I/O pins each time an action is received. If 0,
 				the I/O pins will only be configured once.
 
-		SDA		The SDA pin, used for I2C mode.				255
-		
-		CLK		The clock pin, used for I2C/SPI mode.			255
-
-		SS		The slave select pin, used for SPI mode.		255
-
-		MISO		The master in slave out pin, used for SPI mode.		255
-		
-		MOSI		The master out slave in pin, used for SPI mode.		255
-
-		PINS		The number of pins on the target chip connected to	0
-				the Gumbi board. This is used to automatically map
-				chip pins to Gumbi board pins, and assumes an even
-				number of pins on each row. If not specified, user
-				supplied pins will be interpreted as literal Gumbi
-				pin numbers.
-
 	Values in the CONFIG dict can also be viewed/modified using the GetSetting() and
 	SetSetting() methods.
 
@@ -443,6 +426,7 @@ class Configuration(Gumbi):
 		"GND"		: [],
 		"CE"		: [Gumbi.UNUSED, 0],
 		"WE"		: [Gumbi.UNUSED, 0],
+		"RE"		: [Gumbi.UNUSED, 0],
 		"OE"		: [Gumbi.UNUSED, 0],
 		"BE"		: [Gumbi.UNUSED, 0],
 		"BY"		: [Gumbi.UNUSED, 0],
@@ -451,11 +435,6 @@ class Configuration(Gumbi):
 		"COMMANDS"	: [],
 		"CMDELAY"	: [0],
 		"RECONFIGURE"	: [0],
-		"SDA"		: [Gumbi.UNUSED, 0],
-		"CLK"		: [Gumbi.UNUSED, 0],
-		"SS"		: [Gumbi.UNUSED, 0],
-		"MISO"		: [Gumbi.UNUSED, 0],
-		"MOSI"		: [Gumbi.UNUSED, 0],
 		# These are not part of the config strcture that gets pushed to the Gumbi board
 		"PINS"		: [0]
 	}
@@ -543,16 +522,12 @@ class Configuration(Gumbi):
 			self.CONFIG["GND"] = self._convert_pin_array(self.CONFIG["GND"])
 			self.CONFIG["CE"] = self._convert_control_pin(self.CONFIG["CE"])
 			self.CONFIG["WE"] = self._convert_control_pin(self.CONFIG["WE"])
+			self.CONFIG["RE"] = self._convert_control_pin(self.CONFIG["RE"])
 			self.CONFIG["OE"] = self._convert_control_pin(self.CONFIG["OE"])
 			self.CONFIG["BE"] = self._convert_control_pin(self.CONFIG["BE"])
 			self.CONFIG["BY"] = self._convert_control_pin(self.CONFIG["BY"])
 			self.CONFIG["WP"] = self._convert_control_pin(self.CONFIG["WP"])
 			self.CONFIG["RST"] = self._convert_control_pin(self.CONFIG["RST"])
-			self.CONFIG["SDA"] = self._convert_control_pin(self.CONFIG["SDA"])
-			self.CONFIG["CLK"] = self._convert_control_pin(self.CONFIG["CLK"])
-			self.CONFIG["SS"] = self._convert_control_pin(self.CONFIG["SS"])
-			self.CONFIG["MISO"] = self._convert_control_pin(self.CONFIG["MISO"])
-			self.CONFIG["MOSI"] = self._convert_control_pin(self.CONFIG["MOSI"])
 			self.pins_shifted = True
 
 	def _convert_control_pin(self, cp):
@@ -692,16 +667,12 @@ class Configuration(Gumbi):
 		data += self._pack_commands(self.CONFIG["COMMANDS"])
 		data += self.PackBytes(self.CONFIG["CE"])
 		data += self.PackBytes(self.CONFIG["WE"])
+		data += self.PackBytes(self.CONFIG["RE"])
 		data += self.PackBytes(self.CONFIG["OE"])
 		data += self.PackBytes(self.CONFIG["BE"])
 		data += self.PackBytes(self.CONFIG["BY"])
 		data += self.PackBytes(self.CONFIG["WP"])
 		data += self.PackBytes(self.CONFIG["RST"])
-		data += self.PackBytes(self.CONFIG["SDA"])
-		data += self.PackBytes(self.CONFIG["CLK"])
-		data += self.PackBytes(self.CONFIG["SS"])
-		data += self.PackBytes(self.CONFIG["MISO"])
-		data += self.PackBytes(self.CONFIG["MOSI"])
 		return data
 
 

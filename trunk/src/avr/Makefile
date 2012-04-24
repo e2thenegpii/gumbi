@@ -20,14 +20,11 @@ MCU=at90usb1286
 # Clock speed, in hertz
 F_CPU=16000000
 
-# UART baudrate
-BAUD=9600
-
 # Target file name (without extension).
 TARGET = gumbi
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c common.c debug.c mcp23s17.c gpio.c parallel.c spi.c i2c.c avrlib/rawhid.c avrlib/spi.c
+SRC = $(TARGET).c common.c debug.c mcp23s17.c gpio.c parallel.c avrlib/rawhid.c avrlib/spi.c
 
 # Programming hardware: type `avrdude -c ?` to get a full listing.
 AVRDUDE_PROGRAMMER = usbtiny
@@ -77,7 +74,7 @@ EXTRAINCDIRS = .
 #  -Wall...:  warning level
 #  -Wa,...:   tell GCC to pass this to the assembler.
 #    -ahlms:  create assembler listing
-CFLAGS = -g -O$(OPT) -DF_CPU=$(F_CPU) -DBAUD=$(BAUD) \
+CFLAGS = -g -O$(OPT) -DF_CPU=$(F_CPU) \
 -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
 -Wall -Wstrict-prototypes -Werror \
 -Wa,-adhlns=$(<:.c=.lst) \
