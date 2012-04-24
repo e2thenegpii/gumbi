@@ -239,7 +239,7 @@ uint16_t read_data_pins(void)
 					}
 
 					/* If this pin is set, set the appropriate bit in data */
-					if((reg | (1 << gconfig.pins[hconfig.data_pins[j]].bit)) == reg)
+					if((reg & (1 << gconfig.pins[hconfig.data_pins[j]].bit)) > 0)
 					{
 						data |= (1 << j);
 					}
@@ -260,7 +260,7 @@ void data2pins(uint32_t data, uint8_t pins[], uint8_t num_pins)
 	{
 		for(i=0; i<num_pins; i++)
 		{
-			if((data | (1 << i)) == data)
+			if((data & (1 << i)) > 0)
 			{
 				set_pin_high(pins[i]);
 			}
