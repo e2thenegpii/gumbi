@@ -45,6 +45,7 @@ void parallel(void)
 				/* Set control pins as outputs */
 				configure_pin_as_output(hconfig.oe.pin);
 				configure_pin_as_output(hconfig.we.pin);
+				configure_pin_as_output(hconfig.re.pin);
 				configure_pin_as_output(hconfig.ce.pin);
 				configure_pin_as_output(hconfig.be.pin);
 				configure_pin_as_output(hconfig.rst.pin);
@@ -65,6 +66,7 @@ void parallel(void)
 				/* Enable the target chip while disabling output and writing */
 				reset_enable(FALSE);
 				write_enable(FALSE);
+				read_enable(FALSE);
 				output_enable(FALSE);
 				chip_enable(TRUE);
 		
@@ -129,6 +131,12 @@ void output_enable(uint8_t tf)
 void write_enable(uint8_t tf)
 {
 	set_control_pin(hconfig.we, tf);
+}
+
+/* Set the read enable pin */
+void read_enable(uint8_t tf)
+{
+	set_control_pin(hconfig.re, tf);
 }
 
 /* Set the chip enable pin */
@@ -358,16 +366,18 @@ void parallel_read(void)
 		/* Wait until the target chip is not busy */
 		while(is_busy()) { }
 
-		/* Set the appropriate address pins and assert the output enable line */
+		/* Set the appropriate address pins and assert the read/output enable line */
 		set_address(hconfig.addr+i);
 		output_enable(TRUE);
+		read_enable(TRUE);
 
 		/* Wait for the output to become active, then read data off the data pins */
 		_delay_us(hconfig.toe);
 		data = read_data_pins();
 
-		/* Release the output enable line, and wait for the output be be deactivated */
+		/* Release the output/read enable line, and wait for the output be be deactivated */
 		output_enable(FALSE);
+		read_enable(FALSE);
 		_delay_us(hconfig.toe);
 
 		/* Use buffered writes here to ensure data is sent as efficiently as possible */
