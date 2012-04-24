@@ -8,6 +8,10 @@ class Gumbi:
 	This is the primary Python class used to interface with the Gumbi board and handles 
 	the communication with the hardware. In most cases you will not need to interface with 
 	this class directly, but rather through a subclass.
+
+	Since all classes that interact with the Gumbi board should be subclassed from this class,
+	all the methods in the Gumbi class should be available through any subclass, unless the
+	subclass has overridden the method (with few exceptions, overriding Gumbi methods is undesirable).
 	"""
 
 	VID = 0xFFFF
@@ -30,7 +34,7 @@ class Gumbi:
 	NOP = 0
 	PARALLEL = 1
 	SPI = 2
-	I2CPROM = 3
+	I2C = 3
 	PING = 4
 	INFO = 5
 	SPEEDTEST = 6
@@ -53,9 +57,11 @@ class Gumbi:
 
 	def __init__(self, new=True):
 		"""
-		Class constructor, calls self._open().
+		Class constructor, opens a connection to the gumbi board.
 
 		@new  - Set to False to not open a connection to the Gumbi board.
+
+		Returns None.
 		"""
 		self.ts = 0
 		self.num_pins = 0
@@ -65,38 +71,50 @@ class Gumbi:
 
 	def _open(self):
 		"""
-		Opens a connection to the Gumbi board.
+		Opens a connection to the Gumbi board. For internal use only.
 		"""
 		self.hid.open(self.VID, self.PID)
 
 	def _exit(self):
 		"""
-		Place holder _exit method. This should be overridden by the subclass so that the
-		appropriate exit message may be sent to exit the given mode implemented by the subclass.
+		Place holder _exit method, called by Close(). 
+
+		This should be overridden by the subclass so that the appropriate exit 
+		message may be sent to exit the given mode implemented by the subclass.
+
+		Returns None.
 		"""
 		return None
 
 	def _close(self):
 		"""
-		Closes the connection with the Gumbi board.
+		Closes the connection with the Gumbi board. For internal use only.
 		"""
 		self.hid.close()
 
 	def StartTimer(self):
 		"""
-		Starts the timer.
+		Starts a timer.
+
+		Returns None.
 		"""
 		self.ts = time.time()
 
 	def StopTimer(self):
 		"""
-		Stops the timer and returns the seconds elapsed since StartTimer().
+		Stops the timer started by StartTimer().
+
+		Returns the seconds elapsed since StartTimer() was called.
 		"""
 		return (time.time() - self.ts)
 
 	def Pin2Real(self, pin):
 		"""
 		Converts user-supplied pin numbers (index 1) to Gumbi board pin numbers (index 0).
+
+		@pin - User supplied pin number.
+
+		Returns the Gumbi board pin number.
 		"""
 		if pin is not None and pin > 0:
 			return (pin - 1)
@@ -106,24 +124,40 @@ class Gumbi:
 	def Pack32(self, value):
 		"""
 		Packs a 32-bit value for transmission to the Gumbi board.
+
+		@value - A 32-bit value to pack.
+
+		Returns a 4 byte string.
 		"""
                 return struct.pack("<I", value)
 
         def Pack16(self, value):
 		"""
 		Packs a 16-bit value for transmission to the Gumbi board.
+
+		@value - A 16-bit value to pack.
+
+		Returns a 2 byte string.
 		"""
                 return struct.pack("<H", value)
 
         def PackByte(self, value):
 		"""
 		Packs an 8-bit value for transmission to the Gumbi board.
+
+		@value - An 8-bit value to pack.
+
+		Returns a 1 byte string.
 		"""
                 return chr(value)
 
 	def PackDWords(self, data):
 		"""
 		Packs an array of 32-bit values for transmission to the Gumbi board.
+
+		@data - An array of 32-bit values to pack.
+
+		Returns a string len(data)*4 bytes long.
 		"""
 		pdata = ''
 		for dword in data:
@@ -133,6 +167,10 @@ class Gumbi:
         def PackBytes(self, data):
 		"""
 		Packs an array of 8-bit values for transmission to the Gumbi board.
+
+		@data - An array of 8-bit values to pack.
+
+		Returns a string len(data) bytes long.
 		"""
                 pdata = ''
                 for byte in data:
@@ -141,13 +179,19 @@ class Gumbi:
 
 	def PackFiller(self, count):
 		"""
-		Returns count filler bytes of data.
+		Returns count filler bytes of data. Used for filling out unused arrays/structures.
+
+		@count - Number of filler bytes required.
+
+		Returns a string of NULL bytes.
 		"""
 		return (self.NULL * count)
 
 	def ReadAck(self):
 		"""
-		Reads an ACK/NACK from the Gumbi board. Returns True on ACK, raises an exception on NACK.
+		Reads an ACK/NACK from the Gumbi board. 
+
+		Returns True on ACK, raises an exception on NACK.
 		"""
 		line = self.ReadText() 
 		if line != self.ACK:
@@ -158,25 +202,43 @@ class Gumbi:
 	def SetMode(self, mode):
 		"""
 		Puts the Gumbi board in the specified mode.
+
+		@mode - One of: NOP, PARALLEL, SPI, I2C, PING, INFO, SPEEDTEST, GPIO, GID, XFER, PINCOUNT
+
+		Returns None.
 		"""
 		self.WriteBytes(self.PackByte(mode))
 		self.ReadAck()
 
 	def ReadText(self):
 		"""
-		Reads and returns a new-line terminated string from the Gumbi board.
+		Reads an ASCII string from the Gumbi board.
+
+		Returns the string read
 		"""
 		return self.ReadBytes().strip(self.NULL)
 
 	def ReadBytes(self, n=None):
 		"""
-		Reads n bytes of data from the Gumbi board. Default n == 1.
+		Reads n bytes of data from the Gumbi board.
+
+		@n - Number of bytes to read. If not specified, BLOCK_SIZE bytes are read.
+
+		Returns a string of bytes received from the Gumbi board.
 		"""
-		return self.hid.recv(n)[0:n]
+		data = self.hid.recv(n)
+		if n is not None:
+			data = data[0:n]
+
+		return data
 
 	def WriteBytes(self, data):
 		"""
-		Sends data to the Gumbi board and verifies acknowledgement.
+		Sends data to the Gumbi board.
+		
+		@data - String of bytes to send.
+
+		Returns None.
 		"""
 		self.hid.send(data)
 
@@ -201,7 +263,6 @@ class Gumbi:
 	def Write(self, start, data):
 		"""
 		Writes a number of bytes to the target chip, beginning at the given start address.
-		NOT CURRENTLY IMPLEMENTED.
 
 		@start - Address to start writing at.
 		@data  - String of data to write.
@@ -234,15 +295,18 @@ class Gumbi:
 	def ExecuteCommands(self):
 		"""
 		Runs the commands listed in self.config.CONFIG["COMMANDS"] without any further actions.
+
+		Returns None.
 		"""
 		self.WriteBytes(self.config.Pack(self.COMMAND, 0, 0))
 		self.ReadAck()
 		self.ReadAck()
-		return True
 
 	def PinCount(self):
 		"""
-		Returns the number of available I/O pins on the Gumbi board.
+		Queries the Gumbi board for the number of available I/O pins.
+
+		Returns the number of available I/O pins.
 		"""
 		self.SetMode(self.PINCOUNT)
 		return ord(self.ReadBytes()[0])
@@ -250,6 +314,8 @@ class Gumbi:
 	def Reset(self):
 		"""
 		Resets the communications stream with the Gumbi board.
+
+		Returns None.
 		"""
 		self.hid.send(self.PackByte(self.EXIT))
 		for i in range(0, self.RESET_LEN):
@@ -258,6 +324,8 @@ class Gumbi:
 	def Close(self):
 		"""
 		Closes the connection with the Gumbi board.
+
+		Returns None.
 		"""
 		self._exit()
 		return self._close()
@@ -265,10 +333,104 @@ class Gumbi:
 
 class Configuration(Gumbi):
 	"""
-	This class parses configuration files that can be used by Gumbi based code and applications, and
-	builds the command structure that is sent to the Gumbi hardware. 
+	This class parses configuration files that can be used by Gumbi based code and
+	applications, and builds the command structure that is sent to the Gumbi hardware. 
 
-	If used, this class instance should be called prior to invoking Gumbi.SetMode().
+	Configuration files consist of KEY=VALUE pairs, one per line. Comments are also
+	allowed. Example:
+		
+		# Timeout period, in milliseconds
+		TIMEOUT=10
+		# List of FOO pins
+		FOO=1,2,3,4
+
+	All data read from the configuration file will be stored in the CONFIG dictionary.
+	All values are stored in the CONFIG dict as lists.
+
+	There are some configuration values that are pre-defined in the CONFIG dict. These
+	values are used to generate the configuration data structure that is passed down
+	to the Gumbi board:
+
+		KEY		DESCRIPTION						DEFAULT VALUE
+		---------------------------------------------------------------------------------------
+		TOE		Output Enable wait period, in uS. Used as a 		0
+				general pin latch wait period. In most cases, 
+				this can be 0.
+
+		TBP		Byte Program wait period, in uS. Used as a wait		25
+				period by some modes after a byte of data is written.
+
+		ADDRESS		An ordered list of address pins. Primarily used		[]
+				for parallel mode.
+
+		DATA		An ordered list of data pins. Primarily used for	[]
+				parallel mode.
+
+		VCC		A list of pins that need to be pulled high to Vcc.	[]
+
+		GND		A list of pins that need to be pulled low to ground.	[]
+
+		CE		The chip enable pin, and its active state (0 is		[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+		WE		The write enable pin, and its active state (0 is	[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+
+		OE		The output enable pin, and its active state (0 is	[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+		BE		The byte enable pin, and its active state (0 is		[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+		BY		The chip busy pin, and its active state (0 is		[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+		WP		The write protect pin, and its active state (0 is	[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+		RST		The chip reset pin, and its active state (0 is		[255, 0]
+				active low, 1 is active high). Primarily used for
+				parallel mode.
+
+		COMMANDS	A list of commands to be executed prior to a read	[]
+				or write opration. The commands will vary based on
+				the selected mode of operation.
+
+		CMDELAY		The delay period, in seconds, to wait after executing	0
+				the commands listed in COMMANDS.
+
+		RECONFIGURE	If set to 1, the Gumbi board will configure the		0
+				I/O pins each time an action is received. If 0,
+				the I/O pins will only be configured once.
+
+		SDA		The SDA pin, used for I2C mode.				255
+		
+		CLK		The clock pin, used for I2C/SPI mode.			255
+
+		SS		The slave select pin, used for SPI mode.		255
+
+		MISO		The master in slave out pin, used for SPI mode.		255
+		
+		MOSI		The master out slave in pin, used for SPI mode.		255
+
+		PINS		The number of pins on the target chip connected to	0
+				the Gumbi board. This is used to automatically map
+				chip pins to Gumbi board pins, and assumes an even
+				number of pins on each row. If not specified, user
+				supplied pins will be interpreted as literal Gumbi
+				pin numbers.
+
+	Values in the CONFIG dict can also be viewed/modified using the GetSetting() and
+	SetSetting() methods.
+
+	If used, this class instance must be called prior to invoking Gumbi.SetMode().
 	"""
 
 	CONFIG = {
@@ -304,6 +466,8 @@ class Configuration(Gumbi):
 		@config - Path to the configuration file.
 		@mode   - The expected MODE value in the configuration file.
 		@pins   - Number of available I/O pins on the Gumbi board. If not specified, this is detected automatically.
+
+		Returns None.
 		"""
 		self.config = config
 		self.cmode = mode
@@ -355,6 +519,7 @@ class Configuration(Gumbi):
 	def _pin2real(self, pin):
 		"""
 		Converts the pin number in the config file to the physical Gumbi pin number.
+		For internal use only.
 		"""
 		pin = self.Pin2Real(pin)
 
@@ -368,6 +533,7 @@ class Configuration(Gumbi):
 	def _shift_pins(self):
 		"""
 		Shifts all pin numbers to be the appropriate pin number on the Gumbi board.
+		For internal use only.
 		"""
 		if not self.pins_shifted:
 			self.CONFIG["ADDRESS"] = self._convert_pin_array(self.CONFIG["ADDRESS"])
@@ -391,6 +557,7 @@ class Configuration(Gumbi):
 	def _convert_control_pin(self, cp):
 		"""
 		Converts a control pin array to a valid pin offset on the Gumbi board.
+		For internal use only.
 		"""
 		cpc = (self.UNUSED, 0)
 		if cp is not None and len(cp) > 0:
@@ -403,6 +570,7 @@ class Configuration(Gumbi):
 	def _convert_pin_array(self, pins):
 		"""
 		Converts an array of pin numbers to valid pin numbers on the Gumbi board.
+		For internal use only.
 		"""
 		for i in range(0, len(pins)):
 			pins[i] = self._pin2real(pins[i])
@@ -410,24 +578,24 @@ class Configuration(Gumbi):
 
 	def _pack_pins(self, pins):
 		"""
-		Packs an array of pins into a data structure.
+		Packs an array of pins into a data structure. For internal use only.
 		"""
 		pd = self.PackBytes(pins)
 		pd += self.PackFiller(self.MAX_PINS - len(pins))
 		return pd
 
 	def _pack_commands(self, commands):
+		"""
+		Packs the CONFIG["COMMANDS"] values for transmission to the Gumbi board.
+		Returns the mode on success. Returns None on failure.
+		"""
 		pd = self.PackDWords(commands)
 		pd += self.PackFiller((self.MAX_COMMANDS * 4) - len(pd))
 		return pd
 
 	def _config_mode(self):
 		"""
-		Returns the mode specified in a configuration file.
-
-		@config - Configuration file path.
-
-		Returns the mode on success. Returns None on failure.
+		Returns the mode specified in a configuration file. For internal use only.
 		"""
 		if self.config and self.config is not None:
 			for line in open(self.config).readlines():
@@ -438,7 +606,7 @@ class Configuration(Gumbi):
 
 	def _parse_config(self):
 		"""
-		Parses the specified configuration file.
+		Parses the specified configuration file. For internal use only.
 		"""
 		mode_name = self._config_mode()
 		if mode_name is not None and mode_name != self.cmode:
@@ -455,13 +623,46 @@ class Configuration(Gumbi):
 	def SetCommand(self, commands):
 		"""
 		Sets the list of commands to execute prior to running an action.
+		What constitutes a valid command will vary based on the current Gumbi mode.
+
+		@commands - A list of commands, or a configuration key identifier string.
+
+		Returns None.
 		"""
-		if commands is not None and self.CONFIG.has_key(commands):
+		if type(commands) == type([]):
+			self.CONFIG["COMMANDS"] = commands
+		elif commands is not None and self.CONFIG.has_key(commands):
 			self.CONFIG["COMMANDS"] = self.CONFIG[commands]
+
+	def GetSetting(self, key):
+		"""
+		Returns the value of the specified CONFIG dict key.
+
+		@key - The CONFIG key name.
+
+		Returns the key value on success, None on failure.
+		"""
+		value = None
+
+		if self.CONFIG.has_key(key):
+			value = self.CONFIG[key]
+		return value
+
+	def SetSetting(self, key, value):
+		"""
+		Sets the value for the specified CONFIG dict key.
+		
+		@key   - The CONFIG key name.
+		@value - The CONFIG key value.
+
+		Returns None.
+		"""
+		self.CONFIG[key] = value
 
 	def Pack(self, action, start, count):
 		"""
-		Packs the configuration data into a string of bytes suitable for transmission to the Gumbi board.
+		Packs the configuration data into a strinig of bytes suitable for transmission to the Gumbi board.
+		Automatically called by Gumbi.Write and Gumbi.Read.
 		
 		@action   - Action (READ, WRITE, EXIT, etc).
 		@start    - Start address.
