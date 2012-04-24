@@ -14,7 +14,7 @@ void gpio(void)
 	{
 		read_data((uint8_t *) &hgpio, sizeof(hgpio));
 		
-		for(i=0; i<hgpio.num_cmd && loop; i++)
+		for(i=0; i<hgpio.num_cmd && i<MAX_GPIO_COMMANDS && loop; i++)
 		{
 			switch(hgpio.cmd[i].action)
 			{

@@ -148,6 +148,16 @@ class GPIO(Gumbi):
 		for pin in pins:
 			self.PinLow(pin, buffer)
 
+	def SetPins(self, high, low):
+		"""
+		Sets the specified array of pins high and low respectively.
+		"""
+		for pin in high:
+			self.PinHigh(pin, True)
+		for pin in low:
+			self.PinLow(pin, True)
+		self.FlushBuffer()
+
 	def ReadPin(self, pin):
 		"""
 		Reads and returns the value of the specified pin.
@@ -166,6 +176,7 @@ class GPIO(Gumbi):
 		rx = ''
 		i = 0
 
+		# TODO: This function should only accept MAX_GPIO_COMMANDS pins at a time.
 		self.FlushBuffer()
 
 		while i < len(pins):
