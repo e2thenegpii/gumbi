@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from gumbi import *
 from modes import GPIO
-from time import sleep
 
 def bits2pins(value, pins):
 	high = []
@@ -15,14 +13,16 @@ def bits2pins(value, pins):
 			low.append(pins[i])
 	return (high, low)
 
-def wait(msg):
-	print msg
+def addrdata(byte, address):
+	high,low = bits2pins(address, addr)
+	io.SetPins(high, low)
+	io.PinLow(we)
 
-#	try:
-#		while True:
-#			sleep(1)
-#	except:
-#		pass
+	high,low = bits2pins(byte, data)
+	io.SetPins(high, low)
+	io.PinHigh(we)
+
+
 
 vdd = 32
 we = 31
@@ -33,26 +33,7 @@ addr = [12,11,10,9,8,7,6,5,27,26,23,25,4,28,29,3,2,30]
 data = [13,14,15,17,18,19,20,21]
 
 io = GPIO()
-io.PinsHigh([vdd,we,oe])
-io.PinsLow([vss, ce])
-io.PinsLow(addr)
-
-wait("Pins initialized...")
-
-def addrdata(byte, address):
-	high,low = bits2pins(address, addr)
-	io.PinsHigh(high)
-	io.PinsLow(low)
-	io.PinLow(we)
-
-	high,low = bits2pins(byte, data)
-	io.PinsHigh(high)
-	io.PinsLow(low)
-	io.PinHigh(we)
-	print high
-	print low
-	#wait("0x%X : 0x%X" % (address, byte))
-	print "0x%X : 0x%X" % (address, byte)
+io.SetPins([vdd,we,oe], [vss, ce])
 
 addrdata(0xaa, 0x5555)
 addrdata(0x55, 0x2aaa)
@@ -61,12 +42,10 @@ addrdata(0x90, 0x5555)
 io.PinHigh(ce)
 addrdata(0x00, 0x0000)
 
-io.PinLow(oe)
-io.PinLow(ce)
-print io.ReadPins(data)
+io.SetPins([], [oe, ce])
+print "Vendor ID:", io.ReadPins(data)
 
 addrdata(0x00, 0x0001)
-print io.ReadPins(data)
+print "Product ID:", io.ReadPins(data)
 
-sleep(1)
 io.Close()
