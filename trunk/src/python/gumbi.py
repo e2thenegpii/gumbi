@@ -172,7 +172,7 @@ class Gumbi:
 		"""
 		Reads n bytes of data from the Gumbi board. Default n == 1.
 		"""
-		return self.hid.recv(n)
+		return self.hid.recv(n)[0:n]
 
 	def WriteBytes(self, data):
 		"""

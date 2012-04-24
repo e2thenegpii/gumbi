@@ -176,18 +176,28 @@ class GPIO(Gumbi):
 		rx = ''
 		i = 0
 
-		# TODO: This function should only accept MAX_GPIO_COMMANDS pins at a time.
+		# Data MUST be flushed prior to entering the below loop. If not, _build_command may
+		# automatically flush the buffer for us. The resulting data returned from reading
+		# the specified pins will then interfere with the next ReadAck call the next time the
+		# buffer is flushed.
 		self.FlushBuffer()
 
 		while i < len(pins):
+			count = 0
+
+			# Only send MAX_GPIO_COMMANDS read commands at a time
 			for pin in pins[i:i+self.MAX_GPIO_COMMANDS]:
 				self._build_command(self.READ, self.Pin2Real(pins[i]), True)
 				i += 1
+				count += 1
 
+			# Make sure the buffer is flushed in case len(pins) < self.MAX_GPIO_COMMANDS
 			self.FlushBuffer()
-			rx += self.ReadBytes(len(pins))
+			# Read back count number of bytes
+			rx += self.ReadBytes(count)
 
-		for i in range(0, len(pins)):
+		# Convert all bytes to numbers
+		for i in range(0, len(rx)):
 			data.append(ord(rx[i]))
 
 		return data
