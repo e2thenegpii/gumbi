@@ -10,6 +10,10 @@ class Parallel(Gumbi):
 	def __init__(self, config=None):
 		"""
 		Class constructor.
+
+		@config - Path to configuration file.
+
+		Returns None.
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
@@ -17,7 +21,7 @@ class Parallel(Gumbi):
 	
 	def _exit(self):
 		"""
-		Exit parallel mode.
+		Exit parallel mode. For internal use only.
 		"""
 		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
 		self.ReadAck()
@@ -27,11 +31,16 @@ class SPI(Gumbi):
 	"""
 	Class for interfacing with SPI devices.
 	"""
+
 	MODE = "SPI"
 
 	def __init__(self, config=None):
 		"""
 		Class constructor.
+	
+		@config - Path to configuration file.
+
+		Returns None.
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
@@ -39,7 +48,7 @@ class SPI(Gumbi):
 
 	def _exit(self):
 		"""
-		Exit SPI mode.
+		Exit SPI mode. For internal use only.
 		"""
 		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
 		self.ReadAck()
@@ -55,6 +64,10 @@ class I2C(Gumbi):
 	def __init__(self, config=None):
 		"""
 		Class constructor.
+
+		@config - Path to configuration file.
+
+		Returns None.
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
@@ -62,7 +75,7 @@ class I2C(Gumbi):
 
 	def _exit(self):
 		"""
-		Exit I2C mode.
+		Exit I2C mode. For internal use only.
 		"""
 		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
 		self.ReadAck()
@@ -79,6 +92,10 @@ class GPIO(Gumbi):
 	def __init__(self, config=None):
 		"""
 		Class constructor.
+
+		@config - Path to configuration file.
+
+		Returns None.
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
@@ -87,7 +104,7 @@ class GPIO(Gumbi):
 
 	def _set_conf_pins(self):
 		"""
-		Sets the Vcc and GND pins specified in the config file.
+		Sets the Vcc and GND pins specified in the config file. For internal use only.
 		"""
 		self.PinsHigh(self.config.CONFIG["VCC"])
 		self.PinsLow(self.config.CONFIG["GND"])
@@ -96,6 +113,7 @@ class GPIO(Gumbi):
 		"""
 		Builds a command from the specified command code and pin number.
 		Buffers data if buffer is set to True.
+		For internal use only.
 		"""
 		self.BUFFER += self.PackBytes([cmd, pin])
 
@@ -104,13 +122,15 @@ class GPIO(Gumbi):
 
 	def _exit(self):
 		"""
-		Exits GPIO mode.
+		Exits GPIO mode. For internal use only.
 		"""
 		self._build_command(self.EXIT, 0)
 
 	def FlushBuffer(self):
 		"""
 		Flushes the GPIO data buffer.
+
+		Returns None.
 		"""
 		if len(self.BUFFER) > 0:
 			repeat = 0
@@ -125,12 +145,22 @@ class GPIO(Gumbi):
 	def PinHigh(self, pin, buffer=False):
 		"""
 		Sets the specified pin high.
+
+		@pin    - The pin to set high.
+		@buffer - Set to True to buffer this command.
+
+		Returns None.
 		"""
 		self._build_command(self.HIGH, self.Pin2Real(pin), buffer)
 
 	def PinsHigh(self, pins, buffer=False):
 		"""
 		Sets the specified pins high.
+
+		@pins   - A list of pins to set high.
+		@buffer - Set to True to buffer this command.
+
+		Returns None.
 		"""
 		for pin in pins:
 			self.PinHigh(pin, buffer)
@@ -138,12 +168,22 @@ class GPIO(Gumbi):
 	def PinLow(self, pin, buffer=False):
 		"""
 		Sets the specified pin low.
+
+		@pin    - The pin to pull low.
+		@buffer - Set to True to buffer this command.
+
+		Returns None.
 		"""
 		self._build_command(self.LOW, self.Pin2Real(pin), buffer)
 
 	def PinsLow(self, pins, buffer=False):
 		"""
 		Sets the specified pins low.
+		
+		@pins   - A list of pins to set low.
+		@buffer - Set to True to buffer this command.
+
+		Returns None.
 		"""
 		for pin in pins:
 			self.PinLow(pin, buffer)
@@ -151,6 +191,14 @@ class GPIO(Gumbi):
 	def SetPins(self, high, low):
 		"""
 		Sets the specified array of pins high and low respectively.
+		First the high pins are set, then the low pins.
+		These pin set commands are buffered, then flushed at once.
+
+		@high   - A list of pins to set high.
+		@low    - A list of pins to set high.
+		@buffer - Set to True to buffer this command.
+
+		Returns None.
 		"""
 		for pin in high:
 			self.PinHigh(pin, True)
@@ -160,8 +208,11 @@ class GPIO(Gumbi):
 
 	def ReadPin(self, pin):
 		"""
-		Reads and returns the value of the specified pin.
-		High == 1, Low == 0.
+		Immediately reads the current state of the specified pin.
+
+		@pin - The pin to read.
+
+		Returns 1 if the pin is high, 0 if low.
 		"""
 		self._build_command(self.READ, self.Pin2Real(pin))
 		data = ord(self.ReadBytes()[0])
@@ -169,8 +220,12 @@ class GPIO(Gumbi):
 
 	def ReadPins(self, pins):
 		"""
-		Reads and returns the value of the specified pins.
-		High == 1, Low == 0.
+		Immediately reads the values of the specified pins.
+		This function will flush the data buffer.
+
+		@pins - A list of pins to read.
+
+		Returns a list of values for each corresponding pin in the pins list (1 == high, 0 == low).
 		"""
 		data = []
 		rx = ''

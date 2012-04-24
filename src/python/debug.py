@@ -123,11 +123,11 @@ class Identify(Gumbi):
 	Class to obtain the Gumbi board ID.
 	"""
 
-	def Identify(self):
+	def ID(self):
 		"""
 		Returns the board ID, as reported by the Gumbi board.
 		"""
-		self.SetMode(self.ID)
+		self.SetMode(self.GID)
 		return self.ReadText()
 
 class Ping(Gumbi):
