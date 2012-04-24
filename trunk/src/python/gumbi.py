@@ -324,6 +324,7 @@ class Gumbi:
 	def Close(self):
 		"""
 		Closes the connection with the Gumbi board.
+		This method MUST be called or else subsequent Gumbi instances may fail.
 
 		Returns None.
 		"""
