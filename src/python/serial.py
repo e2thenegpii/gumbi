@@ -1,4 +1,5 @@
 from modes import GPIO
+from gumbi import Configuration
 
 class SPI(GPIO):
 	"""
@@ -17,7 +18,7 @@ class SPI(GPIO):
 		Returns None.
 		"""
 		self.config = Configuration(config, self.MODE)
-		Gumbi.__init__(self)
+		GPIO.__init__(self)
 		self.SetMode(self.SPI)
 
 	def Start(self):
@@ -132,9 +133,17 @@ class JTAG(GPIO):
 
 	def WriteBits(self, data):
 		"""
-		TODO: Write data to TDI
+		Clocks data into TDI.
 		"""
-		return None
+		for bit in data:
+			if bit:
+				self.PinHigh(self.tdi, True)
+			else:
+				self.PinLow(self.tdi, True)
+			self.PinHigh(self.clock, True)
+			self.PinLow(self.clock, True)
+
+		self.FlushBuffer()
 
 	def ClockLow(self):
 		"""
