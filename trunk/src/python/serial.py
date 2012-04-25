@@ -9,7 +9,7 @@ class SPI(GPIO):
 
 	MODE = "SPI"
 
-	def __init__(self, config=None):
+	def __init__(self, config=None, miso=0, mosi=0, ss=0, clk=0, cpol=0, cpha=0):
 		"""
 		Class constructor.
 	
@@ -17,55 +17,134 @@ class SPI(GPIO):
 
 		Returns None.
 		"""
-		self.config = Configuration(config, self.MODE)
+		self.miso = miso
+		self.mosi = mosi
+		self.ss = ss
+		self.clk = clk
+		self.cpol = cpol
+		self.cpha = cpha
+
+		if config is not None:
+			self.config = Configuration(config, self.MODE)
+			self.miso = self.config.GetSetting("MISO")[0]
+			self.mosi = self.config.GetSetting("MOSI")[0]
+			self.ss = self.config.GetSetting("SS")[0]
+			self.clk = self.config.GetSetting("CLK")[0]
+			self.cpol = self.config.GetSetting("CPOL")[0]
+			self.cpha = self.config.GetSetting("CPHA")[0]
+
+			# CPOL and CPHA are optional; default to 0
+			if self.cpol is None:
+				self.cpol = 0
+			if self.cpha is None:
+				self.cpha = 0
+
 		GPIO.__init__(self)
-		self.SetMode(self.SPI)
+		self.ClockIdle()
+
+	def ToggleClock(self, n=1, buffer=False):
+		"""
+		Toggles the SPI clock.
+
+		@n - Number of times to toggle the clock. Defaults to 1.
+
+		Returns None.
+		"""
+		for i in range(0, n):
+			self.ClockActive(buffer)
+			self.ClockIdle(buffer)
+
+	def ClockIdle(self, buffer=False):
+		"""
+		Sets the SPI clock to its idle position.
+
+		@buffer - Set to True to buffer the action.
+		
+		Returns None.
+		"""
+		if self.cpol == 0:
+			self.PinLow(self.clk, buffer)
+		else:
+			self.PinHigh(self.clk, buffer)
+
+
+	def ClockActive(self, buffer=False):
+		"""
+		Sets the SPI clock to its active position.
+
+		@buffer - Set to True to buffer the action.
+		
+		Returns None.
+		"""
+		if self.cpol == 0:
+			self.PinHigh(self.clk, buffer)
+		else:
+			self.PinLow(self.clk, buffer)
 
 	def Start(self):
-		self.WriteBytes(self.config.Pack(self.START, 0, 0))
-		self.ReadAck()
-		self.ReadAck()
+		"""
+		Starts an SPI transaction.
+		
+		Returns None.
+		"""
+		self.PinLow(self.ss)
 
 	def Stop(self):
-		self.WriteBytes(self.config.Pack(self.STOP, 0, 0))
-		self.ReadAck()
-		self.ReadAck()
-
-	def _exit(self):
 		"""
-		Exit SPI mode. For internal use only.
+		Stops an SPI transaction.
+		
+		Returns None.
 		"""
-		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
-		self.ReadAck()
-		self.ReadAck()
+		self.PinHigh(self.ss)
 
-class I2C(GPIO):
-	"""
-	Class for interfacing with I2C devices.
-	TODO: Make this subclassed from GPIO.
-	"""
-	
-	MODE = "I2C"
-
-	def __init__(self, config=None):
+	def Send(self, data):
 		"""
-		Class constructor.
+		Sends data over the SPI bus.
 
-		@config - Path to configuration file.
+		@data - Bytes of data to send.
 
 		Returns None.
 		"""
-		self.config = Configuration(config, self.MODE)
-		Gumbi.__init__(self)
-		self.SetMode(self.I2C)
+		for byte in data:
+			i = 7
+			while i >= 0:
+				if (byte & (1 << i)) > 0:
+					self.PinHigh(self.mosi, True)
+				else:
+					self.PinLow(self.mosi, True)
+				self.ToggleClock(1, True)
+		self.FlushBuffer()
 
-	def _exit(self):
+	def Receive(self, n=1):
 		"""
-		Exit I2C mode. For internal use only.
+		Reads data from the SPI bus.
+
+		@n - Number of bytes to read. Defaults to 1.
+
+		Returns a string of bytes read from the SPI bus.
 		"""
-		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
-		self.ReadAck()
-		self.ReadAck()
+		data = ''
+
+		for i in range(0, n):
+
+			j=7
+			while j >= 0:
+				if cpol == cpha:
+					self.ClockActive(True)
+					bit = self.ReadPin(self.miso)
+					self.ClockIdle()
+				else:
+					self.ClockActive(True)
+					self.ClockIdle(True)
+					bit = self.ReadPin(self.miso)
+
+				if bit:
+					byte |= (1 << j)
+				j += 1
+
+			data += chr(byte)
+
+		return data
 
 class JTAG(GPIO):
 	"""
@@ -91,10 +170,10 @@ class JTAG(GPIO):
 
 		if config is not None:
 			self.config = Configuration(config, self.MODE)
-			self.tdi = self.config.CONFIG["TDI"][0]
-			self.tdo = self.config.CONFIG["TDO"][0]
-			self.tms = self.config.CONFIG["TMS"][0]
-			self.clk = self.config.CONFIG["CLK"][0]
+			self.tdi = self.config.GetSetting("TDI")[0]
+			self.tdo = self.config.GetSetting("TDO")[0]
+			self.tms = self.config.GetSetting("TMS")[0]
+			self.clk = self.config.GetSetting("CLK")[0]
 		
 		GPIO.__init__(self)
 		self.TDILow()
@@ -117,7 +196,7 @@ class JTAG(GPIO):
 		"""
 		Reads the current status of the TDO pin.
 		"""
-		return self.GetPin(self.tdo)
+		return self.ReadPin(self.tdo)
 
 	def TMSHigh(self):
 		"""
@@ -145,17 +224,12 @@ class JTAG(GPIO):
 
 		self.FlushBuffer()
 
-	def ClockLow(self):
+	def Reset(self):
 		"""
-		Sets the clock pin low.
+		Reset the JTAG chain.
 		"""
-		self.PinLow(self.clk)
-	
-	def ClockHigh(self):
-		"""
-		Sets the clock pin high.
-		"""
-		self.PinHigh(self.clk)
+		self.PinHigh(self.tms, True)
+		self.Clock(5)
 
 	def Clock(self, n=1):
 		"""
@@ -164,5 +238,7 @@ class JTAG(GPIO):
 		@n - Number of clock cycles to send, defaults to 1.
 		"""
 		for i in range(0, n):
-			self.ClockHigh()
-			self.ClockLow()
+			self.PinHigh(self.clk, True)
+			self.PinLow(self.clk, True)
+		self.FlushBuffer()
+
