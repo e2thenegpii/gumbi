@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from time import sleep
-from modes import GPIO
+from gumbi import GPIO
 
 def wait():
 	sleep(.25)

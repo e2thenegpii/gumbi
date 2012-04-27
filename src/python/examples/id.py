@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from modes import GPIO
+from gumbi import GPIO
 
 def bits2pins(value, pins):
 	high = []
