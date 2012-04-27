@@ -90,7 +90,7 @@ void mcp23s17_io_init(void)
 	}
 }
 
-/* Detects the number of active slaves devices */
+/* Detects the number of active slave devices */
 uint8_t mcp23s17_chip_count(void)
 {
 	uint8_t i = 0;
