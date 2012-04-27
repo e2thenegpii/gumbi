@@ -57,7 +57,7 @@ int8_t usb_rawhid_send(const uint8_t *buffer, uint8_t timeout); // send a packet
 #define PLL_CONFIG() (PLLCSR = 0x1A)
 #define USB_CONFIG() (USBCON = ((1<<USBE)|(1<<OTGPADE)))
 #define USB_FREEZE() (USBCON = ((1<<USBE)|(1<<FRZCLK)))
-#elif defined(__AVR_AT90USB1286__)
+#elif defined(__AVR_AT90USB1286__) || defined(__AVR_AT90USB1287__)
 #define HW_CONFIG() (UHWCON = 0x81)
 #define PLL_CONFIG() (PLLCSR = 0x16)
 #define USB_CONFIG() (USBCON = ((1<<USBE)|(1<<OTGPADE)))

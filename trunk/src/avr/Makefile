@@ -14,24 +14,19 @@
 # To rebuild project do "make clean" then "make all".
 
 # Microcontroller Type
-#MCU=atmega32u4
-MCU=at90usb1286
+MCU = at90usb1287
 
 # Clock speed, in hertz
-F_CPU=16000000
+F_CPU = 16000000
 
 # Target file name (without extension).
 TARGET = gumbi
 
+# Path to DFU programmer
+DFU = dfu-programmer
+
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c common.c debug.c mcp23s17.c gpio.c parallel.c avrlib/rawhid.c avrlib/spi.c
-
-# Programming hardware: type `avrdude -c ?` to get a full listing.
-AVRDUDE_PROGRAMMER = usbtiny
-#AVRDUDE_PROGRAMMER = avrispmkII
-
-# Port to which the programmer is connected
-AVRDUDE_PORT = /dev/ttyUSB0
 
 ############# Don't need to change below here for most purposes  (Elliot)
 
@@ -273,14 +268,11 @@ extcoff: $(TARGET).elf
 	@echo $(MSG_EXTENDED_COFF) $(TARGET).cof
 	$(COFFCONVERT) -O coff-ext-avr $< $(TARGET).cof
 
-
-
-
 # Program the device.  
 install: $(TARGET).hex $(TARGET).eep
-	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
-
-
+	$(DFU) $(MCU) erase
+	$(DFU) $(MCU) flash $(TARGET).hex
+	$(DFU) $(MCU) start
 
 
 # Create final output files (.hex, .eep) from ELF output file.
