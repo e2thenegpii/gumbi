@@ -66,6 +66,7 @@ void mcp23s17_io_init(void)
 
 	/* Set IOCON value on all un-initialized slave devices */
 	write_register(0, IOCON, IOCON_DEFAULT_VALUE);
+	write_register(4, IOCON, IOCON_DEFAULT_VALUE);
 
 	/* Initialize all registers  on all slave devices */
 	for(i=0; i<MAX_DEVICES; i++)
@@ -93,17 +94,18 @@ void mcp23s17_io_init(void)
 /* Detects the number of active slave devices */
 uint8_t mcp23s17_chip_count(void)
 {
-	uint8_t i = 0;
+	uint8_t i = 0, c = 0;
 
 	for(i=0; i<MAX_DEVICES; i++)
 	{
-		if(read_register(i, IOCON) != IOCON_DEFAULT_VALUE)
+		if(read_register(i, IOCON) == IOCON_DEFAULT_VALUE)
 		{
-			break;
+			/* DEBUG: count all chips, even if their hardware addresses are not in order */
+			c++;
 		}
 	}
 
-	return i;
+	return c;
 }
 
 /* Initializes all available pins in the gconfig.pins data structure array */
