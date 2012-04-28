@@ -22,7 +22,7 @@ void mcp23s17_init(void)
 }
 
 /* 
- * Puts the MCP23S17 chips into a reset state, or takes the out of a reset state.
+ * Puts the MCP23S17 chips into a reset state, or takes them out of a reset state.
  * If rst == TRUE, the chips are put into a reset state.
  * If rst == FALSE, the chips are taken out of a reset state.
  */
@@ -66,9 +66,14 @@ void mcp23s17_io_init(void)
 
 	/* Set IOCON value on all un-initialized slave devices */
 	write_register(0, IOCON, IOCON_DEFAULT_VALUE);
-	write_register(4, IOCON, IOCON_DEFAULT_VALUE);
 
-	/* Initialize all registers  on all slave devices */
+	/* 
+	 * Per the MCP23S17 errata sheet, this is required to initialize some silicon versions
+	 * of the MCP23S17 chip if the A2 hardware address pin is pulled high.
+	 */
+	write_register(7, IOCON, IOCON_DEFAULT_VALUE);
+
+	/* Initialize all internal register states for all slave devices */
 	for(i=0; i<MAX_DEVICES; i++)
 	{
 		for(j=0; j<NUM_REGISTERS; j++)
@@ -85,8 +90,6 @@ void mcp23s17_io_init(void)
 				default:
 					gconfig.chips[i].port[j] = REG_DEFAULT_VALUE;
 			}
-
-			commit_settings(i, j);
 		}
 	}
 }
@@ -94,18 +97,17 @@ void mcp23s17_io_init(void)
 /* Detects the number of active slave devices */
 uint8_t mcp23s17_chip_count(void)
 {
-	uint8_t i = 0, c = 0;
+	uint8_t i = 0;
 
 	for(i=0; i<MAX_DEVICES; i++)
 	{
-		if(read_register(i, IOCON) == IOCON_DEFAULT_VALUE)
+		if(read_register(i, IOCON) != IOCON_DEFAULT_VALUE)
 		{
-			/* DEBUG: count all chips, even if their hardware addresses are not in order */
-			c++;
+			break;
 		}
 	}
 
-	return c;
+	return i;
 }
 
 /* Initializes all available pins in the gconfig.pins data structure array */
@@ -142,7 +144,7 @@ void write_register(uint8_t addr, uint8_t reg, uint8_t val)
 	spi_release();
 }
 
-/* Reads the current value of the reg register from teh MCP23S17 chip configured with teh addr hardware address */
+/* Reads the current value of the reg register from the MCP23S17 chip configured with the addr hardware address */
 uint8_t read_register(uint8_t addr, uint8_t reg)
 {
 	uint8_t value = 0;

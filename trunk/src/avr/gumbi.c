@@ -18,13 +18,13 @@ int main(void)
 	/* Make sure the entire gconfig structure is zeroed out */
 	memset(&gconfig, 0, sizeof(gconfig));
 
-	/* Initialize the MCP23S17 chips */	
-	mcp23s17_init();
-
 	/* Initialize USB */
 	usb_init();
 	while(!usb_configured()) { }
 	_delay_ms(1000);
+
+	/* Initialize the MCP23S17 chips */	
+	mcp23s17_init();
 
 	/* Show that we're alive and ready */
 	led_on();
@@ -73,6 +73,9 @@ void command_handler(uint8_t mode)
 			break;
 		case PINCOUNT:
 			handler = &pin_count;
+			break;
+		case SCANBUS:
+			handler = &scan_bus;
 			break;
 		default:
 			break;

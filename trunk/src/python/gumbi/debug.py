@@ -141,3 +141,16 @@ class Ping(Gumbi):
 		"""
 		self.SetMode(self.PING)
 		return self.ReadAck()
+
+class ScanBus(Gumbi):
+	"""
+	Class to perform a bus scan for I/O expansion chips.
+	"""
+
+	def Scan(self):
+		"""
+		Returns the number of available I/O pins.
+		"""
+		self.SetMode(self.SCANBUS)
+		return ord(self.ReadBytes(1)[0])
+
