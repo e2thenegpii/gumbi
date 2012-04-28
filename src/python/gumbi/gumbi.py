@@ -40,6 +40,7 @@ class Gumbi:
 	GID = 6
 	XFER = 7
 	PINCOUNT = 8
+	SCANBUS = 9
 
 	EXIT = 0
 	READ = 1

@@ -15,6 +15,13 @@ void ping(void)
 	ack();
 }
 
+/* Handler for SCANBUS mode. Checks the SPI bus for I/O expansion chips and responds with the number of available I/O pins. */
+void scan_bus(void)
+{
+	mcp23s17_init();
+	pin_count();
+}
+
 /* Handler for PINCOUNT mode. Responds with the number of available I/O pins. */
 void pin_count(void)
 {

@@ -4,7 +4,6 @@ from gumbi import Configuration
 class SPI(GPIO):
 	"""
 	Class for interfacing with SPI devices.
-	TODO: Make this subclassed from GPIO.
 	"""
 
 	MODE = "SPI"
