@@ -454,7 +454,6 @@ class Configuration(Gumbi):
 		self.config = config
 		self.cmode = mode
 		self.num_pins = pins
-		self._parse_config()
 		self.package_pins = 0
 		self.pins_shifted = False
 
@@ -462,6 +461,8 @@ class Configuration(Gumbi):
 			Gumbi.__init__(self)
 			self.num_pins = self.PinCount()
 			self.Close()
+
+		self._parse_config()
 
 	def ParseConfigLine(self, line):
 		"""
@@ -503,12 +504,14 @@ class Configuration(Gumbi):
 		Converts the pin number in the config file to the physical Gumbi pin number.
 		For internal use only.
 		"""
-		pin = self.Pin2Real(pin)
+		if pin != self.UNUSED:
 
-		# If the number of pins in the target package was specified in the config file,
-		# then treat the pin numbers as relative to the package type.
-		if self.num_pins > 0 and self.package_pins > 0 and pin >= (self.package_pins / 2):
-			pin += (self.num_pins - self.package_pins)
+			# If the number of pins in the target package was specified in the config file,
+			# then treat the pin numbers as relative to the package type.
+			if self.num_pins > 0 and self.package_pins > 0 and pin >= (self.package_pins / 2):
+				pin += (self.num_pins - self.package_pins)
+			
+			pin = self.Pin2Real(pin)
 	
 		return pin
 		
