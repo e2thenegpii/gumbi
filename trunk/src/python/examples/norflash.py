@@ -50,7 +50,6 @@ class NORFlash(Parallel):
 		return True
 
 if __name__ == "__main__":
-
 	flash = NORFlash(config="examples/config/39SF020.conf")
 	vendor, product = flash.ChipID()
 	flash.Close()

@@ -72,6 +72,20 @@ class GPIO(Gumbi):
 		"""
 		self._build_command(self.EXIT, 0)
 
+	def StartStream(self):
+		"""
+		Reads all I/O pins continuously until the Gumbi board is reset.
+		"""
+		
+		self._build_command(self.STREAM, 0, False)
+
+	def ReadStream(self):
+		"""
+		Reads back data from the data stream.
+		StartStream() must be invoked prior to calling ReadStream().
+		"""
+		return self.ReadBytes(self.BLOCK_SIZE)
+
 	def FlushBuffer(self):
 		"""
 		Flushes the GPIO data buffer.

@@ -82,7 +82,8 @@ enum actions
 	WRITE = 2,
 	HIGH = 3,
 	LOW = 4,
-	COMMAND = 5
+	COMMAND = 5,
+	STREAM = 6
 };
 
 struct pin

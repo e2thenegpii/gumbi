@@ -82,10 +82,14 @@ void mcp23s17_io_init(void)
 			{
 				case IOCON:
 					gconfig.chips[i].port[j] = IOCON_DEFAULT_VALUE;
+					/* Double check to ensure the IOCON settings are taken by each chip */
+					commit_settings(i, j);
 					break;
 				case IODIRA:
 				case IODIRB:
 					gconfig.chips[i].port[j] = IODIR_DEFAULT_VALUE;
+					/* Ensure that the data direction ports are in sync with our internal port settings */
+					commit_settings(i, j);
 					break;
 				default:
 					gconfig.chips[i].port[j] = REG_DEFAULT_VALUE;
