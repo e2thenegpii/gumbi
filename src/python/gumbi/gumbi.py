@@ -48,6 +48,7 @@ class Gumbi:
 	HIGH = 3
 	LOW = 4
 	COMMAND = 5
+	STREAM = 6
 
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
