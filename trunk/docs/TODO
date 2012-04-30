@@ -1,6 +1,7 @@
 Software/Firmware
 
 	o Add length limitation to STREAM mode.
+	o Get proper reset button to fit board pads.
 	o Test SPI and JTAG implementations.
 	o Make sure additional expantion chips get reset during MCP23S17 de-initialization.
 
