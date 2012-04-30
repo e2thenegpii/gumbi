@@ -18,6 +18,7 @@ class Gumbi:
 	PID = 0x1337
 	ACK = "GUMBIACK"
 	NACK = "GUMBINACK"
+	PINS_PER_PORT = 8
 	MAX_PINS = 128
 	MAX_COMMANDS = 32
 	MAX_GPIO_COMMANDS = 31
@@ -41,6 +42,7 @@ class Gumbi:
 	XFER = 7
 	PINCOUNT = 8
 	SCANBUS = 9
+	STREAM = 10
 
 	EXIT = 0
 	READ = 1
@@ -48,7 +50,6 @@ class Gumbi:
 	HIGH = 3
 	LOW = 4
 	COMMAND = 5
-	STREAM = 6
 
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
