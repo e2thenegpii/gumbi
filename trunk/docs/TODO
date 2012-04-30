@@ -1,0 +1,12 @@
+Software/Firmware
+
+	o Add length limitation to STREAM mode.
+	o Test SPI and JTAG implementations.
+	o Make sure additional expantion chips get reset during MCP23S17 de-initialization.
+
+Hardware
+	
+	o Use SOIC MCP23S17's
+	o 4 paired rows of 32 pin headers instead of 3
+	o Find 64 pin ZIF DIP socket to fit board
+	o Selectable voltage ranges: 5v, 3.3v, 1.8v, external
