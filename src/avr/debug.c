@@ -19,11 +19,19 @@ void ping(void)
 void scan_bus(void)
 {
 	mcp23s17_init();
-	pin_count();
+	get_pin_count();
+}
+
+/* Explicitly sets the number of available I/O pins. Responds with the new pin count setting. */
+void set_pin_count(void)
+{
+	read_data((uint8_t *) &gconfig.num_pins, sizeof(gconfig.num_pins));
+	gconfig.num_io_devices = gconfig.num_pins / PINS_PER_DEVICE;
+	get_pin_count();
 }
 
 /* Handler for PINCOUNT mode. Responds with the number of available I/O pins. */
-void pin_count(void)
+void get_pin_count(void)
 {
 	write_data((void *) &gconfig.num_pins, sizeof(gconfig.num_pins));
 }
