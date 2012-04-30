@@ -1,9 +1,10 @@
 #include "common.h"
 #include "gumbi.h"
-#include "debug.h"
-#include "gpio.h"
 #include "mcp23s17.h"
+#include "debug.h"
 #include "parallel.h"
+#include "gpio.h"
+#include "stream.h"
 
 int main(void)
 {
@@ -76,6 +77,9 @@ void command_handler(uint8_t mode)
 			break;
 		case SCANBUS:
 			handler = &scan_bus;
+			break;
+		case STREAM:
+			handler = &stream;
 			break;
 		default:
 			break;

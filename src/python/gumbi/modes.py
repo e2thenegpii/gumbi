@@ -27,6 +27,59 @@ class Parallel(Gumbi):
 		self.ReadAck()
 		self.ReadAck()
 
+class Stream(Gumbi):
+	"""
+	Class for streaming data from the Gumbi board.
+	"""
+
+	def __init__(self):
+		"""
+		Class constructor.
+		"""
+		Gumbi.__init__(self)
+		self.num_pins = self.PinCount()
+		self.num_ports = self.num_pins / self.PINS_PER_PORT
+		self.SetMode(self.STREAM)
+
+	def Stream(self, n):
+		"""
+		Reads in a stream of pin data.
+
+		@n - Number of stream blocks to read. Each block contains the pin status for every Gumbi pin.
+
+		Returns an array (size n) of dicts with each pin number and pin state.
+		"""
+		pin_array = []
+		bytes_per_iteration = self.num_ports * n
+
+		self.WriteBytes(self.config.Pack32(n))
+		data = self.ReadBytes(bytes_per_iteration)
+
+		for j in range(0, n):
+			i = 0
+			pins = {}
+			offset = j * self.num_ports
+			bytes = data[offset:offset+self.num_ports]
+
+			for byte in bytes:
+				byte = ord(byte)
+
+				for k in range(0, 8):
+					pins[i+1] = ((byte & (1 << k)) >> k)
+					i += 1
+
+			pin_array.append(pins)
+				
+
+		return pin_array
+
+	def _exit(self):
+		"""
+		Exit stream mode. For internal use only.
+		"""
+		self.WriteBytes(self.config.Pack32(0))
+		self.ReadAck()
+
 class GPIO(Gumbi):
 	"""
 	Class to provide raw read/write access to all I/O pins.

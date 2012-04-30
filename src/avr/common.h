@@ -72,7 +72,8 @@ enum modes
 	GID = 6,
 	XFER = 7,
 	PINCOUNT = 8,
-	SCANBUS = 9
+	SCANBUS = 9,
+	STREAM = 10
 };
 
 enum actions
@@ -82,8 +83,7 @@ enum actions
 	WRITE = 2,
 	HIGH = 3,
 	LOW = 4,
-	COMMAND = 5,
-	STREAM = 6
+	COMMAND = 5
 };
 
 struct pin

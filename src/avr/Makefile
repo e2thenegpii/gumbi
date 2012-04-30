@@ -26,7 +26,7 @@ TARGET = gumbi
 DFU = dfu-programmer
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c common.c debug.c mcp23s17.c gpio.c parallel.c avrlib/rawhid.c avrlib/spi.c
+SRC = $(TARGET).c common.c debug.c mcp23s17.c gpio.c stream.c parallel.c avrlib/rawhid.c avrlib/spi.c
 
 ############# Don't need to change below here for most purposes  (Elliot)
 

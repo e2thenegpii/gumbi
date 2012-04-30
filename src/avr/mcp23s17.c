@@ -55,7 +55,15 @@ void mcp23s17_enable(void)
 /* Puts the MCP23S17 chips into a reset state and disables SPI on the AVR. */
 void mcp23s17_disable(void)
 {
+	/* 
+	 * Any off-board expander chips don't have access to the reset line, 
+	 * so make sure they get re-initialized to default start up settings. 
+	 */
+	mcp23s17_io_init();
+
+	/* Reset all on-board expander chips */
 	mcp23s17_chip_reset(TRUE);
+
 	spi_disable();
 }
 
