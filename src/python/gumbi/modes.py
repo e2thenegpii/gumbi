@@ -52,7 +52,7 @@ class Stream(Gumbi):
 		pin_array = []
 		bytes_per_iteration = self.num_ports * n
 
-		self.WriteBytes(self.config.Pack32(n))
+		self.WriteBytes(self.Pack32(n))
 		data = self.ReadBytes(bytes_per_iteration)
 
 		for j in range(0, n):
@@ -77,7 +77,7 @@ class Stream(Gumbi):
 		"""
 		Exit stream mode. For internal use only.
 		"""
-		self.WriteBytes(self.config.Pack32(0))
+		self.WriteBytes(self.Pack32(0))
 		self.ReadAck()
 
 class GPIO(Gumbi):
