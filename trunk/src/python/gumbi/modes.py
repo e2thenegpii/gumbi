@@ -1,4 +1,5 @@
 from gumbi import *
+from debug import ScanBus
 
 class Parallel(Gumbi):
 	"""
@@ -32,12 +33,17 @@ class Stream(Gumbi):
 	Class for streaming data from the Gumbi board.
 	"""
 
-	def __init__(self):
+	def __init__(self, count=0):
 		"""
 		Class constructor.
+
+		@count - The number of pins to read. Must be a multiple of 16.
+			 If 0 or not specified, all pins will be read.
+	
+		Returns None.
 		"""
 		Gumbi.__init__(self)
-		self.num_pins = self.PinCount()
+		self.num_pins = self.PinCount(count)
 		self.num_ports = self.num_pins / self.PINS_PER_PORT
 		self.SetMode(self.STREAM)
 
@@ -79,6 +85,10 @@ class Stream(Gumbi):
 		"""
 		self.WriteBytes(self.Pack32(0))
 		self.ReadAck()
+
+		# Tell the Gumbi board to re-scan the I/O bus in order to re-set the pin count to its original value
+		self.SetMode(self.SCANBUS)
+		self.ReadBytes(1)
 
 class GPIO(Gumbi):
 	"""

@@ -2,10 +2,10 @@
 
 from gumbi import Info, ScanBus
 
+s = ScanBus()
+s.Scan()
+s.Close()
+
 i = Info()
 print i.Info()
 i.Close()
-
-s = ScanBus()
-print "I/O count:", s.Scan()
-s.Close()

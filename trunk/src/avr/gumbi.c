@@ -72,8 +72,11 @@ void command_handler(uint8_t mode)
 		case XFER:
 			handler = &xfer_test;
 			break;
-		case PINCOUNT:
-			handler = &pin_count;
+		case GETPINCOUNT:
+			handler = &get_pin_count;
+			break;
+		case SETPINCOUNT:
+			handler = &set_pin_count;
 			break;
 		case SCANBUS:
 			handler = &scan_bus;

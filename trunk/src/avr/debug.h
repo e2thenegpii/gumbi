@@ -9,7 +9,8 @@ void id(void);
 void ping(void);
 void info(void);
 void scan_bus(void);
-void pin_count(void);
+void set_pin_count(void);
+void get_pin_count(void);
 void speed_test(void);
 void xfer_test(void);
 

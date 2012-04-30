@@ -40,9 +40,10 @@ class Gumbi:
 	GPIO = 5
 	GID = 6
 	XFER = 7
-	PINCOUNT = 8
-	SCANBUS = 9
-	STREAM = 10
+	GETPINCOUNT = 8
+	SETPINCOUNT = 9
+	SCANBUS = 10
+	STREAM = 11
 
 	EXIT = 0
 	READ = 1
@@ -202,7 +203,7 @@ class Gumbi:
 		"""
 		Puts the Gumbi board in the specified mode.
 
-		@mode - One of: NOP, PARALLEL, SPI, I2C, PING, INFO, SPEEDTEST, GPIO, GID, XFER, PINCOUNT
+		@mode - One of: NOP, PARALLEL, SPI, I2C, PING, INFO, SPEEDTEST, GPIO, GID, XFER, GETPINCOUNT
 
 		Returns None.
 		"""
@@ -301,22 +302,30 @@ class Gumbi:
 		self.ReadAck()
 		self.ReadAck()
 
-	def PinCount(self):
+	def PinCount(self, count=0):
 		"""
-		Queries the Gumbi board for the number of available I/O pins.
+		Gets/sets the number of available I/O pins on the Gumbi board.
+
+		@count - The number of I/O pins to use on the Gumbi board. 
+			 If greater than 0, PinCount will change the current setting.
+			 If 0 or not specified, PinCount will only get the current setting.
 
 		Returns the number of available I/O pins.
 		"""
-		self.SetMode(self.PINCOUNT)
+		if not count or count is None:
+			self.SetMode(self.GETPINCOUNT)
+		else:
+			self.SetMode(self.SETPINCOUNT)
+			self.WriteBytes(self.PackByte(count))
+
 		return ord(self.ReadBytes()[0])
 
 	def Reset(self):
 		"""
-		Resets the communications stream with the Gumbi board.
+		Attempts to reset the communications stream with the Gumbi board.
 
 		Returns None.
 		"""
-		self.hid.send(self.PackByte(self.EXIT))
 		for i in range(0, self.RESET_LEN):
 			self.SetMode(self.NOP)
 

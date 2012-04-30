@@ -71,9 +71,10 @@ enum modes
 	GPIO = 5,
 	GID = 6,
 	XFER = 7,
-	PINCOUNT = 8,
-	SCANBUS = 9,
-	STREAM = 10
+	GETPINCOUNT = 8,
+	SETPINCOUNT = 9,
+	SCANBUS = 10,
+	STREAM = 11
 };
 
 enum actions
