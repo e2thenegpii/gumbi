@@ -10,3 +10,4 @@ Hardware
 	o Use SOIC MCP23S17's
 	o 4 paired rows of 32 pin headers instead of 3
 	o Selectable voltage ranges: 5v, 3.3v, 1.8v, external
+	o Expansion connector Vcc should be wired to the currently selected voltage regulator
