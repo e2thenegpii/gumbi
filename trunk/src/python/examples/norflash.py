@@ -49,7 +49,7 @@ class NORFlash(Parallel):
 		self.ExecuteCommands()
 		return True
 
-	def FlipEndianess(self, data):
+	def WordFlip(self, data):
 		"""
 		Word-flips a given data string.
 
@@ -73,3 +73,6 @@ if __name__ == "__main__":
 	data = flash.ReadChip(0, 1024)
 	t = flash.StopTimer()
 	flash.Close()
+
+	print "Read 1024 bytes of data in", t, "seconds"
+	open("flash.bin", "wb").write(data)
