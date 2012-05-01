@@ -4,7 +4,7 @@
 #include "debug.h"
 #include "parallel.h"
 #include "gpio.h"
-#include "stream.h"
+#include "monitor.h"
 
 int main(void)
 {
@@ -81,8 +81,8 @@ void command_handler(uint8_t mode)
 		case SCANBUS:
 			handler = &scan_bus;
 			break;
-		case STREAM:
-			handler = &stream;
+		case MONITOR:
+			handler = &monitor;
 			break;
 		default:
 			break;

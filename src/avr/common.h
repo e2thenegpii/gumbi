@@ -74,7 +74,7 @@ enum modes
 	GETPINCOUNT = 8,
 	SETPINCOUNT = 9,
 	SCANBUS = 10,
-	STREAM = 11
+	MONITOR = 11
 };
 
 enum actions
