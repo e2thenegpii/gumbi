@@ -131,7 +131,6 @@ class RawHID:
 			if hid_ret == HID_RET_SUCCESS:
 				data += packet
 				rx += len(packet)
-				print "%d / %d" % (rx, count)
 			# Ignore timeouts
 			elif hid_ret != 21:
 				raise Exception("hid_interrupt_read failed, error code: %d" % hid_ret)
