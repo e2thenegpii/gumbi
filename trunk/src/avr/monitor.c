@@ -1,7 +1,7 @@
-#include "stream.h"
+#include "monitor.h"
 
 /* Read from all pins and stream data back to the host n number of times */
-void stream(void)
+void monitor(void)
 {
 	uint32_t i = 0, count = 0;
 	uint8_t j = 0, gpioa = 0, gpiob = 0;

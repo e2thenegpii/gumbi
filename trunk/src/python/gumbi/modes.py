@@ -28,9 +28,9 @@ class Parallel(Gumbi):
 		self.ReadAck()
 		self.ReadAck()
 
-class Stream(Gumbi):
+class Monitor(Gumbi):
 	"""
-	Class for streaming data from the Gumbi board.
+	Class for monitoring input pins on the Gumbi board.
 	"""
 
 	def __init__(self, count=0):
@@ -45,13 +45,13 @@ class Stream(Gumbi):
 		Gumbi.__init__(self)
 		self.num_pins = self.PinCount(count)
 		self.num_ports = self.num_pins / self.PINS_PER_PORT
-		self.SetMode(self.STREAM)
+		self.SetMode(self.MONITOR)
 
-	def Stream(self, n):
+	def Sniff(self, n):
 		"""
-		Reads in a stream of pin data.
+		Reads in blocks of pin data.
 
-		@n - Number of stream blocks to read. Each block contains the pin status for every Gumbi pin.
+		@n - Number of locks to read. Each block contains the pin status for every Gumbi pin.
 
 		Returns an array (size n) of dicts with each pin number and pin state.
 		"""
@@ -81,7 +81,7 @@ class Stream(Gumbi):
 
 	def _exit(self):
 		"""
-		Exit stream mode. For internal use only.
+		Exit monitor mode. For internal use only.
 		"""
 		self.WriteBytes(self.Pack32(0))
 		self.ReadAck()
