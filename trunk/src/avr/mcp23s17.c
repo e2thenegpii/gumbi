@@ -209,7 +209,7 @@ uint8_t is_output(uint8_t p)
 /* Get the status of a specific pin. Returns 1 for high, 0 for low. */
 uint8_t get_pin(uint8_t p)
 {
-	return ((read_register(gconfig.pins[p].addr, gconfig.pins[p].reg) & (1 << gconfig.pins[p].bit)) >> gconfig.pins[p].bit);
+	return ((read_register(gconfig.pins[p].addr, gconfig.pins[p].reg) >> gconfig.pins[p].bit) & 1);
 }
 
 /* Set the specified pins high (hl = 1) or low (hl = 0) */

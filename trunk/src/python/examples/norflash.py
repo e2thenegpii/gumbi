@@ -5,7 +5,7 @@ from gumbi import Parallel
 class NORFlash(Parallel):
 
 	# Default chip erase time in seconds
-	DEFAULT_TSCE = 1
+	DEFAULT_TSCE = 60
 
 	def ReadChip(self, address, count):
 		"""
@@ -49,10 +49,27 @@ class NORFlash(Parallel):
 		self.ExecuteCommands()
 		return True
 
-if __name__ == "__main__":
-	flash = NORFlash(config="examples/config/39SF020.conf")
-	vendor, product = flash.ChipID()
-	flash.Close()
+	def FlipEndianess(self, data):
+		"""
+		Word-flips a given data string.
 
-	print "Vendor ID:  0x%X" % vendor
-	print "Product ID: 0x%X" % product
+		@data - String of data to flip.
+
+		Returns converted data.
+		"""
+		i = 0
+		fdata = ''
+
+		while i < len(data):
+			fdata += data[i+1] + data[i]
+			i += 2
+
+		return fdata
+
+
+if __name__ == "__main__":
+	flash = NORFlash(config="examples/config/29LV320.conf")
+	flash.StartTimer()
+	data = flash.ReadChip(0, 1024)
+	t = flash.StopTimer()
+	flash.Close()

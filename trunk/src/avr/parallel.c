@@ -167,14 +167,12 @@ void byte_enable(uint8_t tf)
 /* Check if the chip is busy or not */
 uint8_t is_busy(void)
 {
-	uint8_t reg = 0, busy = FALSE;
+	uint8_t busy = FALSE;
 
 	if(is_valid_pin(hconfig.by.pin))
 	{
-		reg = read_register(gconfig.pins[hconfig.by.pin].addr, gconfig.pins[hconfig.by.pin].reg);
-
-		if(((reg & (1 << gconfig.pins[hconfig.by.pin].bit)) >> gconfig.pins[hconfig.by.pin].bit) == gconfig.pins[hconfig.by.pin].active)
-		{
+		if(get_pin(hconfig.by.pin) == hconfig.by.active)
+		{	
 			busy = TRUE;
 		}
 	}
@@ -277,7 +275,7 @@ void data2pins(uint32_t data, uint8_t pins[], uint8_t num_pins)
 	{
 		for(i=0; i<num_pins; i++)
 		{
-			if((data & (1 << i)) > 0)
+			if(((data >> i) & 1) == 1)
 			{
 				set_pin_high(pins[i]);
 			}
@@ -359,13 +357,10 @@ void execute_commands(void)
 /* Read in the specified number of bytes from the chip and send them back to the host */
 void parallel_read(void)
 {
-	uint32_t sa = 0, ea = 0, ca = 0;
 	uint16_t data = 0;
 	uint8_t read_size = 0;
+	uint32_t i = 0, j = 0;
 	
-	sa = hconfig.addr;
-	ea = hconfig.addr + hconfig.count;
-
 	/* Get the size of the data bus, in bytes (1 or 2) */
 	read_size = data_size();
 	
@@ -376,13 +371,13 @@ void parallel_read(void)
 	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
 	commit_ddr_settings();
 
-	for(ca=sa; ca<ea; ca+=read_size)
+	for(i=0, j=0; i<hconfig.count; i+=read_size, j++)
 	{
 		/* Wait until the target chip is not busy */
 		while(is_busy()) { }
 
 		/* Set the appropriate address pins and assert the read/output enable line */
-		set_address(ca);
+		set_address(hconfig.addr+j);
 		output_enable(TRUE);
 		read_enable(TRUE);
 
