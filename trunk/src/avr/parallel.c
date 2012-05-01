@@ -68,8 +68,9 @@ void parallel(void)
 				write_enable(FALSE);
 				read_enable(FALSE);
 				output_enable(FALSE);
+				write_protect(FALSE);
 				chip_enable(TRUE);
-		
+					
 				/* Supply power to the target chip */
 				set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
 				set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
@@ -131,6 +132,12 @@ void output_enable(uint8_t tf)
 void write_enable(uint8_t tf)
 {
 	set_control_pin(hconfig.we, tf);
+}
+
+/* Set the write protect pin */
+void write_protect(uint8_t tf)
+{
+	set_control_pin(hconfig.wp, tf);
 }
 
 /* Set the read enable pin */
