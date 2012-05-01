@@ -281,14 +281,9 @@ class Gumbi:
 		while tx < len(data):
 			self.WriteBytes(data[tx:tx+self.BLOCK_SIZE])
 
-			# Wait for an ACK, ignoring timeout exceptions (writes could take a while)
-			while True:
-				try:
-					self.ReadAck()
-					tx += self.BLOCK_SIZE
-					break
-				except:
-					continue
+			# Wait for an ACK
+			self.ReadAck()
+			tx += self.BLOCK_SIZE
 
 		return True
 
@@ -519,7 +514,7 @@ class Configuration(Gumbi):
 
 			# If the number of pins in the target package was specified in the config file,
 			# then treat the pin numbers as relative to the package type.
-			if self.num_pins > 0 and self.package_pins > 0 and pin >= (self.package_pins / 2):
+			if self.num_pins > 0 and self.package_pins > 0 and pin > (self.package_pins / 2):
 				pin += (self.num_pins - self.package_pins)
 			
 			pin = self.Pin2Real(pin)

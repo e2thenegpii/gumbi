@@ -10,7 +10,7 @@ class RawHID:
 	INTERFACE = 0
 
 	BLOCK_SIZE = 64
-	TIMEOUT = 1000 # milliseconds
+	TIMEOUT = 10000 # milliseconds
 	CONNECT_RETRIES = 3
 
 	def __init__(self, bs=BLOCK_SIZE, verbose=False):
@@ -103,10 +103,7 @@ class RawHID:
 		while tx < len(packet):
 			hid_ret = hid_interrupt_write(self.hid, self.wep, packet[tx:tx+self.BLOCK_SIZE], timeout)
 			
-			if hid_ret != HID_RET_SUCCESS:
-				retval = False
-				raise Exception("hid_interrupt_write failed with error code 0x%X" % hid_ret)
-			else:
+			if hid_ret == HID_RET_SUCCESS:
 				tx += self.BLOCK_SIZE
 			
 		return retval
@@ -131,9 +128,7 @@ class RawHID:
 		while rx < count:
 			hid_ret, packet = hid_interrupt_read(self.hid, self.rep, self.BLOCK_SIZE, timeout)
 
-			if hid_ret != HID_RET_SUCCESS:
-				raise Exception("hid_interrupt_read failed with error code 0x%X" % hid_ret)
-			else:
+			if hid_ret == HID_RET_SUCCESS:
 				data += packet
 				rx += len(packet)
 
