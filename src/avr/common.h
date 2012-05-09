@@ -23,9 +23,10 @@
 
 #define LED_DDR DDRB
 #define LED_PORT PORTB
-#define LED_PIN PB5
+#define LED_PIN PB4
 
 #define MAX_PINS 128
+#define MIN_DEVICES 4
 #define MAX_DEVICES 8
 #define MAX_COMMANDS 32
 #define MAX_GPIO_COMMANDS 31
@@ -74,7 +75,8 @@ enum modes
 	GETPINCOUNT = 8,
 	SETPINCOUNT = 9,
 	SCANBUS = 10,
-	MONITOR = 11
+	MONITOR = 11,
+	VOLTAGE = 12
 };
 
 enum actions
