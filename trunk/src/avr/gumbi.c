@@ -5,6 +5,7 @@
 #include "parallel.h"
 #include "gpio.h"
 #include "monitor.h"
+#include "regulator.h"
 
 int main(void)
 {
@@ -15,6 +16,9 @@ int main(void)
 
 	/* Initialize LED pin(s) */
 	led_init();
+
+	/* Initialize voltage regulators */
+	regulator_init();
 
 	/* Make sure the entire gconfig structure is zeroed out */
 	memset(&gconfig, 0, sizeof(gconfig));
@@ -27,12 +31,23 @@ int main(void)
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();
 
+	/* If we were unable to identify the minimum number of I/O chips, blink the status LED and keep trying */
+	while(gconfig.num_io_devices < MIN_DEVICES)
+	{
+		led_on();
+		_delay_ms(500);
+		led_off();
+		_delay_ms(500);
+		
+		mcp23s17_init();
+	}
+
 	/* Show that we're alive and ready */
 	led_on();
 
 	while(TRUE)
 	{
-		read_data((uint8_t *) &mode, 1);
+		read_data((uint8_t *) &mode, sizeof(mode));
 		command_handler(mode);
 	}
 
@@ -83,6 +98,9 @@ void command_handler(uint8_t mode)
 			break;
 		case MONITOR:
 			handler = &monitor;
+			break;
+		case VOLTAGE:
+			handler = &voltage;
 			break;
 		default:
 			break;

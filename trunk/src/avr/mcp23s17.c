@@ -11,8 +11,6 @@
  */
 void mcp23s17_init(void)
 {
-	RESET_DDR |= (1 << RESET_PIN);
-
 	mcp23s17_enable();
 	gconfig.num_io_devices = mcp23s17_chip_count();
 	gconfig.num_pins = (gconfig.num_io_devices * PINS_PER_DEVICE);
@@ -21,30 +19,9 @@ void mcp23s17_init(void)
 	init_pins();
 }
 
-/* 
- * Puts the MCP23S17 chips into a reset state, or takes them out of a reset state.
- * If rst == TRUE, the chips are put into a reset state.
- * If rst == FALSE, the chips are taken out of a reset state.
- */
-void mcp23s17_chip_reset(uint8_t rst)
-{
-	if(rst == TRUE)
-	{
-		/* The reset pin is active low. */
-		RESET_PORT &= ~(1 << RESET_PIN);
-	}
-	else
-	{
-		RESET_PORT |= (1 << RESET_PIN);
-	}
-}
-
 /* Enables and configures all the MCP23S17 chips on the SPI bus. */
 void mcp23s17_enable(void)
 {
-	/* Bring the I/O chips out of their reset state */
-	mcp23s17_chip_reset(FALSE);
-
 	/* Initialize SPI */
 	spi_init(SPI_MODE_0, SPI_MSB, SPI_NO_INTERRUPT, SPI_MSTR_CLK4, SPI_SS_IDLE_HIGH);
 
@@ -55,14 +32,8 @@ void mcp23s17_enable(void)
 /* Puts the MCP23S17 chips into a reset state and disables SPI on the AVR. */
 void mcp23s17_disable(void)
 {
-	/* 
-	 * Any off-board expander chips don't have access to the reset line, 
-	 * so make sure they get re-initialized to default start up settings. 
-	 */
+	/* Re-initialize all I/O chips to default start up settings. */
 	mcp23s17_io_init();
-
-	/* Reset all on-board expander chips */
-	mcp23s17_chip_reset(TRUE);
 
 	spi_disable();
 }
