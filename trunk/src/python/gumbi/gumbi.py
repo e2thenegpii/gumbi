@@ -44,6 +44,16 @@ class Gumbi:
 	SETPINCOUNT = 9
 	SCANBUS = 10
 	MONITOR = 11
+	VOLTAGE = 12
+
+	REGULATORS = {
+		0 	: 0x00,
+		1	: 0x18,
+		1.8	: 0x18,
+		3	: 0x30,
+		4.7	: 0x47,
+		5	: 0x47
+	}
 
 	EXIT = 0
 	READ = 1
@@ -315,6 +325,23 @@ class Gumbi:
 
 		return ord(self.ReadBytes()[0])
 
+	def SetVoltage(self, v):
+		"""
+		Sets the voltage for the target device connected to the Gumbi board.
+
+		@v - The voltage to set. One of: 0, 1.8, 3, 5.
+
+		Returns None.
+		"""
+		if self.REGULATORS.has_key(v):
+			v = self.REGULATORS[v]
+		else:
+			v = 0
+
+		self.SetMode(self.VOLTAGE)
+		self.WriteBytes(self.PackByte(v))
+		self.ReadAck()
+
 	def Reset(self):
 		"""
 		Attempts to reset the communications stream with the Gumbi board.
@@ -443,8 +470,9 @@ class Configuration(Gumbi):
 		"COMMANDS"	: [],
 		"CMDELAY"	: [0],
 		"RECONFIGURE"	: [0],
-		# These are not part of the config strcture that gets pushed to the Gumbi board
-		"PINS"		: [0]
+		# These are not part of the config structure that gets pushed to the Gumbi board
+		"PINS"		: [0],
+		"VOLTAGE"	: [0]
 	}
 	
 	def __init__(self, config, mode, pins=None):
@@ -469,6 +497,7 @@ class Configuration(Gumbi):
 			self.Close()
 
 		self._parse_config()
+		self.SetVoltage(self.CONFIG["VOLTAGE"])
 
 	def ParseConfigLine(self, line):
 		"""
@@ -516,7 +545,7 @@ class Configuration(Gumbi):
 			# then treat the pin numbers as relative to the package type.
 			if self.num_pins > 0 and self.package_pins > 0 and pin > (self.package_pins / 2):
 				pin += (self.num_pins - self.package_pins)
-			
+
 			pin = self.Pin2Real(pin)
 	
 		return pin
