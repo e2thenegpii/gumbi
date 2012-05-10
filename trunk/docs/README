@@ -9,7 +9,6 @@ ABOUT
 		o Controlling LED/LCD displays
 		o Reverse engineering JTAG
 		o Reading and writing parallel and serial flash chips	
-		o Reading and writing SRAM chips
 		o Controlling RF synthesizers
 		o In circuit emulation for Zilog Z80 CPUs
 
@@ -39,7 +38,7 @@ HARDWARE
 	Although the Gumbi board uses four I/O expansion chips with a total of 64 I/O pins, it can support 
 	up to eight expansion chips providing 128 I/O pins. Additional expansion chips are easily added via
 	the expansion/ICSP connector, and are automatically detected when the board is powered on. This allows
-	users to add additional I/O pins without needing to modify any code or firmware.
+	users to attach additional I/O pins without needing to modify any code or firmware.
 
 FIRMWARE
 
@@ -48,5 +47,4 @@ FIRMWARE
 	the 'PROGRAM' jumper on the Gumbi board and press the reset button. You can then download new firmware
 	to the microcontroller using Atmel's FLIP software, or the open source dfu-programmer utility. To
 	take the microcontroller out of program mode, remove the PROGRAM jumper and press the reset button.
-
 
