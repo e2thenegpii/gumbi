@@ -3,7 +3,7 @@
 from time import sleep
 from gumbi import GPIO
 
-io = GPIO()
+io = GPIO(voltage=3)
 
 try:
 	while True:

@@ -494,10 +494,11 @@ class Configuration(Gumbi):
 		if self.num_pins is None:
 			Gumbi.__init__(self)
 			self.num_pins = self.PinCount()
+			if self.CONFIG["VOLTAGE"][0] != 0:
+				self.SetVoltage(self.CONFIG["VOLTAGE"][0])
 			self.Close()
 
 		self._parse_config()
-		self.SetVoltage(self.CONFIG["VOLTAGE"])
 
 	def ParseConfigLine(self, line):
 		"""
