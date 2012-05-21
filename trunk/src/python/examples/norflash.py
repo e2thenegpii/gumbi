@@ -11,14 +11,14 @@ class NORFlash(Parallel):
 		"""
 		Reads count bytes from the target chip starting at address.
 		"""
-                return self.Read(address, count)
+                return self.WordFlip(self.Read(address, count))
 
         def WriteChip(self, address, data):
 		"""
 		Writes data to the target chip starting at address.
 		"""
                 self.config.SetCommand("WRITE")
-                return self.Write(address, data)
+                return self.Write(address, self.WordFlip(data))
 
 	def ChipID(self):
 		"""
@@ -70,9 +70,9 @@ class NORFlash(Parallel):
 if __name__ == "__main__":
 	flash = NORFlash(config="examples/config/29LV320.conf")
 	flash.StartTimer()
-	data = flash.ReadChip(0, 1024)
+	data = flash.ReadChip(0, 0x400000)
 	t = flash.StopTimer()
 	flash.Close()
 
-	print "Read 1024 bytes of data in", t, "seconds"
+	print "Read 4Mbytes of data in", t, "seconds"
 	open("flash.bin", "wb").write(data)

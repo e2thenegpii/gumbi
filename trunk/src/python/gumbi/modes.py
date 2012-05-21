@@ -33,7 +33,7 @@ class Monitor(Gumbi):
 	Class for monitoring input pins on the Gumbi board.
 	"""
 
-	def __init__(self, count=0):
+	def __init__(self, count=0, voltage=0):
 		"""
 		Class constructor.
 
@@ -43,6 +43,8 @@ class Monitor(Gumbi):
 		Returns None.
 		"""
 		Gumbi.__init__(self)
+		if voltage != 0:
+			self.SetVoltage(voltage)
 		self.num_pins = self.PinCount(count)
 		self.num_ports = self.num_pins / self.PINS_PER_PORT
 		self.SetMode(self.MONITOR)
@@ -98,7 +100,7 @@ class GPIO(Gumbi):
 	MODE = "GPIO"
 	BUFFER = ""
 
-	def __init__(self, config=None):
+	def __init__(self, config=None, voltage=0):
 		"""
 		Class constructor.
 
@@ -108,6 +110,8 @@ class GPIO(Gumbi):
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self)
+		if voltage != 0:
+			self.SetVoltage(voltage)
 		self.SetMode(self.GPIO)
 		self._set_conf_pins()
 
