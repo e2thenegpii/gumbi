@@ -86,7 +86,7 @@ class RawHID:
 
 		return retval
 
-	def send(self, packet, timeout=TIMEOUT):
+	def send(self, packet, timeout=TIMEOUT, callback=None):
 		"""
 		Send a USB packet to the connected USB device.
 	
@@ -99,16 +99,18 @@ class RawHID:
 
 		tx = 0
 		retval = False
+		size = len(packet)
 
-		while tx < len(packet):
+		while tx < size:
 			hid_ret = hid_interrupt_write(self.hid, self.wep, packet[tx:tx+self.BLOCK_SIZE], timeout)
 			
 			if hid_ret == HID_RET_SUCCESS:
 				tx += self.BLOCK_SIZE
-			
+				if callback is not None:
+					callback(tx, size)
 		return retval
 
-	def recv(self, count=BLOCK_SIZE, timeout=TIMEOUT):
+	def recv(self, count=BLOCK_SIZE, timeout=TIMEOUT, callback=None):
 		"""
 		Read data from the connected USB device.
 	
@@ -131,7 +133,8 @@ class RawHID:
 			if hid_ret == HID_RET_SUCCESS:
 				data += packet
 				rx += len(packet)
-				print "%d / %d" % (rx, count)
+				if callback is not None:
+					callback(rx, count)
 			# Ignore timeouts
 			elif hid_ret != 21:
 				raise Exception("hid_interrupt_read failed, error code: %d" % hid_ret)
