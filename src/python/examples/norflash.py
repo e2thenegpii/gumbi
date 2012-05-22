@@ -9,10 +9,15 @@ class NORFlash(Parallel):
 	# Default chip erase time in seconds
 	DEFAULT_TSCE = 60
 
-	def ReadChip(self, address, count):
+	def ReadChip(self, address=0, count=0):
 		"""
 		Reads count bytes from the target chip starting at address.
 		"""
+		if count == 0:
+			count = self.config.GetSetting("SIZE")[0]
+			if count is None:
+				count = 0
+
                 return self.Read(address, count, callback=self.PrintProgress)
 
         def WriteChip(self, address, data):
@@ -31,8 +36,8 @@ class NORFlash(Parallel):
 		Returns a tuple of (vendor id, product id).
 		"""
 		self.config.SetCommand("ID")
-		vendor = ord(self.Read(0, 1)[0])
-		product = ord(self.Read(1, 1)[0])
+		vendor = ord(self.Read(0, 1))
+		product = ord(self.Read(1, 1))
 		return (vendor, product)
 
         def EraseChip(self):
@@ -41,11 +46,10 @@ class NORFlash(Parallel):
 		"""
                 self.config.SetCommand("ERASE")
 
-		try:
-			self.config.CONFIG["CMDELAY"] = self.config.CONFIG["TSCE"]
-		except:
-			self.config.CONFIG["CMDELAY"] = [self.DEFAULT_TSCE]
-
+		self.config.SetSetting("CMDELAY", self.config.GetSetting("TSCE"))
+		if self.config.GetSetting("CMDELAY") is None:
+			self.config.SetSetting("CMDELAY", [self.DEFAULT_TSCE])
+		
 		self.ExecuteCommands()
 		return True
 
@@ -150,7 +154,8 @@ if __name__ == "__main__":
 
 	if doerase:
 		flash = NORFlash(config=config)
-		print "Erasing chip...",
+		sys.stdout.write("Erasing chip...")
+		sys.stdout.flush()
 		flash.EraseChip()
 		flash.Close()
 		print "done."
@@ -171,7 +176,12 @@ if __name__ == "__main__":
 
 	if outfile:
 		flash = NORFlash(config=config)
-		print "Reading %d bytes starting at address 0x%X...\n" % (size, address)
+
+		if size:
+			print "Reading %d bytes starting at address 0x%X...\n" % (size, address)
+		else:
+			print "Reading all bytes starting at address 0x%X...\n" % (address)
+
 		flash.StartTimer()
 		open(outfile, "wb").write(flash.ReadChip(address, size))
 		t = flash.StopTimer()
@@ -180,3 +190,4 @@ if __name__ == "__main__":
 
 	if t:
 		print "Operation completed in", t, "seconds."
+
