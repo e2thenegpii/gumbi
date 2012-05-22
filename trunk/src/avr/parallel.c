@@ -402,7 +402,7 @@ void parallel_read(void)
 void parallel_write(void)
 {
 	uint16_t pbyte = 0;
-	uint32_t i = 0, j = 0;
+	uint32_t i = 0, j = 0, k = 0;
 	uint8_t data[BLOCK_SIZE] = { 0 };
 	uint8_t write_size = data_size();
 
@@ -410,13 +410,13 @@ void parallel_write(void)
 	if(write_size <= sizeof(pbyte))
 	{
 		/* Loop until we've written hconfig.count bytes */
-		for(i=0; i<hconfig.count; )
+		for(i=0, k=0; k<hconfig.count; )
 		{
 			/* Read in the data to be written to the chip */
 			read_data((uint8_t *) &data, sizeof(data));
 
 			/* Loop through this block of data, writing it sequentially to the chip, starting at address hconfig.addr */
-			for(j=0; i<hconfig.count && j<sizeof(data); i+=write_size, j+=write_size)
+			for(j=0; k<hconfig.count && j<sizeof(data); i++, k+=write_size, j+=write_size)
 			{
 				/* Get the next byte/word to write */
 				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);

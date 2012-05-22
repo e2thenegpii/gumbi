@@ -1,6 +1,7 @@
-import struct
-import time
 import sys
+import time
+import math
+import struct
 from rawhid import RawHID
 	
 class Gumbi:
@@ -228,7 +229,7 @@ class Gumbi:
 		"""
 		return self.ReadBytes().strip(self.NULL)
 
-	def ReadBytes(self, n=None):
+	def ReadBytes(self, n=None, callback=None):
 		"""
 		Reads n bytes of data from the Gumbi board.
 
@@ -236,13 +237,13 @@ class Gumbi:
 
 		Returns a string of bytes received from the Gumbi board.
 		"""
-		data = self.hid.recv(n)
+		data = self.hid.recv(n, callback=callback)
 		if n is not None:
 			data = data[0:n]
 
 		return data
 
-	def WriteBytes(self, data):
+	def WriteBytes(self, data, callback=None):
 		"""
 		Sends data to the Gumbi board.
 		
@@ -250,9 +251,9 @@ class Gumbi:
 
 		Returns None.
 		"""
-		self.hid.send(data)
+		self.hid.send(data, callback=callback)
 
-	def Read(self, start, count):
+	def Read(self, start, count, callback=None):
 		"""
 		Reads a number of bytes from the target chip, beginning at the given start address.
 
@@ -268,9 +269,9 @@ class Gumbi:
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
 	
-		return self.ReadBytes(count)
+		return self.ReadBytes(count, callback)
 
-	def Write(self, start, data):
+	def Write(self, start, data, callback=None):
 		"""
 		Writes a number of bytes to the target chip, beginning at the given start address.
 
@@ -288,13 +289,16 @@ class Gumbi:
 		# Even though the RawHID class will chunk data into BLOCK_SIZE chunks for us,
 		# we do it ourselves in order to wait for the ACK after each block is processed.
 		tx = 0
-		while tx < len(data):
+		size = len(data)
+
+		while tx < size:
 			self.WriteBytes(data[tx:tx+self.BLOCK_SIZE])
 
 			# Wait for an ACK
 			self.ReadAck()
 			tx += self.BLOCK_SIZE
-
+			if callback is not None:
+				callback(tx, size)
 		return True
 
 	def ExecuteCommands(self):
@@ -350,6 +354,22 @@ class Gumbi:
 		"""
 		for i in range(0, self.RESET_LEN):
 			self.SetMode(self.NOP)
+
+	def PrintProgress(self, current, total):
+		"""
+		Displays a progress bar to stdout.
+
+		@current - Current number of bytes.
+		@total   - Total number of bytes.
+
+		Returns None.
+		"""
+		percent = (current / float(total)) * 100
+		marks = int(math.floor(percent / 2))
+		markstring = "#" * marks
+		dotstring = "." * (50 - marks)
+		sys.stdout.write("\r[%s%s] %0.2f%%" % (markstring, dotstring, percent))
+		sys.stdout.flush()
 
 	def Close(self):
 		"""

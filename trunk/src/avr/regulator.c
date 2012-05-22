@@ -5,6 +5,7 @@ void regulator_init(void)
 {
 	REGULATOR_DDR |= (1 << V47_PIN) | (1 << V30_PIN) | (1 << V18_PIN);
 
+	/* Default to 4.7v */
 	set_regulator(V47);
 }
 
