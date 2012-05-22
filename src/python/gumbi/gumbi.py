@@ -371,7 +371,7 @@ class Gumbi:
 		marks = int(math.floor(percent / 2))
 		markstring = "#" * marks
 		dotstring = "." * (50 - marks)
-		sys.stdout.write("\r[%s%s] %0.2f%%" % (markstring, dotstring, percent))
+		sys.stdout.write("\r[%s%s] %0.2f%% (%d / %d)" % (markstring, dotstring, percent, current, total))
 		sys.stdout.flush()
 
 	def Close(self):

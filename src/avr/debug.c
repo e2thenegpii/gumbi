@@ -43,6 +43,8 @@ void info(void)
 
 	snprintf((void *) &info, BLOCK_SIZE, "Board ID: %s", BOARD_ID);
 	write_string((char *) &info);
+	snprintf((void *) &info, BLOCK_SIZE, "Firmware Version: %s", FIRMWARE_ID);
+	write_string((char *) &info);
 	snprintf((void *) &info, BLOCK_SIZE, "I/O Chip Count: %d", gconfig.num_io_devices);
 	write_string((char *) &info);
 	snprintf((void *) &info, BLOCK_SIZE, "I/O Pin Count: %d", gconfig.num_pins);

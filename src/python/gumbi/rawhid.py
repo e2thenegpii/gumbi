@@ -109,6 +109,10 @@ class RawHID:
 
 				if callback is not None:
 					callback(tx, size)
+
+		if tx == size:
+			retval = True
+
 		return retval
 
 	def recv(self, count=BLOCK_SIZE, timeout=TIMEOUT, callback=None):
@@ -141,6 +145,9 @@ class RawHID:
 			# Ignore timeouts
 			elif hid_ret != 21:
 				raise Exception("hid_interrupt_read failed, error code: %d" % hid_ret)
+
+		if not data:
+			data = None
 
 		return data
 
