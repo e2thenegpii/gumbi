@@ -364,6 +364,9 @@ class Gumbi:
 
 		Returns None.
 		"""
+		if current > total:
+			current = total
+
 		percent = (current / float(total)) * 100
 		marks = int(math.floor(percent / 2))
 		markstring = "#" * marks
