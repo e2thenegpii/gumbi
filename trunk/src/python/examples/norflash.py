@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from getopt import getopt as GetOpt, GetoptError
 from gumbi import Parallel
 
 class NORFlash(Parallel):
@@ -48,50 +49,134 @@ class NORFlash(Parallel):
 		self.ExecuteCommands()
 		return True
 
-def WordFlip(data):
-	"""
-	Word-flips a given data string.
 
-	@data - String of data to flip.
-
-	Returns converted data.
-	"""
-	i = 0
-	fdata = ''
-
-	while i < len(data):
-		fdata += data[i+1] + data[i]
-		i += 2
-
-	return fdata
 
 
 if __name__ == "__main__":
 
-	data = ''
-	size = 1024
+	CONFIG_PATH = "examples/config/"
+
+	def wordflip(data):
+		"""
+		Word-flips a given data string.
+
+		@data - String of data to flip.
+
+		Returns converted data.
+		"""
+		i = 0
+		fdata = ''
+
+		while i < len(data):
+			fdata += data[i+1] + data[i]
+			i += 2
+	
+		return fdata
+
+	def usage():
+		print ""
+		print "Usage: %s [OPTIONS]" % sys.argv[0]
+		print ""
+		print "\t-i, --id                 Retrieve the vendor and product IDs from the target chip."
+		print "\t-e, --erase              Erase the target chip."
+		print "\t-r, --read=<file>        Read data from the chip and save it in the specified file"
+		print "\t-w, --write=<file>       Write data from the specified file to the chip"
+		print "\t-c, --chip=<part no.>    Specify the part number of the target chip"
+		print "\t-a, --address=<int>      Specify the starting address [0]"
+		print "\t-s, --size=<int>         Specify the number of bytes to read/write"
+		print "\t-f, --word-flip=<file>   Word-flip the contents of the specified file"
+		print "\t-p, --path=<path>        Set the path to the chip configuration files [%s]" % CONFIG_PATH
+		print "\t-h, --help               Show help"
+		print ""
+		sys.exit(1)
+
+	t = 0
+	size = 0
+	address = 0
+	doid = False
+	doerase = False
+	chip = None
+	infile = None
+	config = None
+	outfile = None
+	flipfile = None
 
 	try:
-		size = int(sys.argv[1])
-		if size < 1024:
-			size = 1024
-	except:
-		pass
+		opts, args = GetOpt(sys.argv[1:], "iea:s:r:w:c:f:p:h", ["id", "erase", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "--path=", "help"])
+	except GetoptError, e:
+		print e
+		usage()
 
-	flash = NORFlash(config="examples/config/29LV320.conf")
+	for opt, arg in opts:
+		if opt in ('-i', '--id'):
+			doid = True
+		elif opt in ('-e', '--erase'):
+			doerase = True
+		elif opt in ('-a', '--address'):
+			address = int(arg)
+		elif opt in ('-s', '--size'):
+			size = int(arg)
+		elif opt in ('-r', '--read'):
+			outfile = arg
+		elif opt in ('-w', '--write'):
+			infile = arg
+		elif opt in ('-c', '--chip'):
+			chip = arg
+		elif opt in ('-f', '--word-flip'):
+			flipfile = arg
+		elif opt in ('-p', '--path'):
+			CONFIG_PATH = arg + '/'
+		elif opt in ('-h', '--help'):
+			usage()
 
-	try:
-		flash.WriteChip(0, "\x01\x02\x03\x04")
-		print "Reading %d bytes of data:\n" % size
+	
+	if flipfile:
+		open("%s.flip" % flipfile, "wb").write(wordflip(open(flipfile, "rb").read()))
+		print "File saved to: %s.flip" % flipfile
+		sys.exit(0)
+	else:
+		try:
+			config = CONFIG_PATH + chip.upper() + '.conf'
+		except:
+			print "Please specify the chip type!"
+			usage()
+
+	if doid:
+		flash = NORFlash(config=config)
+		vendor, product = flash.ChipID()
+		print "Vendor ID: 0x%X" % vendor
+		print "Product ID: 0x%X" % product
+		flash.Close()
+
+	if doerase:
+		flash = NORFlash(config=config)
+		print "Erasing chip...",
+		flash.EraseChip()
+		flash.Close()
+		print "done."
+
+	if infile:
+		flash = NORFlash(config=config)
+		
+		data = open(infile, "rb").read()
+		if not size:
+			size = len(data)
+		
+		print "Writing %d bytes from %s starting at address 0x%X...\n" % (size, infile, address)
 		flash.StartTimer()
-		data = flash.ReadChip(0, size)
-#		flash.EraseChip()
+		flash.WriteChip(address, data[0:size])
 		t = flash.StopTimer()
-	except:
-		pass
+		flash.Close()
+		print "\n"
 
-	flash.Close()
+	if outfile:
+		flash = NORFlash(config=config)
+		print "Reading %d bytes starting at address 0x%X...\n" % (size, address)
+		flash.StartTimer()
+		open(outfile, "wb").write(flash.ReadChip(address, size))
+		t = flash.StopTimer()
+		flash.Close()
+		print "\n"
 
-	print "\n"
-	print "Read", len(data), "bytes of data in", t, "seconds"
-	open("flash.bin", "wb").write(data)
+	if t:
+		print "Operation completed in", t, "seconds."
