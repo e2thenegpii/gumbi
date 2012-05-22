@@ -396,6 +396,7 @@ void parallel_read(void)
 		/* Use buffered writes here to ensure data is sent as efficiently as possible */
 		buffered_write((uint8_t *) &data, read_size);
 
+		/* Toggle the status LED every 128 loops */
 		if(k == 128)
 		{
 			toggle_led();
@@ -406,22 +407,7 @@ void parallel_read(void)
 	/* Make sure all data from the buffered_write() calls is flushed back to the host */
 	flush_buffer();
 
-	if(i == hconfig.count)
-	{
-		for(j=0; j<5; j++)
-		{
-			led_off();
-			_delay_ms(500);
-			led_on();
-			_delay_ms(500);
-		}
-	}
-	else
-	{
-		led_off();
-		sleep(5);
-		led_on();
-	}
+	led_on();
 }
 
 /* Read bytes from the host and write them to the target chip */

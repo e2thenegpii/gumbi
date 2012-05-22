@@ -35,7 +35,7 @@
 
 // You can change these to give your code its own name.
 #define STR_MANUFACTURER	L"Tactical Network Solutions"
-#define STR_PRODUCT		L"Gumbi v1"
+#define STR_PRODUCT		L"Gumbi v1.1"
 
 // These 4 numbers identify your device.  Set these to
 // something that is (hopefully) not used by any others!
