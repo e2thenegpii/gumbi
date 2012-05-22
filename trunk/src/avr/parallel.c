@@ -327,6 +327,9 @@ void write_data_to_addr(uint32_t address, uint16_t data)
 	/* Wait until the target chip is ready to receive commands */
 	while(is_busy()) { }
 
+	/* Disable all output from the target chip */
+	output_enable(FALSE);
+
 	/* Setup the address and data lines  */
 	set_address(address);
 	set_data(data);
@@ -359,7 +362,7 @@ void parallel_read(void)
 {
 	uint16_t data = 0;
 	uint8_t read_size = 0;
-	uint32_t i = 0, j = 0;
+	uint32_t i = 0, j = 0, k = 0;
 	
 	/* Get the size of the data bus, in bytes (1 or 2) */
 	read_size = data_size();
@@ -371,7 +374,7 @@ void parallel_read(void)
 	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
 	commit_ddr_settings();
 
-	for(i=0, j=0; i<hconfig.count; i+=read_size, j++)
+	for(i=0, j=0; i<hconfig.count; i+=read_size, j++, k++)
 	{
 		/* Wait until the target chip is not busy */
 		while(is_busy()) { }
@@ -392,10 +395,33 @@ void parallel_read(void)
 
 		/* Use buffered writes here to ensure data is sent as efficiently as possible */
 		buffered_write((uint8_t *) &data, read_size);
+
+		if(k == 128)
+		{
+			toggle_led();
+			k = 0;
+		}
 	}
 
 	/* Make sure all data from the buffered_write() calls is flushed back to the host */
 	flush_buffer();
+
+	if(i == hconfig.count)
+	{
+		for(j=0; j<5; j++)
+		{
+			led_off();
+			_delay_ms(500);
+			led_on();
+			_delay_ms(500);
+		}
+	}
+	else
+	{
+		led_off();
+		sleep(5);
+		led_on();
+	}
 }
 
 /* Read bytes from the host and write them to the target chip */

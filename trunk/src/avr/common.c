@@ -17,6 +17,11 @@ void led_off(void)
 	LED_PORT &= ~(1 << LED_PIN);
 }
 
+void toggle_led(void)
+{
+	LED_PORT ^= (1 << LED_PIN);
+}
+
 /* Send an ACK. */
 void ack(void)
 {

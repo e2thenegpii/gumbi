@@ -9,7 +9,8 @@
 #include <avrlib/rawhid.h>
 #include <util/delay.h>
 
-#define BOARD_ID "GUMBI v1"
+#define BOARD_ID "GUMBI v1.1"
+#define FIRMWARE_ID "0.1"
 
 #define TRUE 1
 #define FALSE 0
@@ -24,6 +25,7 @@
 #define LED_DDR DDRB
 #define LED_PORT PORTB
 #define LED_PIN PB4
+#define LED_XOR PINB
 
 #define MAX_PINS 128
 #define MIN_DEVICES 4
@@ -164,6 +166,7 @@ struct config
 void led_init(void);
 void led_on(void);
 void led_off(void);
+void toggle_led(void);
 void ack(void);
 void nack(void);
 void sleep(uint8_t seconds);
