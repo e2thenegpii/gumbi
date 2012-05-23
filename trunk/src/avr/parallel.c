@@ -362,7 +362,7 @@ void parallel_read(void)
 {
 	uint16_t data = 0;
 	uint8_t read_size = 0;
-	uint32_t i = 0, j = 0, k = 0;
+	uint32_t i = 0, j = 0, c = 0;
 	
 	/* Get the size of the data bus, in bytes (1 or 2) */
 	read_size = data_size();
@@ -374,7 +374,7 @@ void parallel_read(void)
 	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
 	commit_ddr_settings();
 
-	for(i=0, j=0; i<hconfig.count; i+=read_size, j++, k++)
+	for(i=0, j=0, c=0; i<hconfig.count; i+=read_size, j++, c++)
 	{
 		/* Wait until the target chip is not busy */
 		while(is_busy()) { }
@@ -396,11 +396,11 @@ void parallel_read(void)
 		/* Use buffered writes here to ensure data is sent as efficiently as possible */
 		buffered_write((uint8_t *) &data, read_size);
 
-		/* Toggle the status LED every 128 loops */
-		if(k == 128)
+		/* Toggle the status LED */
+		if(c == LED_TOGGLE_INTERVAL)
 		{
 			toggle_led();
-			k = 0;
+			c = 0;
 		}
 	}
 
@@ -414,7 +414,7 @@ void parallel_read(void)
 void parallel_write(void)
 {
 	uint16_t pbyte = 0;
-	uint32_t i = 0, j = 0, k = 0;
+	uint32_t i = 0, j = 0, k = 0, c = 0;
 	uint8_t data[BLOCK_SIZE] = { 0 };
 	uint8_t write_size = data_size();
 
@@ -422,13 +422,13 @@ void parallel_write(void)
 	if(write_size <= sizeof(pbyte))
 	{
 		/* Loop until we've written hconfig.count bytes */
-		for(i=0, k=0; k<hconfig.count; )
+		for(i=0, k=0, c=0; k<hconfig.count; )
 		{
 			/* Read in the data to be written to the chip */
 			read_data((uint8_t *) &data, sizeof(data));
 
 			/* Loop through this block of data, writing it sequentially to the chip, starting at address hconfig.addr */
-			for(j=0; k<hconfig.count && j<sizeof(data); i++, k+=write_size, j+=write_size)
+			for(j=0; k<hconfig.count && j<sizeof(data); i++, c++, k+=write_size, j+=write_size)
 			{
 				/* Get the next byte/word to write */
 				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
@@ -439,6 +439,13 @@ void parallel_write(void)
 				/* Write the specified byte/word to the next address, then wait for the write to complete */
 				write_data_to_addr(hconfig.addr+i, pbyte);
 				_delay_us(hconfig.tbp);
+
+				/* Toggle the status LED every 128 loops */
+				if(c == LED_TOGGLE_INTERVAL)
+				{
+					toggle_led();
+					c = 0;
+				}
 			}
 
 			/* Acknowledge when we've finished processing a block of data so the host knows we're ready for more */

@@ -21,6 +21,7 @@
 #define BLOCK_SIZE 64
 #define DUMMY_BYTE 0xFF
 #define XFER_TEST_SIZE 128
+#define LED_TOGGLE_INTERVAL 128
 
 #define LED_DDR DDRB
 #define LED_PORT PORTB
