@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import math
@@ -521,7 +522,7 @@ class Configuration(Gumbi):
 				self.SetVoltage(self.CONFIG["VOLTAGE"][0])
 			self.Close()
 
-		self._parse_config()
+		self._parse_config(self.config)
 
 	def ParseConfigLine(self, line):
 		"""
@@ -644,7 +645,7 @@ class Configuration(Gumbi):
 					return value
 		return None
 
-	def _parse_config(self):
+	def _parse_config(self, config):
 		"""
 		Parses the specified configuration file. For internal use only.
 		"""
@@ -652,11 +653,14 @@ class Configuration(Gumbi):
 		if mode_name is not None and mode_name != self.cmode:
 			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.cmode))
 
-		if self.config and self.config is not None:
-			for line in open(self.config).readlines():
+		if config and config is not None:
+			for line in open(config).readlines():
 				(key, value) = self.ParseConfigLine(line)
 				if key is not None and value is not None:
-					self.CONFIG[key] = value
+					if key == "INCLUDE":
+						self._parse_config(os.path.dirname(config) + '/' + value + '.conf')
+					else:
+						self.CONFIG[key] = value
 
 		self.package_pins = self.CONFIG["PINS"][0]
 
