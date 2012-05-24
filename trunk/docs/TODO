@@ -3,5 +3,6 @@ Software/Firmware
 	o Test SPI and JTAG implementations.
 
 Hardware
-	
+
+	o Debug issues with adding additional chips via the expansion header	
 	o 4 paired rows of 32 pin headers instead of 3
