@@ -52,6 +52,8 @@ class RawHID:
 				retval = True
 				if self.verbose:
 					hid_write_identification(sys.stderr, self.hid)
+			elif hid_ret == 7:
+				raise Exception("hid_force_open() failed: cannot find USB device")
 			else:
 				raise Exception("hid_force_open() failed with error code: %d\n" % hid_ret)
 		else:
