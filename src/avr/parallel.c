@@ -408,6 +408,7 @@ void parallel_read(void)
 	flush_buffer();
 
 	led_on();
+	return;
 }
 
 /* Read bytes from the host and write them to the target chip */
@@ -440,7 +441,7 @@ void parallel_write(void)
 				write_data_to_addr(hconfig.addr+i, pbyte);
 				_delay_us(hconfig.tbp);
 
-				/* Toggle the status LED every 128 loops */
+				/* Toggle the status LED */
 				if(c == LED_TOGGLE_INTERVAL)
 				{
 					toggle_led();
@@ -453,6 +454,7 @@ void parallel_write(void)
 		}
 	}
 
+	led_on();
 	return;
 }
 
