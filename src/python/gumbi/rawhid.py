@@ -142,7 +142,7 @@ class RawHID:
 				rx += len(packet)
 
 				if callback is not None:
-					callback(rx, count)
+					callback(packet, rx, count)
 
 			# Ignore timeouts
 			elif hid_ret != 21:
