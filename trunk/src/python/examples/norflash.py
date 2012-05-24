@@ -36,8 +36,8 @@ class NORFlash(Parallel):
 		Returns a tuple of (vendor id, product id).
 		"""
 		self.config.SetCommand("ID")
-		vendor = ord(self.Read(0, 1))
-		product = ord(self.Read(1, 1))
+		vendor = ord(self.Read(0, 2)[0])
+		product = ord(self.Read(1, 2)[0])
 		return (vendor, product)
 
         def EraseChip(self):
@@ -94,6 +94,14 @@ if __name__ == "__main__":
 		print ""
 		sys.exit(1)
 
+
+
+
+
+	ACTIONS = {}
+	ACTION_LIST = ['id', 'erase', 'write', 'read']
+	CONF_EXT = '.conf'
+
 	t = 0
 	size = 0
 	address = 0
@@ -113,17 +121,17 @@ if __name__ == "__main__":
 
 	for opt, arg in opts:
 		if opt in ('-i', '--id'):
-			doid = True
+			ACTIONS['id'] = True
 		elif opt in ('-e', '--erase'):
-			doerase = True
+			ACTIONS['erase'] = True
 		elif opt in ('-a', '--address'):
 			address = int(arg)
 		elif opt in ('-s', '--size'):
 			size = int(arg)
 		elif opt in ('-r', '--read'):
-			outfile = arg
+			ACTIONS['read'] = arg
 		elif opt in ('-w', '--write'):
-			infile = arg
+			ACTIONS['write'] = arg
 		elif opt in ('-c', '--chip'):
 			chip = arg
 		elif opt in ('-f', '--word-flip'):
@@ -140,54 +148,56 @@ if __name__ == "__main__":
 		sys.exit(0)
 	else:
 		try:
-			config = CONFIG_PATH + chip.upper() + '.conf'
+			config = CONFIG_PATH + chip.upper() + CONF_EXT
 		except:
 			print "Please specify the chip type!"
 			usage()
 
-	if doid:
-		flash = NORFlash(config=config)
-		vendor, product = flash.ChipID()
-		print "Vendor ID: 0x%X" % vendor
-		print "Product ID: 0x%X" % product
-		flash.Close()
+	for action in ACTION_LIST:
 
-	if doerase:
-		flash = NORFlash(config=config)
-		sys.stdout.write("Erasing chip...")
-		sys.stdout.flush()
-		flash.EraseChip()
-		flash.Close()
-		print "done."
-
-	if infile:
-		flash = NORFlash(config=config)
+		if ACTIONS.has_key(action):
+			
+			t = 0
+			flash = NORFlash(config=config)
+			
+			if action == 'id':
+				vendor, product = flash.ChipID()
+				print "Vendor ID: 0x%X" % vendor
+				print "Product ID: 0x%X" % product
 		
-		data = open(infile, "rb").read()
-		if not size:
-			size = len(data)
-		
-		print "Writing %d bytes from %s starting at address 0x%X...\n" % (size, infile, address)
-		flash.StartTimer()
-		flash.WriteChip(address, data[0:size])
-		t = flash.StopTimer()
-		flash.Close()
-		print "\n"
+			elif action == 'erase':
+				sys.stdout.write("Erasing chip...")
+				sys.stdout.flush()
+				flash.EraseChip()
+				print "done."
 
-	if outfile:
-		flash = NORFlash(config=config)
+			elif action == 'write':
+				data = open(ACTIONS['write'], "rb").read()
+				if not size:
+					size = len(data)
+			
+				print "Writing %d bytes from %s starting at address 0x%X...\n" % (size, ACTIONS['write'], address)
+				flash.StartTimer()
+				flash.WriteChip(address, data[0:size])
+				t = flash.StopTimer()
+				print "\n"
 
-		if size:
-			print "Reading %d bytes starting at address 0x%X...\n" % (size, address)
-		else:
-			print "Reading all bytes starting at address 0x%X...\n" % (address)
+			elif action == 'read':
+				if size:
+					print "Reading %d bytes starting at address 0x%X...\n" % (size, address)
+				else:
+					print "Reading all bytes starting at address 0x%X...\n" % (address)
 
-		flash.StartTimer()
-		open(outfile, "wb").write(flash.ReadChip(address, size))
-		t = flash.StopTimer()
-		flash.Close()
-		print "\n"
+				flash.StartTimer()
+				open(ACTIONS['read'], "wb").write(flash.ReadChip(address, size))
+				t = flash.StopTimer()
+				print "\n"
 
-	if t:
-		print "Operation completed in", t, "seconds."
+			flash.Close()
+
+			if t:
+				print "Operation completed in", t, "seconds."
+
+			if action == 'id':
+				sys.exit(0)
 
