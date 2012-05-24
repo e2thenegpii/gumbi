@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 from getopt import getopt as GetOpt, GetoptError
 from gumbi import Parallel
@@ -8,17 +9,29 @@ class NORFlash(Parallel):
 
 	# Default chip erase time in seconds
 	DEFAULT_TSCE = 60
+	TMP_FILE = 'flash_read.tmp'
+
+	def _read_callback(self, data, current, total):
+		open(self.TMP_FILE, "ab").write(data)
+		self.PrintProgress(current, total)
 
 	def ReadChip(self, address=0, count=0):
 		"""
 		Reads count bytes from the target chip starting at address.
 		"""
+		self.read_data = ''
+		
+		try:
+			os.unlink(self.TMP_FILE)
+		except:
+			pass
+
 		if count == 0:
 			count = self.config.GetSetting("SIZE")[0]
 			if count is None:
 				count = 0
 
-                return self.Read(address, count, callback=self.PrintProgress)
+                return self.Read(address, count, callback=self._read_callback)
 
         def WriteChip(self, address, data):
 		"""
@@ -30,8 +43,7 @@ class NORFlash(Parallel):
 	def ChipID(self):
 		"""
 		This is a generic method to obtain the vendor and product ID of parallel flash chips.
-		It may not work for some chips; for others, you may need to connect an external high voltage power source to certian pins. 
-		Consult your chip's datasheet.
+		It may not work for all chips; consult the chip's datasheet.
 
 		Returns a tuple of (vendor id, product id).
 		"""
