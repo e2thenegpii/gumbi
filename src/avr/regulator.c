@@ -30,15 +30,25 @@ void set_regulator(uint8_t voltage)
 	{
 		case V47:
 			REGULATOR_PORT |= (1 << V47_PIN);
+			gconfig.regulator = V47;
 			break;
 		case V30:
 			REGULATOR_PORT |= (1 << V30_PIN);
+			gconfig.regulator = V30;
 			break;
 		case V18:
 			REGULATOR_PORT |= (1 << V18_PIN);
+			gconfig.regulator = V18;
 			break;
 		case V0:
 		default:
+			gconfig.regulator = V0;
 			break;
 	}
+}
+
+/* Returns the current retulator value */
+uint8_t get_regulator(void)
+{
+	return gconfig.regulator;
 }

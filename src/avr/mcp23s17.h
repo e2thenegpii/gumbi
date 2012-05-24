@@ -2,6 +2,7 @@
 #define __MCP23S17_H__
 
 #include "common.h"
+#include "regulator.h"
 #include <avrlib/spi.h>
 
 #define REG_READ 1

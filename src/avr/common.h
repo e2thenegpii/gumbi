@@ -162,6 +162,7 @@ struct config
 	struct device chips[MAX_DEVICES];
 	uint8_t buffer[BLOCK_SIZE];
 	uint8_t buffer_size;
+	uint8_t regulator;
 } gconfig;
 
 void led_init(void);
