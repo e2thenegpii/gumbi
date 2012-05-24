@@ -20,5 +20,6 @@ enum voltages
 void voltage(void);
 void regulator_init(void);
 void set_regulator(uint8_t voltage);
+uint8_t get_regulator(void);
 
 #endif
