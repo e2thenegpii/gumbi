@@ -174,11 +174,7 @@ void nack(void);
 void sleep(uint8_t seconds);
 uint8_t is_valid_pin(uint8_t p);
 void set_control_pin(struct ctrlpin p, uint8_t tf);
-void write_string(char *string);
 void read_data(uint8_t *buffer, uint32_t count);
-void write_data(uint8_t *buffer, uint32_t count);
 uint8_t are_valid_pins(uint8_t pins[], uint8_t count);
-void flush_buffer(void);
-void buffered_write(uint8_t *buffer, uint32_t size);
 
 #endif

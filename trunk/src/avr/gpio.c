@@ -34,7 +34,7 @@ void gpio(void)
 					break;
 				default:
 					nack();
-					write_string("The specified GPIO action is not supported");
+					fprintf(&gconfig.usb, "The specified GPIO action is not supported [0x%X]\n", hgpio.cmd[i].action);
 					break;
 			}
 		}

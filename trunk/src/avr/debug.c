@@ -6,7 +6,7 @@ void nop(void) { }
 /* Handler for ID mode. Return the board ID string */
 void id(void)
 {
-	write_string(BOARD_ID);
+	fprintf(&gconfig.usb, "%s\n", BOARD_ID);
 }
 
 /* Handler for PING mode. Just responds with an ACK. */
@@ -33,22 +33,16 @@ void set_pin_count(void)
 /* Handler for PINCOUNT mode. Responds with the number of available I/O pins. */
 void get_pin_count(void)
 {
-	write_data((void *) &gconfig.num_pins, sizeof(gconfig.num_pins));
+	fprintf(&gconfig.usb, "%c", gconfig.num_pins);
 }
 
 /* Handler for INFO mode. Prints out several lines of info, with the last line being an ACK. */
 void info(void)
 {
-	uint8_t info[BLOCK_SIZE] = { 0 };
-
-	snprintf((void *) &info, BLOCK_SIZE, "Board ID: %s\n", BOARD_ID);
-	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "Firmware Version: %s\n", FIRMWARE_ID);
-	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "I/O Chip Count: %d\n", gconfig.num_io_devices);
-	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "I/O Pin Count: %d\n", gconfig.num_pins);
-	write_string((char *) &info);
+	fprintf(&gconfig.usb, "Board ID: %s\n", BOARD_ID);
+	fprintf(&gconfig.usb, "Firmware Version: %s\n", FIRMWARE_ID);
+	fprintf(&gconfig.usb, "I/O Chip Count: %d\n", gconfig.num_io_devices);
+	fprintf(&gconfig.usb, "I/O Pin Count: %d\n", gconfig.num_pins);
 	ack();
 }
 
@@ -62,18 +56,20 @@ void speed_test(void)
 
 	for(i=0; i<count; i++)
 	{
-		buffered_write((uint8_t *) &byte, 1);
+		fprintf(&gconfig.usb, "%c", byte);
 	}
-	
-	flush_buffer();
 }
 
 /* Handler for XFER mode. Reads in a 4 byte size field, reads in size data while sending it back out to the host. */
 void xfer_test(void)
 {
+	uint32_t i = 0;
 	uint8_t buf[XFER_TEST_SIZE] = { 0 };
 
 	read_data((uint8_t *) &buf, sizeof(buf));
-	buffered_write((uint8_t *) &buf, sizeof(buf));
-	flush_buffer();
+
+	for(i=0; i<sizeof(buf); i++)
+	{
+		fprintf(&gconfig.usb, "%c", buf[i]);
+	}
 }

@@ -25,13 +25,13 @@ void toggle_led(void)
 /* Send an ACK. */
 void ack(void)
 {
-	write_string(ACK);
+	fprintf(&gconfig.usb, "%s\n", ACK);
 }
 
 /* Send a NACK. */
 void nack(void)
 {
-	write_string(NACK);
+	fprintf(&gconfig.usb, "%s\n", NACK);
 }
 
 /* Delay for x number of seconds */
@@ -56,61 +56,6 @@ void read_data(uint8_t *buffer, uint32_t size)
 	for(i=0; i<size; i++)
 	{
 		buffer[i] = fgetc(&gconfig.usb);
-	}
-}
-
-/* Send size bytes of data from buffer to USB HID endpoint */
-void write_data(uint8_t *buffer, uint32_t size)
-{
-	uint32_t i = 0;
-
-	for(i=0; i<size; i++)
-	{
-		fprintf(&gconfig.usb, "%c", buffer[i]);
-	}
-}
-
-/* Flushes the contents of the global buffer used by buffered_write() */
-void flush_buffer(void)
-{
-	if(gconfig.buffer_size > 0)
-	{
-		write_data((uint8_t *) &gconfig.buffer, gconfig.buffer_size);
-	}
-
-	memset((void *) &gconfig.buffer, 0, BLOCK_SIZE);
-	gconfig.buffer_size = 0;
-}
-
-/* Buffers transmitted data into BLOCK_SIZE data chunks */
-void buffered_write(uint8_t *buffer, uint32_t size)
-{
-	uint32_t i = 0;
-
-	for(i=0; i<size; i++)
-	{
-		gconfig.buffer[gconfig.buffer_size++] = buffer[i];
-
-		if(gconfig.buffer_size == BLOCK_SIZE)
-		{
-			flush_buffer();
-		}
-	}
-}
-
-/* Wrapper function for writing strings. Strings must be <= BLOCK_SIZE bytes. */
-void write_string(char *string)
-{
-	uint8_t size = 0;
-
-	if(string != NULL)
-	{
-		size = strlen(string);
-		if(size > BLOCK_SIZE)
-		{
-			size = BLOCK_SIZE;
-		}
-		write_data((uint8_t *) string, size);
 	}
 }
 

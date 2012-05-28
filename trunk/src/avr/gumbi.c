@@ -119,7 +119,7 @@ void command_handler(uint8_t mode)
 	{
 		/* If the specified mode is unknown/unsupported, send a NACK followed by a reason */
 		nack();
-		write_string("Specified mode not implemented!");
+		fprintf(&gconfig.usb, "The specified mode is not implemented [0x%X]\n", mode);
 	}
 
 	return;
