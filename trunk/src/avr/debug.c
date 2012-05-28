@@ -41,13 +41,13 @@ void info(void)
 {
 	uint8_t info[BLOCK_SIZE] = { 0 };
 
-	snprintf((void *) &info, BLOCK_SIZE, "Board ID: %s", BOARD_ID);
+	snprintf((void *) &info, BLOCK_SIZE, "Board ID: %s\n", BOARD_ID);
 	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "Firmware Version: %s", FIRMWARE_ID);
+	snprintf((void *) &info, BLOCK_SIZE, "Firmware Version: %s\n", FIRMWARE_ID);
 	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "I/O Chip Count: %d", gconfig.num_io_devices);
+	snprintf((void *) &info, BLOCK_SIZE, "I/O Chip Count: %d\n", gconfig.num_io_devices);
 	write_string((char *) &info);
-	snprintf((void *) &info, BLOCK_SIZE, "I/O Pin Count: %d", gconfig.num_pins);
+	snprintf((void *) &info, BLOCK_SIZE, "I/O Pin Count: %d\n", gconfig.num_pins);
 	write_string((char *) &info);
 	ack();
 }

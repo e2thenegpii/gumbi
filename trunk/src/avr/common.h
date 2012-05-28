@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <avr/io.h>
-#include <avrlib/rawhid.h>
 #include <util/delay.h>
 
 #define BOARD_ID "GUMBI v1.1"
@@ -15,8 +14,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define ACK "GUMBIACK"
-#define NACK "GUMBINACK"
+#define ACK "GUMBIACK\n"
+#define NACK "GUMBINACK\n"
 
 #define BLOCK_SIZE 64
 #define DUMMY_BYTE 0xFF
@@ -163,6 +162,7 @@ struct config
 	uint8_t buffer[BLOCK_SIZE];
 	uint8_t buffer_size;
 	uint8_t regulator;
+	FILE usb;
 } gconfig;
 
 void led_init(void);

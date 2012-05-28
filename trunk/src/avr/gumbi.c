@@ -1,5 +1,6 @@
 #include "common.h"
 #include "gumbi.h"
+#include "serial.h"
 #include "mcp23s17.h"
 #include "debug.h"
 #include "parallel.h"
@@ -10,6 +11,10 @@
 int main(void)
 {
 	uint8_t mode = 0;
+
+	/* Ensure watchdog is disabled */
+	MCUSR &= ~(1 << WDRF);
+	wdt_disable();
 
 	/* By default, the DIV8 fuse is set. Change it to use the full clock speed. */
 	clock_prescale_set(clock_div_1);
@@ -23,10 +28,8 @@ int main(void)
 	/* Make sure the entire gconfig structure is zeroed out */
 	memset(&gconfig, 0, sizeof(gconfig));
 
-	/* Initialize USB */
-	usb_init();
-	while(!usb_configured()) { }
-	_delay_ms(1000);
+	/* Initialize virtual serial port */
+	serial_init();
 
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();

@@ -52,55 +52,21 @@ void sleep(uint8_t seconds)
 void read_data(uint8_t *buffer, uint32_t size)
 {
 	uint32_t i = 0;
-	uint8_t r = 0, n = 0;
-	uint8_t rx_buf[BLOCK_SIZE] = { 0 };
 
-	for(i=0; i<size; i+=n)
+	for(i=0; i<size; i++)
 	{
-		memset((uint8_t *) &rx_buf, 0, sizeof(rx_buf));
-
-		r = usb_rawhid_recv((uint8_t *) &rx_buf, 0);
-		if(r > 0)
-		{
-			if((i+r) > size)
-			{
-				n = size - i;
-			}
-			else
-			{
-				n = r;
-			}
-
-			memcpy(buffer+i, (void *) &rx_buf, n);
-		}
-		else
-		{
-			n = 0;
-		}
+		buffer[i] = fgetc(&gconfig.usb);
 	}
 }
 
 /* Send size bytes of data from buffer to USB HID endpoint */
 void write_data(uint8_t *buffer, uint32_t size)
 {
-	uint32_t i = 0, n = 0;
-	uint8_t tx_buf[BLOCK_SIZE] = { 0 };
+	uint32_t i = 0;
 
-	for(i=0; i<size; i+=n)
+	for(i=0; i<size; i++)
 	{
-		memset((void *) &tx_buf, 0, sizeof(tx_buf));
-		
-		if((size-i) >= BLOCK_SIZE)
-		{
-			n = BLOCK_SIZE;
-		}
-		else
-		{
-			n = size - i;
-		}
-		
-		memcpy((void *) &tx_buf, buffer+i, n);
-		usb_rawhid_send((uint8_t *) &tx_buf, 50);
+		fprintf(&gconfig.usb, "%c", buffer[i]);
 	}
 }
 

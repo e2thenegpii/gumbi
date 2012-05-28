@@ -96,6 +96,7 @@ void parallel(void)
 				case COMMAND:
 					ack();
 					execute_commands();
+					ack();
 					break;
 				case EXIT:
 					ack();
