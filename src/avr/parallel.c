@@ -105,7 +105,7 @@ void parallel(void)
 				default:
 					/* Bad action specified, respond with NACK and a reason string */
 					nack();
-					write_string("The specified action is not supported");
+					fprintf(&gconfig.usb, "The specified action is not supported [0x%X]\n", hconfig.action);
 					break;
 			}
 		}
@@ -113,7 +113,7 @@ void parallel(void)
 		{
 			/* Band configuration specified, send a NACK and a reason */
 			nack();
-			write_string("Invalid configuration");
+			fprintf(&gconfig.usb, "Invalid configuration");
 		}
 	}
 	
@@ -394,8 +394,12 @@ void parallel_read(void)
 		read_enable(FALSE);
 		_delay_us(hconfig.toe);
 
-		/* Use buffered writes here to ensure data is sent as efficiently as possible */
-		buffered_write((uint8_t *) &data, read_size);
+		/* Send one (or two) bytes of read data back to the host */
+		fputc((data & 0xFF), &gconfig.usb);
+		if(read_size > 1)
+		{
+			fputc((data >> 8), &gconfig.usb);
+		}
 
 		/* Toggle the status LED */
 		if(c == LED_TOGGLE_INTERVAL)
@@ -405,9 +409,6 @@ void parallel_read(void)
 		}
 	}
 
-	/* Make sure all data from the buffered_write() calls is flushed back to the host */
-	flush_buffer();
-
 	led_on();
 	return;
 }
@@ -415,39 +416,43 @@ void parallel_read(void)
 /* Read bytes from the host and write them to the target chip */
 void parallel_write(void)
 {
-	uint16_t pbyte = 0;
-	uint32_t i = 0, j = 0, k = 0, c = 0;
-	uint8_t data[BLOCK_SIZE] = { 0 };
+	uint16_t data = 0;
+	uint32_t i = 0, c = 0, j = 0;
+	uint8_t data1 = 0, data2 = 0;
 	uint8_t write_size = data_size();
 
-	/* We use write_size in the memcpy, so make sure it's sane. */
-	if(write_size <= sizeof(pbyte))
+	/* Make sure write_size is sane. */
+	if(write_size <= sizeof(data))
 	{
 		/* Loop until we've written hconfig.count bytes */
-		for(i=0, k=0, c=0; k<hconfig.count; )
+		for(i=0, j=hconfig.addr, c=0; i<hconfig.count; c++, j++, i+=write_size)
 		{
-			/* Read in the data to be written to the chip */
-			read_data((uint8_t *) &data, sizeof(data));
+			/* Get a byte of data from the host */
+			data1 = fgetc(&gconfig.usb);
 
-			/* Loop through this block of data, writing it sequentially to the chip, starting at address hconfig.addr */
-			for(j=0; k<hconfig.count && j<sizeof(data); i++, c++, k+=write_size, j+=write_size)
+			/* If we're working with a 16 bit data bus, get the next byte */
+			if(write_size > 1)
 			{
-				/* Get the next byte/word to write */
-				memcpy((void *) &pbyte, (void *) &(data[j]), write_size);
+				/* Send an ack so the host will send the next byte */
+				ack();
+				data2 = fgetc(&gconfig.usb);
+			}
 
-				/* Write operations may need to be preceeded by a set of commands that prepare the chip for writing */
-				execute_commands();
+			/* Combine the two bytes read into a single 16 bit value */
+			data = data1 + (data2 << 8);
 
-				/* Write the specified byte/word to the next address, then wait for the write to complete */
-				write_data_to_addr(hconfig.addr+i, pbyte);
-				_delay_us(hconfig.tbp);
+			/* Write operations may need to be preceeded by a set of commands that prepare the chip for writing */
+			execute_commands();
 
-				/* Toggle the status LED */
-				if(c == LED_TOGGLE_INTERVAL)
-				{
-					toggle_led();
-					c = 0;
-				}
+			/* Write the specified byte/word to the next address, then wait for the write to complete */
+			write_data_to_addr(j, data);
+			_delay_us(hconfig.tbp);
+
+			/* Toggle the status LED */
+			if(c == LED_TOGGLE_INTERVAL)
+			{
+				toggle_led();
+				c = 0;
 			}
 
 			/* Acknowledge when we've finished processing a block of data so the host knows we're ready for more */

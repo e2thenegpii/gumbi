@@ -4,7 +4,6 @@ import time
 import math
 import struct
 import serial
-#from rawhid import RawHID
 	
 class Gumbi:
 	"""
@@ -226,9 +225,9 @@ class Gumbi:
 
 	def ReadText(self):
 		"""
-		Reads an ASCII string from the Gumbi board.
+		Reads a new-line terminated ASCII string from the Gumbi board.
 
-		Returns the string read
+		Returns the string read.
 		"""
 		return self.serial.readline().strip()
 
@@ -236,16 +235,17 @@ class Gumbi:
 		"""
 		Reads n bytes of data from the Gumbi board.
 
-		@n - Number of bytes to read. If not specified, BLOCK_SIZE bytes are read.
+		@n - Number of bytes to read. If not specified, one byte is read.
 
 		Returns a string of bytes received from the Gumbi board.
 		"""
 		if n is None:
 			n = 1
 
-		data = self.serial.read(n)
-		if n is not None:
-			data = data[0:n]
+		for i in range(0, n):
+			data += self.serial.read(1)
+			if callback is not None:
+				callback(i, n)
 
 		return data
 
@@ -257,7 +257,14 @@ class Gumbi:
 
 		Returns None.
 		"""
-		self.serial.write(data)
+		n = len(data)
+
+		for i in range(0, n):
+			self.serial.write(data[i])
+			if callback is not None:
+				callback(i, n)
+	
+		return None
 
 	def Read(self, start, count, callback=None):
 		"""
@@ -292,17 +299,16 @@ class Gumbi:
 		# Receive the ACK indicating that the specified action is valid
 		self.ReadAck()
 	
-		# Even though the RawHID class will chunk data into BLOCK_SIZE chunks for us,
-		# we do it ourselves in order to wait for the ACK after each block is processed.
 		tx = 0
 		size = len(data)
 
+		# Write one byte at a time in order to wait for the ACK after each byte is processed.
 		while tx < size:
-			self.WriteBytes(data[tx:tx+self.BLOCK_SIZE])
+			self.WriteBytes(data[tx:tx+1])
 
 			# Wait for an ACK
 			self.ReadAck()
-			tx += self.BLOCK_SIZE
+			tx += 1
 			if callback is not None:
 				callback(tx, size)
 		return True
@@ -347,7 +353,7 @@ class Gumbi:
 		if self.REGULATORS.has_key(v):
 			v = self.REGULATORS[v]
 		else:
-			v = 0
+			v = self.REGULATORS[0]
 
 		self.SetMode(self.VOLTAGE)
 		self.WriteBytes(self.PackByte(v))

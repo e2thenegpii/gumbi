@@ -25,12 +25,10 @@ void monitor(void)
 				gpioa = read_register(j, GPIOA);
 				gpiob = read_register(j, GPIOB);
 
-				buffered_write((uint8_t *) &gpioa, 1);
-				buffered_write((uint8_t *) &gpiob, 1);
+				fputc(gpioa, &gconfig.usb);
+				fputc(gpiob, &gconfig.usb);
 			}
 		}
-
-		flush_buffer();
 	}
 
 	mcp23s17_disable();
