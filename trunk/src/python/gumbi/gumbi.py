@@ -239,6 +239,8 @@ class Gumbi:
 
 		Returns a string of bytes received from the Gumbi board.
 		"""
+		data = ''
+
 		if n is None:
 			n = 1
 

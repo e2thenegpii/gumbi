@@ -14,8 +14,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define ACK "GUMBIACK\n"
-#define NACK "GUMBINACK\n"
+#define ACK "GUMBIACK"
+#define NACK "GUMBINACK"
 
 #define BLOCK_SIZE 64
 #define DUMMY_BYTE 0xFF
@@ -145,13 +145,6 @@ struct confdata
 	struct ctrlpin wp;			/* Write Protect */
 	struct ctrlpin rst;			/* Reset */
 } hconfig;
-
-struct gpiodata
-{
-	uint8_t num_cmd;
-	uint8_t repeat;				/* Currently not used. */
-	struct io cmd[MAX_GPIO_COMMANDS];
-} hgpio;
 
 struct config
 {
