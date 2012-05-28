@@ -19,14 +19,14 @@ int main(void)
 	/* By default, the DIV8 fuse is set. Change it to use the full clock speed. */
 	clock_prescale_set(clock_div_1);
 
+	/* Make sure the entire gconfig structure is zeroed out */
+	memset(&gconfig, 0, sizeof(gconfig));
+
 	/* Initialize LED pin(s) */
 	led_init();
 
 	/* Initialize voltage regulators */
 	regulator_init();
-
-	/* Make sure the entire gconfig structure is zeroed out */
-	memset(&gconfig, 0, sizeof(gconfig));
 
 	/* Initialize virtual serial port */
 	serial_init();

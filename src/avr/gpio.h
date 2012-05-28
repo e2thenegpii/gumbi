@@ -4,6 +4,5 @@
 #include "common.h"
 
 void gpio(void);
-void read_stream(void);
 
 #endif

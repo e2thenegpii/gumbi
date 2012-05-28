@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "mcp23s17.h"
+#include "regulator.h"
 
 void nop(void);
 void id(void);

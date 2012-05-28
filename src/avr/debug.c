@@ -39,10 +39,13 @@ void get_pin_count(void)
 /* Handler for INFO mode. Prints out several lines of info, with the last line being an ACK. */
 void info(void)
 {
+	uint8_t voltage = get_regulator();
+
 	fprintf(&gconfig.usb, "Board ID: %s\n", BOARD_ID);
 	fprintf(&gconfig.usb, "Firmware Version: %s\n", FIRMWARE_ID);
 	fprintf(&gconfig.usb, "I/O Chip Count: %d\n", gconfig.num_io_devices);
 	fprintf(&gconfig.usb, "I/O Pin Count: %d\n", gconfig.num_pins);
+	fprintf(&gconfig.usb, "Voltage: %d.%dv\n", (voltage >> 4), (voltage & 0x0F));
 	ack();
 }
 

@@ -122,98 +122,62 @@ class GPIO(Gumbi):
 		self.PinsHigh(self.config.CONFIG["VCC"])
 		self.PinsLow(self.config.CONFIG["GND"])
 
-	def _build_command(self, cmd, pin, buffer=False):
+	def _send_command(self, cmd, pin):
 		"""
-		Builds a command from the specified command code and pin number.
-		Buffers data if buffer is set to True.
-		For internal use only.
-		"""
-		self.BUFFER += self.PackBytes([cmd, pin])
+		Sends a GPIO command.
 
-		if not buffer or len(self.BUFFER) == self.MAX_GPIO_BUFFER:
-			self.FlushBuffer()
+		Returns None.
+		"""
+		self.WriteBytes(self.PackBytes([cmd, pin]))
+		self.ReadAck()
 
 	def _exit(self):
 		"""
 		Exits GPIO mode. For internal use only.
 		"""
-		self._build_command(self.EXIT, 0)
+		self._send_command(self.EXIT, 0)
 
-	def StartStream(self):
-		"""
-		Reads all I/O pins continuously until the Gumbi board is reset.
-		"""
-		
-		self._build_command(self.STREAM, 0, False)
-
-	def ReadStream(self):
-		"""
-		Reads back data from the data stream.
-		StartStream() must be invoked prior to calling ReadStream().
-		"""
-		return self.ReadBytes(self.BLOCK_SIZE)
-
-	def FlushBuffer(self):
-		"""
-		Flushes the GPIO data buffer.
-
-		Returns None.
-		"""
-		if len(self.BUFFER) > 0:
-			repeat = 0
-			num_cmd = len(self.BUFFER) / 2
-
-			data = self.PackBytes([num_cmd, repeat]) + self.BUFFER
-			self.BUFFER = ""
-		
-			self.WriteBytes(data)
-			self.ReadAck()
-
-	def PinHigh(self, pin, buffer=False):
+	def PinHigh(self, pin):
 		"""
 		Sets the specified pin high.
 
 		@pin    - The pin to set high.
-		@buffer - Set to True to buffer this command.
 
 		Returns None.
 		"""
-		self._build_command(self.HIGH, self.Pin2Real(pin), buffer)
+		self._send_command(self.HIGH, self.Pin2Real(pin))
 
-	def PinsHigh(self, pins, buffer=False):
+	def PinsHigh(self, pins):
 		"""
 		Sets the specified pins high.
 
 		@pins   - A list of pins to set high.
-		@buffer - Set to True to buffer this command.
 
 		Returns None.
 		"""
 		for pin in pins:
-			self.PinHigh(pin, buffer)
+			self.PinHigh(pin)
 
-	def PinLow(self, pin, buffer=False):
+	def PinLow(self, pin):
 		"""
 		Sets the specified pin low.
 
 		@pin    - The pin to pull low.
-		@buffer - Set to True to buffer this command.
 
 		Returns None.
 		"""
-		self._build_command(self.LOW, self.Pin2Real(pin), buffer)
+		self._send_command(self.LOW, self.Pin2Real(pin))
 
-	def PinsLow(self, pins, buffer=False):
+	def PinsLow(self, pins):
 		"""
 		Sets the specified pins low.
 		
 		@pins   - A list of pins to set low.
-		@buffer - Set to True to buffer this command.
 
 		Returns None.
 		"""
 		for pin in pins:
-			self.PinLow(pin, buffer)
+			self.PinLow(pin)
 
 	def SetPins(self, high, low):
 		"""
@@ -223,15 +187,13 @@ class GPIO(Gumbi):
 
 		@high   - A list of pins to set high.
 		@low    - A list of pins to set high.
-		@buffer - Set to True to buffer this command.
 
 		Returns None.
 		"""
 		for pin in high:
-			self.PinHigh(pin, True)
+			self.PinHigh(pin)
 		for pin in low:
-			self.PinLow(pin, True)
-		self.FlushBuffer()
+			self.PinLow(pin)
 
 	def ReadPin(self, pin):
 		"""
@@ -241,9 +203,8 @@ class GPIO(Gumbi):
 
 		Returns 1 if the pin is high, 0 if low.
 		"""
-		self._build_command(self.READ, self.Pin2Real(pin))
-		data = ord(self.ReadBytes()[0])
-		return data
+		self._send_command(self.READ, self.Pin2Real(pin))
+		return ord(self.ReadBytes()[0])
 
 	def ReadPins(self, pins):
 		"""
@@ -254,32 +215,9 @@ class GPIO(Gumbi):
 
 		Returns a list of values for each corresponding pin in the pins list (1 == high, 0 == low).
 		"""
-		data = []
-		rx = ''
-		i = 0
+		states = []
 
-		# Data MUST be flushed prior to entering the below loop. If not, _build_command may
-		# automatically flush the buffer for us. The resulting data returned from reading
-		# the specified pins will then interfere with the next ReadAck call the next time the
-		# buffer is flushed.
-		self.FlushBuffer()
+		for pin in pins:
+			states.append(self.ReadPin(pin))
 
-		while i < len(pins):
-			count = 0
-
-			# Only send MAX_GPIO_COMMANDS read commands at a time
-			for pin in pins[i:i+self.MAX_GPIO_COMMANDS]:
-				self._build_command(self.READ, self.Pin2Real(pins[i]), True)
-				i += 1
-				count += 1
-
-			# Make sure the buffer is flushed in case len(pins) < self.MAX_GPIO_COMMANDS
-			self.FlushBuffer()
-			# Read back count number of bytes
-			rx += self.ReadBytes(count)
-
-		# Convert all bytes to numbers
-		for i in range(0, len(rx)):
-			data.append(ord(rx[i]))
-
-		return data
+		return states
