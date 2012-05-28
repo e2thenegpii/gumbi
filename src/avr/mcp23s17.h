@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "regulator.h"
-#include <avrlib/spi.h>
+#include "spi.h"
 
 #define REG_READ 1
 #define REG_WRITE 0

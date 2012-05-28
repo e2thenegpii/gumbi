@@ -3,7 +3,8 @@ import sys
 import time
 import math
 import struct
-from rawhid import RawHID
+import serial
+#from rawhid import RawHID
 	
 class Gumbi:
 	"""
@@ -30,6 +31,7 @@ class Gumbi:
 	NULL = "\x00"
 	DUMMY_BYTE = "\xFF"
 	BLOCK_SIZE = 64
+	SERIAL_PORT = "/dev/ttyACM0"
 
 	TBP_DEFAULT = 25
 	TOE_DEFAULT = 0
@@ -67,7 +69,7 @@ class Gumbi:
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
 
-	def __init__(self, new=True):
+	def __init__(self, new=True, port=SERIAL_PORT):
 		"""
 		Class constructor, opens a connection to the gumbi board.
 
@@ -76,8 +78,8 @@ class Gumbi:
 		Returns None.
 		"""
 		self.ts = 0
+		self.port = port
 		self.num_pins = 0
-		self.hid = RawHID(bs=self.BLOCK_SIZE)
 		if new:
 			self._open()
 
@@ -85,7 +87,7 @@ class Gumbi:
 		"""
 		Opens a connection to the Gumbi board. For internal use only.
 		"""
-		self.hid.open(self.VID, self.PID)
+		self.serial = serial.Serial(self.port)
 
 	def _exit(self):
 		"""
@@ -102,7 +104,7 @@ class Gumbi:
 		"""
 		Closes the connection with the Gumbi board. For internal use only.
 		"""
-		self.hid.close()
+		self.serial.close()
 
 	def StartTimer(self):
 		"""
@@ -228,7 +230,7 @@ class Gumbi:
 
 		Returns the string read
 		"""
-		return self.ReadBytes().strip(self.NULL)
+		return self.serial.readline().strip()
 
 	def ReadBytes(self, n=None, callback=None):
 		"""
@@ -238,7 +240,10 @@ class Gumbi:
 
 		Returns a string of bytes received from the Gumbi board.
 		"""
-		data = self.hid.recv(n, callback=callback)
+		if n is None:
+			n = 1
+
+		data = self.serial.read(n)
 		if n is not None:
 			data = data[0:n]
 
@@ -252,7 +257,7 @@ class Gumbi:
 
 		Returns None.
 		"""
-		self.hid.send(data, callback=callback)
+		self.serial.write(data)
 
 	def Read(self, start, count, callback=None):
 		"""
@@ -309,6 +314,7 @@ class Gumbi:
 		Returns None.
 		"""
 		self.WriteBytes(self.config.Pack(self.COMMAND, 0, 0))
+		self.ReadAck()
 		self.ReadAck()
 		self.ReadAck()
 
