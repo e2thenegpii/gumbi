@@ -24,5 +24,7 @@ class Parallel(Gumbi):
 		Exit parallel mode. For internal use only.
 		"""
 		self.WriteBytes(self.config.Pack(self.EXIT, 0, 0))
+		# First ACK indicates receipt of a valid config
 		self.ReadAck()
+		# Second ACK indicates the EXIT comand was received successfully
 		self.ReadAck()

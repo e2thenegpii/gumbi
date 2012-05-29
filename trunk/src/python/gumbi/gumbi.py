@@ -221,6 +221,7 @@ class Gumbi:
 		Returns None.
 		"""
 		self.WriteBytes(self.PackByte(mode))
+		# ACK acknowledges the receipt of a valid mode
 		self.ReadAck()
 
 	def ReadText(self):
@@ -229,7 +230,14 @@ class Gumbi:
 
 		Returns the string read.
 		"""
-		return self.serial.readline().strip()
+		raw = self.serial.readline()
+
+		# DEBUG
+		print ""
+		print "ReadText():", raw
+		print ""
+
+		return raw.strip()
 
 	def ReadBytes(self, n=None, callback=None):
 		"""
@@ -248,6 +256,13 @@ class Gumbi:
 			data += self.serial.read(1)
 			if callback is not None:
 				callback(i+1, n)
+
+		# DEBUG
+		print ""
+		print "ReadBytes:", len(data)
+		for c in data:
+			print "\t0x%X" % ord(c)
+		print ""
 
 		return data
 
@@ -322,8 +337,11 @@ class Gumbi:
 		Returns None.
 		"""
 		self.WriteBytes(self.config.Pack(self.COMMAND, 0, 0))
+		# First ACK acknowledges the receipt of a valid configuration
 		self.ReadAck()
+		# Second ACK acknowledges the receipt of a valid action
 		self.ReadAck()
+		# Third ACK indicates the completion of the command
 		self.ReadAck()
 
 	def PinCount(self, count=0):
@@ -359,6 +377,7 @@ class Gumbi:
 
 		self.SetMode(self.VOLTAGE)
 		self.WriteBytes(self.PackByte(v))
+		# Wait for the ACK indicating the voltage has been set
 		self.ReadAck()
 
 	def Reset(self):

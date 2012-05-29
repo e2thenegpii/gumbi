@@ -36,6 +36,7 @@ class GPIO(Gumbi):
 		Returns None.
 		"""
 		self.WriteBytes(self.PackBytes([cmd, pin]))
+		# GPIO mode will return an ACK once the specified command is completed
 		self.ReadAck()
 
 	def _exit(self):
