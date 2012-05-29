@@ -31,7 +31,7 @@ class NORFlash(Parallel):
 			if count is None:
 				count = 0
 
-                return self.Read(address, count, callback=self._read_callback)
+                return self.Read(address, count, callback=self.PrintProgress)
 
         def WriteChip(self, address, data):
 		"""
@@ -102,6 +102,7 @@ if __name__ == "__main__":
 		print "\t-s, --size=<int>         Specify the number of bytes to read/write"
 		print "\t-f, --word-flip=<file>   Word-flip the contents of the specified file"
 		print "\t-p, --path=<path>        Set the path to the chip configuration files [%s]" % CONFIG_PATH
+		print "\t-v, --verbose            Enabled verbose output"
 		print "\t-h, --help               Show help"
 		print ""
 		sys.exit(1)
@@ -119,6 +120,7 @@ if __name__ == "__main__":
 	address = 0
 	doid = False
 	doerase = False
+	verbose = False
 	chip = None
 	infile = None
 	config = None
@@ -126,7 +128,7 @@ if __name__ == "__main__":
 	flipfile = None
 
 	try:
-		opts, args = GetOpt(sys.argv[1:], "iea:s:r:w:c:f:p:h", ["id", "erase", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "--path=", "help"])
+		opts, args = GetOpt(sys.argv[1:], "iea:s:r:w:c:f:p:vh", ["id", "erase", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "--path=", "help"])
 	except GetoptError, e:
 		print e
 		usage()
@@ -150,6 +152,8 @@ if __name__ == "__main__":
 			flipfile = arg
 		elif opt in ('-p', '--path'):
 			CONFIG_PATH = arg + '/'
+		elif opt in ('-v', '--verbose'):
+			verbose = True
 		elif opt in ('-h', '--help'):
 			usage()
 
@@ -170,7 +174,14 @@ if __name__ == "__main__":
 		if ACTIONS.has_key(action):
 			
 			t = 0
+			if verbose:
+				sys.stdout.write("Connecting to Gumbi board...")
+				sys.stdout.flush()
+
 			flash = NORFlash(config=config)
+
+			if verbose:
+				print "connected."
 			
 			if action == 'id':
 				vendor, product = flash.ChipID()
