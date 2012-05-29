@@ -247,7 +247,7 @@ class Gumbi:
 		for i in range(0, n):
 			data += self.serial.read(1)
 			if callback is not None:
-				callback(i, n)
+				callback(i+1, n)
 
 		return data
 
@@ -264,7 +264,7 @@ class Gumbi:
 		for i in range(0, n):
 			self.serial.write(data[i])
 			if callback is not None:
-				callback(i, n)
+				callback(i+1, n)
 	
 		return None
 
@@ -528,15 +528,18 @@ class Configuration(Gumbi):
 		self.num_pins = pins
 		self.package_pins = 0
 		self.pins_shifted = False
+		
+		Gumbi.__init__(self)
 
-		if self.num_pins is None:
-			Gumbi.__init__(self)
-			self.num_pins = self.PinCount()
-			if self.CONFIG["VOLTAGE"][0] != 0:
-				self.SetVoltage(self.CONFIG["VOLTAGE"][0])
-			self.Close()
+		self.num_pins = self.PinCount()
 
 		self._parse_config(self.config)
+
+		if self.CONFIG["VOLTAGE"][0] != 0:
+			self.SetVoltage(self.CONFIG["VOLTAGE"][0])
+		
+		self.Close()
+		
 
 	def ParseConfigLine(self, line):
 		"""
