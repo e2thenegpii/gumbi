@@ -5,7 +5,7 @@
 void gpio(void)
 {
 	struct io cmd = { 0 };
-	uint8_t loop = TRUE;
+	uint8_t loop = TRUE, send_data = FALSE, data = 0;
 
 	mcp23s17_enable();
 
@@ -25,7 +25,8 @@ void gpio(void)
 				break;
 			case READ:
 				configure_pin_immediate(cmd.pin, 'r');
-				fputc(get_pin(cmd.pin), &gconfig.usb);
+				data = get_pin(cmd.pin);
+				send_data = TRUE;
 				break;
 			case EXIT:
 				loop = FALSE;
@@ -38,6 +39,13 @@ void gpio(void)
 
 		/* Acknowledge that the command was processed */
 		ack();
+	
+		/* If there is data to send, send it */	
+		if(send_data)
+		{
+			fputc(data, &gconfig.usb);
+			send_data = FALSE;
+		}
 	}
 	
 	mcp23s17_disable();
