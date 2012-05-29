@@ -140,6 +140,7 @@ class Ping(Gumbi):
 		Returns True if the board was successfully pinged. Raises an exception on error.
 		"""
 		self.SetMode(self.PING)
+		# If successful, PING mode will return one ACK
 		return self.ReadAck()
 
 class ScanBus(Gumbi):

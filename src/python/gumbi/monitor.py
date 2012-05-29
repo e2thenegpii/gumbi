@@ -59,8 +59,10 @@ class Monitor(Gumbi):
 		Exit monitor mode. For internal use only.
 		"""
 		self.WriteBytes(self.Pack32(0))
+		# When told to read back 0 iterations, monitor mode will ACK and exit
 		self.ReadAck()
 
 		# Tell the Gumbi board to re-scan the I/O bus in order to re-set the pin count to its original value
 		self.SetMode(self.SCANBUS)
+		# Dummy read to get the number of I/O pins returned by SCANBUS mode
 		self.ReadBytes(1)
