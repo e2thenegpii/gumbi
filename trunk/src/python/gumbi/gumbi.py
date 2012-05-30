@@ -16,6 +16,8 @@ class Gumbi:
 	subclass has overridden the method (with few exceptions, overriding Gumbi methods is undesirable).
 	"""
 
+	DEBUG = False
+
 	VID = 0xFFFF
 	PID = 0x1337
 	ACK = "GUMBIACK"
@@ -232,10 +234,10 @@ class Gumbi:
 		"""
 		raw = self.serial.readline()
 
-		# DEBUG
-		print ""
-		print "ReadText():", raw
-		print ""
+		if self.DEBUG:
+			print ""
+			print "ReadText():", raw
+			print ""
 
 		return raw.strip()
 
@@ -257,12 +259,12 @@ class Gumbi:
 			if callback is not None:
 				callback(i+1, n)
 
-		# DEBUG
-		print ""
-		print "ReadBytes:", len(data)
-		for c in data:
-			print "\t0x%X" % ord(c)
-		print ""
+		if self.DEBUG:
+			print ""
+			print "ReadBytes:", len(data)
+			for c in data:
+				print "\t0x%X" % ord(c)
+			print ""
 
 		return data
 
