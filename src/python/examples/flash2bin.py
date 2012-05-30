@@ -31,6 +31,11 @@ class NORFlash(Parallel):
 			if count is None:
 				count = 0
 
+		# THIS IS A NASTY HACK!
+		# Some chips read 0x00 for data at address 0 until address 1 or higher is read, then it works fine.
+		# Read one byte from address 1 before we do the real read in order to circumvent this issue for now.
+		self.Read(1, 1)
+
                 return self.Read(address, count, callback=self.PrintProgress)
 
         def WriteChip(self, address, data):
