@@ -18,8 +18,6 @@ class Gumbi:
 
 	DEBUG = False
 
-	VID = 0xFFFF
-	PID = 0x1337
 	ACK = "GUMBIACK"
 	NACK = "GUMBINACK"
 	PINS_PER_PORT = 8
@@ -31,7 +29,6 @@ class Gumbi:
 	UNUSED = 0xFF
 	NULL = "\x00"
 	DUMMY_BYTE = "\xFF"
-	BLOCK_SIZE = 64
 	SERIAL_PORT = "/dev/ttyACM0"
 
 	TBP_DEFAULT = 25
@@ -70,10 +67,11 @@ class Gumbi:
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
 
-	def __init__(self, new=True, port=SERIAL_PORT):
+	def __init__(self, port=SERIAL_PORT, new=True):
 		"""
 		Class constructor, opens a connection to the gumbi board.
 
+		@port - Gumbi board serial port, defaults to /dev/ttyACM0.
 		@new  - Set to False to not open a connection to the Gumbi board.
 
 		Returns None.
@@ -696,7 +694,9 @@ class Configuration(Gumbi):
 				(key, value) = self.ParseConfigLine(line)
 				if key is not None and value is not None:
 					if key == "INCLUDE":
-						self._parse_config(os.path.dirname(config) + '/' + value + '.conf')
+						filepath = os.path.dirname(config)
+						filename = "%s%s" % (value, os.path.splitext(config)[1])
+						self._parse_config(os.path.join(*[filepath, filename]))
 					else:
 						self.CONFIG[key] = value
 
