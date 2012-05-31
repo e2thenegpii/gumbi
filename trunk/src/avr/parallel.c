@@ -63,13 +63,13 @@ void parallel(void)
 					byte_enable(FALSE);
 				}
 	
-				/* Disable all control pins except chip enable */
+				/* Disable all control pins */
 				reset_enable(FALSE);
 				write_enable(FALSE);
 				read_enable(FALSE);
 				output_enable(FALSE);
 				write_protect(FALSE);
-				chip_enable(TRUE);
+				chip_enable(FALSE);
 					
 				/* Supply power to the target chip */
 				set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
@@ -79,6 +79,11 @@ void parallel(void)
 				commit_ddr_settings();
 				commit_io_settings();
 
+				/* Enable the target chip */
+				_delay_us(hconfig.toe);
+				chip_enable(TRUE);
+				_delay_us(hconfig.toe);
+	
 				/* Set the configured flag */
 				configured = TRUE;
 			}
