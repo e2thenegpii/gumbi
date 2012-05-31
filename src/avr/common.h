@@ -9,7 +9,7 @@
 #include <util/delay.h>
 
 #define BOARD_ID "GUMBI v1.1"
-#define FIRMWARE_ID "0.1"
+#define FIRMWARE_ID "0.9"
 
 #define TRUE 1
 #define FALSE 0

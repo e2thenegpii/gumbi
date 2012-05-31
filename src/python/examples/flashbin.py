@@ -9,11 +9,6 @@ class NORFlash(Parallel):
 
 	# Default chip erase time in seconds
 	DEFAULT_TSCE = 60
-	TMP_FILE = 'flash_read.tmp'
-
-	def _read_callback(self, data, current, total):
-		open(self.TMP_FILE, "ab").write(data)
-		self.PrintProgress(current, total)
 
 	def ReadChip(self, address=0, count=0):
 		"""
@@ -21,20 +16,10 @@ class NORFlash(Parallel):
 		"""
 		self.read_data = ''
 		
-		try:
-			os.unlink(self.TMP_FILE)
-		except:
-			pass
-
 		if count == 0:
 			count = self.config.GetSetting("SIZE")[0]
 			if count is None:
 				count = 0
-
-		# THIS IS A NASTY HACK!
-		# Parallel chips read 0x00 for data at address 0 until address 1 or higher is read, then it works fine.
-		# Read some bytes starting at address 0 before we do the real read in order to circumvent this issue for now.
-		self.Read(0, 4)
 
                 return self.Read(address, count, callback=self.PrintProgress)
 
