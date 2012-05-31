@@ -32,8 +32,8 @@ class NORFlash(Parallel):
 				count = 0
 
 		# THIS IS A NASTY HACK!
-		# Some chips read 0x00 for data at address 0 until address 1 or higher is read, then it works fine.
-		# Read one byte from address 1 before we do the real read in order to circumvent this issue for now.
+		# Parallel chips read 0x00 for data at address 0 until address 1 or higher is read, then it works fine.
+		# Read some bytes starting at address 0 before we do the real read in order to circumvent this issue for now.
 		self.Read(0, 4)
 
                 return self.Read(address, count, callback=self.PrintProgress)
