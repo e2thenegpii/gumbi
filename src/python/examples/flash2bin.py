@@ -34,7 +34,7 @@ class NORFlash(Parallel):
 		# THIS IS A NASTY HACK!
 		# Some chips read 0x00 for data at address 0 until address 1 or higher is read, then it works fine.
 		# Read one byte from address 1 before we do the real read in order to circumvent this issue for now.
-		self.Read(1, 1)
+		self.Read(0, 4)
 
                 return self.Read(address, count, callback=self.PrintProgress)
 
@@ -45,7 +45,7 @@ class NORFlash(Parallel):
                 self.config.SetCommand("WRITE")
                 return self.Write(address, data, callback=self.PrintProgress)
 
-	def ChipID(self):
+	def ChipVendorID(self):
 		"""
 		This is a generic method to obtain the vendor and product ID of parallel flash chips.
 		It may not work for all chips; consult the chip's datasheet.
@@ -53,9 +53,11 @@ class NORFlash(Parallel):
 		Returns a tuple of (vendor id, product id).
 		"""
 		self.config.SetCommand("ID")
-		vendor = ord(self.Read(0, 2)[0])
-		product = ord(self.Read(1, 2)[0])
-		return (vendor, product)
+		return ord(self.Read(0, 2)[0])
+
+	def ChipProductID(self):
+		self.config.SetCommand("ID")
+		return ord(self.Read(1, 2)[0])
 
         def EraseChip(self):
 		"""
@@ -76,6 +78,7 @@ class NORFlash(Parallel):
 if __name__ == "__main__":
 
 	CONFIG_PATH = "examples/config/"
+	CONF_EXT = '.conf'
 
 	def wordflip(data):
 		"""
@@ -94,12 +97,29 @@ if __name__ == "__main__":
 	
 		return fdata
 
+	def chip_list():
+		chips = []
+
+		for filename in os.listdir(CONFIG_PATH):
+			if filename.endswith(CONF_EXT):
+				chips.append(filename.strip(CONF_EXT))
+		
+		return chips
+
+	def list_chips():
+		print ""
+		print "Supported chips:\n"
+		for chip in chip_list():
+			print "\t", chip
+		print ""
+
 	def usage():
 		print ""
 		print "Usage: %s [OPTIONS]" % sys.argv[0]
 		print ""
-		print "\t-i, --id                 Retrieve the vendor and product IDs from the target chip."
-		print "\t-e, --erase              Erase the target chip."
+		print "\t-i, --id                 Retrieve the vendor and product IDs from the target chip"
+		print "\t-e, --erase              Erase the target chip"
+		print "\t-l, --list               List supported chips"
 		print "\t-r, --read=<file>        Read data from the chip and save it in the specified file"
 		print "\t-w, --write=<file>       Write data from the specified file to the chip"
 		print "\t-c, --chip=<part no.>    Specify the part number of the target chip"
@@ -117,8 +137,7 @@ if __name__ == "__main__":
 
 
 	ACTIONS = {}
-	ACTION_LIST = ['id', 'erase', 'write', 'read']
-	CONF_EXT = '.conf'
+	ACTION_LIST = ['vendorid', 'productid', 'erase', 'write', 'read']
 
 	t = 0
 	size = 0
@@ -133,16 +152,20 @@ if __name__ == "__main__":
 	flipfile = None
 
 	try:
-		opts, args = GetOpt(sys.argv[1:], "iea:s:r:w:c:f:p:vh", ["id", "erase", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "--path=", "help"])
+		opts, args = GetOpt(sys.argv[1:], "iela:s:r:w:c:f:p:vh", ["id", "erase", "list", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "--path=", "help"])
 	except GetoptError, e:
 		print e
 		usage()
 
 	for opt, arg in opts:
 		if opt in ('-i', '--id'):
-			ACTIONS['id'] = True
+			ACTIONS['vendorid'] = True
+			ACTIONS['productid'] = True
 		elif opt in ('-e', '--erase'):
 			ACTIONS['erase'] = True
+		elif opt in ('-l', '--list'):
+			list_chips()
+			sys.exit(0)
 		elif opt in ('-a', '--address'):
 			address = int(arg)
 		elif opt in ('-s', '--size'):
@@ -188,10 +211,11 @@ if __name__ == "__main__":
 			if verbose:
 				print "connected."
 			
-			if action == 'id':
-				vendor, product = flash.ChipID()
-				print "Vendor ID: 0x%X" % vendor
-				print "Product ID: 0x%X" % product
+			if action == 'vendorid':
+				print "Vendor ID: 0x%X" % flash.ChipVendorID()
+
+			elif action == 'productid':
+				print "Product ID: 0x%X" % flash.ChipProductID()
 		
 			elif action == 'erase':
 				sys.stdout.write("Erasing chip...")

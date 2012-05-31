@@ -32,10 +32,15 @@ void mcp23s17_enable(void)
 /* Puts the MCP23S17 chips into a reset state and disables SPI on the AVR. */
 void mcp23s17_disable(void)
 {
-	/* Re-initialize all I/O chips to default start up settings. */
-	mcp23s17_io_init();
+	uint8_t voltage = 0;
 
 	spi_disable();
+
+	/* Reset all I/O chips by power cycling them. */
+	voltage = get_regulator();
+	set_regulator(V0);
+	_delay_ms(250);
+	set_regulator(voltage);
 }
 
 /* Loads all MCP23S17 chips with their initial configurations. */
