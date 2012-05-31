@@ -2,13 +2,15 @@
 
 import sys
 from time import sleep
-from gumbi import GPIO, Info, ScanBus
+from gumbi import Gumbi, GPIO, Info, ScanBus
 
 
 def blinki():
 	io = GPIO(voltage=3)
 
 	try:
+		print "Starting Gumbi LED test. Press Ctrl+C to quit."
+
 		while True:
 	
 			i = 1
@@ -32,11 +34,17 @@ def blinki():
 
 	io.Close()
 
-def info():
-#	s = ScanBus()
-#	s.Scan()
-#	s.Close()
+def voltage(v):
+	g = Gumbi()
+	g.SetVoltage(v)
+	g.Close()
 
+def scan():
+	s = ScanBus()
+	s.Scan()
+	s.Close()
+
+def info():
 	i = Info()
 	for line in i.Info():
 		print line
@@ -46,7 +54,7 @@ def info():
 
 if __name__ == '__main__':
 	def usage():
-		print "Usage: %s [--info | --led]" % sys.argv[0]
+		print "Usage: %s [--info | --led | --scan | --voltage <0|2|3|5>]" % sys.argv[0]
 		sys.exit(1)
 
 	def main():
@@ -55,9 +63,16 @@ if __name__ == '__main__':
 				info()
 			elif sys.argv[1] == '--led':
 				blinki()
+			elif sys.argv[1] == '--scan':
+				scan()
+				info()
+			elif sys.argv[1] == '--voltage':
+				voltage(int(sys.argv[2]))
+				info()
 			else:
 				raise Exception('bad args')
-		except:
+		except Exception, e:
+			print e
 			usage()
 
 	main()
