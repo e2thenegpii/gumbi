@@ -395,10 +395,10 @@ void parallel_read(void)
 		_delay_us(hconfig.toe);
 
 		/* Send one (or two) bytes of read data back to the host */
-		fputc((data & 0xFF), &gconfig.usb);
+		fputc((uint8_t) (data & 0xFF), &gconfig.usb);
 		if(read_size > 1)
 		{
-			fputc((data >> 8), &gconfig.usb);
+			fputc((uint8_t) ((data >> 8) & 0xFF), &gconfig.usb);
 		}
 
 		/* Toggle the status LED */
@@ -409,6 +409,7 @@ void parallel_read(void)
 		}
 	}
 
+	/* Make sure the LED is on after the read loop */
 	led_on();
 	return;
 }

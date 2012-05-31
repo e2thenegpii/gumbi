@@ -531,7 +531,7 @@ class Configuration(Gumbi):
 		"RECONFIGURE"	: [0],
 		# These are not part of the config structure that gets pushed to the Gumbi board
 		"PINS"		: [0],
-		"VOLTAGE"	: [0]
+		"VOLTAGE"	: [None]
 	}
 	
 	def __init__(self, config, mode, pins=None):
@@ -556,7 +556,7 @@ class Configuration(Gumbi):
 
 		self._parse_config(self.config)
 
-		if self.CONFIG["VOLTAGE"][0] != 0:
+		if self.CONFIG["VOLTAGE"][0] is not None:
 			self.SetVoltage(self.CONFIG["VOLTAGE"][0])
 		
 		self.Close()
