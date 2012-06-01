@@ -69,27 +69,19 @@ void serial_init(void)
 	CDC_Device_CreateBlockingStream(&VirtualSerial_CDC_Interface, &gconfig.usb);
 	
 	sei();
-
-/*
-	uint8_t c = 'A';
-	uint32_t i = 0;
-
-	for (;;)
-	{
-		c = fgetc(&USBSerialStream);
-		for(i=0; i<0x100000; i++)
-		{
-			fprintf(&USBSerialStream, "%c", c);
-		}
-	}
-*/
 }
 
 /** Event handler for the library USB Connection event. */
-void EVENT_USB_Device_Connect(void) { }
+void EVENT_USB_Device_Connect(void) 
+{ 
+	led_on();
+}
 
 /** Event handler for the library USB Disconnection event. */
-void EVENT_USB_Device_Disconnect(void) { }
+void EVENT_USB_Device_Disconnect(void) 
+{ 
+	led_off();
+}
 
 /** Event handler for the library USB Configuration Changed event. */
 void EVENT_USB_Device_ConfigurationChanged(void)
