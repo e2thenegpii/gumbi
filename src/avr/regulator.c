@@ -23,7 +23,7 @@ void voltage(void)
 void set_regulator(uint8_t voltage)
 {
 	/* Disable all voltage regulators */
-	REGULATOR_PORT &= ~(1 << V47_PIN) & ~(1 << V30_PIN) & ~(V18_PIN);
+	REGULATOR_PORT &= ~(1 << V47_PIN) & ~(1 << V30_PIN) & ~(1 << V18_PIN);
 
 	/* Enable the selected regulator */
 	switch(voltage)
