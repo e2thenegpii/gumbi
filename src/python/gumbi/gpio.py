@@ -1,4 +1,5 @@
 from gumbi import *
+from configuration import *
 
 class GPIO(Gumbi):
 	"""

@@ -1,5 +1,5 @@
-from modes import GPIO
-from gumbi import Configuration
+from gpio import GPIO
+from configuration import Configuration
 
 class SPI(GPIO):
 	"""
@@ -101,6 +101,7 @@ class SPI(GPIO):
 		Returns None.
 		"""
 		for byte in data:
+			byte = ord(byte)
 			i = 7
 			while i >= 0:
 				if (byte & (1 << i)) > 0:
