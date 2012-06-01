@@ -30,17 +30,23 @@ class NORFlash(Parallel):
                 self.config.SetCommand("WRITE")
                 return self.Write(address, data, callback=self.PrintProgress)
 
-	def ChipVendorID(self):
+	def VendorID(self):
 		"""
-		This is a generic method to obtain the vendor and product ID of parallel flash chips.
+		This is a generic method to obtain the vendor ID of a parallel flash chip.
 		It may not work for all chips; consult the chip's datasheet.
 
-		Returns a tuple of (vendor id, product id).
+		Returns the vendor ID.
 		"""
 		self.config.SetCommand("ID")
 		return ord(self.Read(0, 2)[0])
 
-	def ChipProductID(self):
+	def ProductID(self):
+		"""
+		This is a generic method to obtain the product ID of a parallel flash chip.
+		It may not work for all chips; consult the chip's datasheet.
+
+		Returns the product ID.
+		"""
 		self.config.SetCommand("ID")
 		return ord(self.Read(1, 2)[0])
 
@@ -163,7 +169,9 @@ if __name__ == "__main__":
 		elif opt in ('-c', '--chip'):
 			chip = arg
 		elif opt in ('-f', '--word-flip'):
-			flipfile = arg
+			open("%s.flip" % flipfile, "wb").write(wordflip(open(arg, "rb").read()))
+			print "File saved to: %s.flip" % arg
+			sys.exit(0)
 		elif opt in ('-p', '--path'):
 			CONFIG_PATH = arg + '/'
 		elif opt in ('-v', '--verbose'):
@@ -172,16 +180,11 @@ if __name__ == "__main__":
 			usage()
 
 	
-	if flipfile:
-		open("%s.flip" % flipfile, "wb").write(wordflip(open(flipfile, "rb").read()))
-		print "File saved to: %s.flip" % flipfile
-		sys.exit(0)
-	else:
-		try:
-			config = CONFIG_PATH + chip.upper() + CONF_EXT
-		except:
-			print "Please specify the chip type!"
-			usage()
+	try:
+		config = CONFIG_PATH + chip.upper() + CONF_EXT
+	except:
+		print "Please specify the chip type!"
+		usage()
 
 	for action in ACTION_LIST:
 
@@ -198,10 +201,10 @@ if __name__ == "__main__":
 				print "connected."
 			
 			if action == 'vendorid':
-				print "Vendor ID: 0x%X" % flash.ChipVendorID()
+				print "Vendor ID: 0x%X" % flash.VendorID()
 
 			elif action == 'productid':
-				print "Product ID: 0x%X" % flash.ChipProductID()
+				print "Product ID: 0x%X" % flash.ProductID()
 		
 			elif action == 'erase':
 				sys.stdout.write("Erasing chip...")
