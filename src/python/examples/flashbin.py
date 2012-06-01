@@ -88,7 +88,8 @@ if __name__ == "__main__":
 		for filename in os.listdir(CONFIG_PATH):
 			if filename.endswith(CONF_EXT):
 				chips.append(filename.strip(CONF_EXT))
-		
+
+		chips.sort()
 		return chips
 
 	def list_chips():
