@@ -14,8 +14,8 @@
 #define TRUE 1
 #define FALSE 0
 
-#define ACK "GUMBIACK"
-#define NACK "GUMBINACK"
+#define ACK "A"
+#define NACK "N"
 
 #define BLOCK_SIZE 64
 #define DUMMY_BYTE 0xFF

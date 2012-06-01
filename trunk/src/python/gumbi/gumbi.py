@@ -18,8 +18,8 @@ class Gumbi:
 
 	DEBUG = False
 
-	ACK = "GUMBIACK"
-	NACK = "GUMBINACK"
+	ACK = "A"
+	NACK = "N"
 	PINS_PER_PORT = 8
 	MAX_PINS = 128
 	MAX_COMMANDS = 32
