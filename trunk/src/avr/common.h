@@ -91,6 +91,14 @@ enum actions
 	COMMAND = 5
 };
 
+enum voltages
+{
+	V0  = 0x00,
+	V18 = 0x18,
+	V30 = 0x30,
+	V47 = 0x47
+};
+
 struct pin
 {
 	uint8_t addr;				/* Address of the I/O expansion chip this pin is located on */

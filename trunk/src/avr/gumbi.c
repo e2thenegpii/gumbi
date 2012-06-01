@@ -45,9 +45,6 @@ int main(void)
 		mcp23s17_init();
 	}
 
-	/* Show that we're alive and ready */
-	led_on();
-
 	while(TRUE)
 	{
 		read_data((uint8_t *) &mode, sizeof(mode));
