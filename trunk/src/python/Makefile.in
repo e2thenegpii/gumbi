@@ -18,4 +18,5 @@ data:
 	cp bin/config/* $(CONFDIR)/
 
 clean:
-	rm -rf *.cache config.* build Makefile
+	rm -rf *.cache config.* build
+	rm -f Makefile
