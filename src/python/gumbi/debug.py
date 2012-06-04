@@ -5,7 +5,7 @@ class SpeedTest(Gumbi):
 	Tests the speed of the PC to Gumbi interface.
 	"""
 
-	def __init__(self, count):
+	def __init__(self, count, port=None):
 		"""
 		Class constructor.
 
@@ -13,7 +13,7 @@ class SpeedTest(Gumbi):
 
 		Returns None.
 		"""
-		Gumbi.__init__(self)
+		Gumbi.__init__(self, port=port)
 		self.data = ''
 		self.count = count
 		self.SetMode(self.SPEEDTEST)
@@ -56,12 +56,12 @@ class TransferTest(Gumbi):
 
 	XFER_SIZE = 128
 
-	def __init__(self):
+	def __init__(self, port=None):
 		"""
 		Class contstructor.
 		"""
 		self.data = ''
-		Gumbi.__init__(self)
+		Gumbi.__init__(self, port=port)
 		self.SetMode(self.XFER)
 
 	def _xfer(self):
