@@ -8,7 +8,7 @@ class GPIO(Gumbi):
 
 	MODE = "GPIO"
 
-	def __init__(self, config=None, voltage=0):
+	def __init__(self, config=None, voltage=0, port=None):
 		"""
 		Class constructor.
 
@@ -17,7 +17,7 @@ class GPIO(Gumbi):
 		Returns None.
 		"""
 		self.config = Configuration(config, self.MODE)
-		Gumbi.__init__(self)
+		Gumbi.__init__(self, port=port)
 		if voltage != 0:
 			self.SetVoltage(voltage)
 		self.SetMode(self.GPIO)

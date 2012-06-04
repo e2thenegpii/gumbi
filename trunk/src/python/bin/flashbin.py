@@ -70,6 +70,7 @@ if __name__ == "__main__":
 
 	CONFIG_PATH = "bin/config/"
 	CONF_EXT = '.conf'
+	PORT = None
 
 	def wordflip(data):
 		"""
@@ -181,7 +182,7 @@ if __name__ == "__main__":
 
 	
 	try:
-		config = CONFIG_PATH + chip.upper() + CONF_EXT
+		config = os.path.join(*[CONFIG_PATH, chip.upper() + CONF_EXT])
 	except:
 		print "Please specify the chip type!"
 		usage()
@@ -195,7 +196,7 @@ if __name__ == "__main__":
 				sys.stdout.write("Connecting to Gumbi board...")
 				sys.stdout.flush()
 
-			flash = NORFlash(config=config)
+			flash = NORFlash(config=config, port=PORT)
 
 			if verbose:
 				print "connected."

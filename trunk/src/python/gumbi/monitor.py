@@ -6,7 +6,7 @@ class Monitor(Gumbi):
 	Class for monitoring input pins on the Gumbi board.
 	"""
 
-	def __init__(self, count=0, voltage=None):
+	def __init__(self, count=0, voltage=None, port=None):
 		"""
 		Class constructor.
 
@@ -15,7 +15,7 @@ class Monitor(Gumbi):
 	
 		Returns None.
 		"""
-		Gumbi.__init__(self)
+		Gumbi.__init__(self, port=port)
 		if voltage is not None:
 			self.SetVoltage(voltage)
 		self.num_pins = self.PinCount(count)

@@ -68,7 +68,7 @@ class Gumbi:
 	MODE_KEY = "MODE"
 	MODE_VALUE = None
 
-	def __init__(self, port=SERIAL_PORT, new=True):
+	def __init__(self, port=None, new=True):
 		"""
 		Class constructor, opens a connection to the gumbi board.
 
@@ -80,6 +80,10 @@ class Gumbi:
 		self.ts = 0
 		self.port = port
 		self.num_pins = 0
+
+		if self.port is None:
+			self.port = self.SERIAL_PORT
+
 		if new:
 			self._open()
 
