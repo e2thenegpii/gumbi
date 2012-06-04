@@ -19,11 +19,13 @@ def blinki():
 				io.PinHigh(i)
 				io.PinLow(i+1)
 				i += 2
+				sleep(.1)
 
 			while i <= 64:
 				io.PinLow(i)
 				io.PinHigh(i+1)
 				i += 2
+				sleep(.1)
 
 			sleep(2)
 
