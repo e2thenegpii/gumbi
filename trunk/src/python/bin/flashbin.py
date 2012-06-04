@@ -68,7 +68,7 @@ class NORFlash(Parallel):
 
 if __name__ == "__main__":
 
-	CONFIG_PATH = "examples/config/"
+	CONFIG_PATH = "bin/config/"
 	CONF_EXT = '.conf'
 
 	def wordflip(data):
