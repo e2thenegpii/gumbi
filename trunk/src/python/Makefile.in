@@ -1,6 +1,6 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
-CONFDIR=@sysconfdir@/@target@
+FLASHCONFDIR=@sysconfdir@/flashbin
 BINDIR=@bindir@
 
 install: api tools data
@@ -9,13 +9,13 @@ api:
 	python setup.py install
 
 tools:
-	python -c "open('$(BINDIR)/flashbin', 'w').write(open('bin/flashbin.py').read().replace('bin/config/', '$(CONFDIR)'))"
+	python -c "open('$(BINDIR)/flashbin', 'w').write(open('bin/flashbin.py').read().replace('bin/config/', '$(FLASHCONFDIR)'))"
 	chmod +x $(BINDIR)/flashbin
 	cp bin/gumbictl.py $(BINDIR)/gumbictl
 
 data:
-	mkdir -p $(CONFDIR)/
-	cp bin/config/* $(CONFDIR)/
+	mkdir -p $(FLASHCONFDIR)/
+	cp bin/config/* $(FLASHCONFDIR)/
 
 clean:
 	rm -rf *.cache config.* build
