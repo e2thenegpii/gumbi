@@ -34,7 +34,7 @@ int main(void)
 	/* Initialize the MCP23S17 chips */	
 	mcp23s17_init();
 
-	/* If we were unable to identify the minimum number of I/O chips, blink the status LED and keep trying */
+	/* If we were unable to identify the minimum number of I/O chips, blink the status LED and keep trying
 	while(gconfig.num_io_devices < MIN_DEVICES)
 	{
 		led_on();
@@ -44,6 +44,7 @@ int main(void)
 		
 		mcp23s17_init();
 	}
+	*/
 
 	while(TRUE)
 	{
