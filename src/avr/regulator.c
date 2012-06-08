@@ -7,6 +7,9 @@ void regulator_init(void)
 
 	/* Default to 4.7v */
 	set_regulator(V47);
+
+	/* Give the connected chips a chance to turn on */
+	_delay_ms(REG_STARTUP_PERIOD);
 }
 
 /* Handler for the VOLTAGE command */

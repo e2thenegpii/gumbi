@@ -8,6 +8,7 @@
 #define V18_PIN PC5
 #define V30_PIN PC4
 #define V47_PIN PC3
+#define REG_STARTUP_PERIOD 500
 
 void voltage(void);
 void regulator_init(void);
