@@ -213,8 +213,10 @@ class Gumbi:
 		"""
 		line = self.ReadText() 
 		if line != self.ACK:
-			print "Instead of ack, I got:", line
-			raise Exception(self.ReadText())
+			if line == self.NACK:
+				raise Exception("Received NACK from Gumbi board")
+			else:
+				raise Exception("Received unexpected response from Gumbi board: '%s'" % line)
 		return True
 
 	def SetMode(self, mode):
@@ -257,10 +259,13 @@ class Gumbi:
 		if n is None:
 			n = 1
 
-		for i in range(0, n):
-			data += self.serial.read(1)
-			if callback is not None:
-				callback(i+1, n)
+		try:
+			for i in range(0, n):
+				data += self.serial.read(1)
+				if callback is not None:
+					callback(i+1, n)
+		except Exception, e:
+			print "ReadBytes():", e
 
 		if self.DEBUG:
 			print ""
@@ -281,11 +286,14 @@ class Gumbi:
 		"""
 		n = len(data)
 
-		for i in range(0, n):
-			self.serial.write(data[i])
-			if callback is not None:
-				callback(i+1, n)
-	
+		try:
+			for i in range(0, n):
+				self.serial.write(data[i])
+				if callback is not None:
+					callback(i+1, n)
+		except Exception, e:
+			print "WriteBytes():", e
+
 		return None
 
 	def Read(self, start, count, callback=None):
