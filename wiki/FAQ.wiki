@@ -1,0 +1,17 @@
+#summary Frequently asked questions
+
+== 1. What is the minimum/maximum external voltage source I can provide? ==
+
+The external voltage source must be between 1.8 and 5 volts, or else permanent damage may be incurred to the I/O expansion chips or the level translator chip.
+
+== 2. What is the maximum current that Gumbi can supply to a target chip? ==
+
+The I/O pins can supply up to 15mA continuously, however, the on board voltage regulators can supply several hundred mA. If your chip requires more current, you may connect the Vcc pin on the Gumbi board expansion header directly to your chip's Vcc pin, but *make sure you have the voltage set properly first*.
+
+== 3. Erasing a flash chip using flashbin sets flash contents to all 0x00's ==
+
+This is typically due to the chip drawing too much current during an erase operation. See FAQ #2.
+
+== 4. Writing to a flash chip using flashbin isn't always reliable ==
+
+This is typically due to the chip drawing too much current during an erase operation. See FAQ #2.
