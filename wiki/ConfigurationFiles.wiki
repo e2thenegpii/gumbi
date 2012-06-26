@@ -8,13 +8,23 @@ The Gumbi API includes a Configuration class which is responsible for parsing co
 
 Configuration files are expected to contain one entry per line, in the format of KEY=VALUE. Any text preceded by a pound sign (#) will be considered a comment and ignored. White space is allowed, and while KEY strings are case insensitive it is good convention to make them all upper case.
 
+If multiple values need to be provided for a given key, they may be separated by any of the following separators:
+
+  * ,
+  * :
+  * ;
+
 Example:
 
 {{{
 # This configuration file is for use in Gumbi's parallel mode
 MODE=parallel
 
-VOLTAGE = 3 #Enable the 3 volt on board regulator
+#Enable the 3 volt on board regulator
+VOLTAGE = 3 
+
+# Specify a list of address pins
+ADDRESS=1,2,3,4
 
 # This is a custom key value.
 FOO=bar
@@ -24,6 +34,8 @@ FOO=bar
 
 There are several configuration keys that have special meaning. Many of these are primarily applicable when operating in parallel mode, but they can be used by any mode of operation.
 
+|| *Key* || *Description* || *Accepted Values* ||
+|| VOLTAGE || The voltage regulator to enable. This value may be any valid value accepted by Gumbi.SetVoltage. If specified in the configuration file, the selected voltage regulator will be automatically enabled. If not specified, the currently enabled voltage regulator will be used. || 0 2 3 5 ||
 
 = Instantiating the Configuration Class =
 
