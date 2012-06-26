@@ -1,0 +1,81 @@
+#summary Documentation on the Gumbi configuration file format
+
+= Configuration Class =
+
+The Gumbi API includes a Configuration class which is responsible for parsing configuration files used by Gumbi based applications. While it does look for specific fields that are common to most Gumbi applications, it is generic enough to be used for parsing customized configuration files as well.
+
+= Configuration File Format =
+
+Configuration files are expected to contain one entry per line, in the format of KEY=VALUE. Any text preceded by a pound sign (#) will be considered a comment and ignored. White space is allowed, and while KEY strings are case insensitive it is good convention to make them all upper case.
+
+Example:
+
+{{{
+# This configuration file is for use in Gumbi's parallel mode
+MODE=parallel
+
+VOLTAGE = 3 #Enable the 3 volt on board regulator
+
+# This is a custom key value.
+FOO=bar
+}}}
+
+= Built In Keys =
+
+There are several configuration keys that have special meaning. Many of these are primarily applicable when operating in parallel mode, but they can be used by any mode of operation.
+
+
+= Instantiating the Configuration Class =
+
+If using a built-in mode, such as the GPIO or Parallel modes, you do not need to instantiate the Configuration class directly; the class constructors for these modes will do this for you.
+
+The Configuration class requires two arguments: 
+
+  # The path to a configuration file
+  # The mode of operation
+
+The mode is simply a text string, which must match the value for the MODE key in the configuration file, if one is specified. This is to help applications quickly identify an incorrect configuration file.
+
+If a MODE value is specified in the configuration file and it does not match the string passed to the Configuration class, an exception will be raised. If no MODE is specified in the configuration file, the mode value will be ignored.
+
+Example:
+
+{{{
+from gumbi import Configuration
+
+conf = Configuration("configs/my.conf", "GPIO")
+}}}
+
+= Accessing Key Values =
+
+You can access specific key values using the GetSetting method:
+
+{{{
+print "Foo setting:", conf.GetSetting("FOO")[0]
+}}}
+
+Note that all values are stored as lists, so GetSetting will return a list on success, or None on failure.
+
+= Setting Key Values =
+
+You can explicitly set key values using the SetSetting method:
+
+{{{
+conf.SetSetting("FOO", ["bar2"])
+}}}
+
+Note that all values are stored as lists, so your value should always be a list.
+
+= Setting Commands = 
+
+Because the COMMANDS field - a list of address/data values that need to be written prior to a read or write operation - is a common field that needs to be changed, there is a convenience function for doing so:
+
+{{{
+conf.SetCommands([0x5555, 0xAA])
+}}}
+
+Alternatively, you can specify the name of an existing configuration key, and the COMMANDS value will be set to the value of that key:
+
+{{{
+conf.SetCommands("ERASE")
+}}}
