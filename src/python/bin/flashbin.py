@@ -21,12 +21,18 @@ class NORFlash(Parallel):
 			if count is None:
 				count = 0
 
+		if (count % 2) != 0:
+			count += 1
+
                 return self.Read(address, count, callback=self.PrintProgress)
 
         def WriteChip(self, address, data):
 		"""
 		Writes data to the target chip starting at address.
 		"""
+		if (len(data) % 2) != 0:
+			data += "\xFF"
+
                 self.config.SetCommand("WRITE")
                 return self.Write(address, data, callback=self.PrintProgress)
 
