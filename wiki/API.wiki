@@ -1,0 +1,105 @@
+#summary Sample usage of the Gumbi Python API
+
+= Modes =
+
+The Gumbi API provides three primary modes of operation:
+
+  * GPIO
+  * Parallel
+  * Monitor
+
+GPIO mode is by far the most flexible mode of operation, but also the slowest. It allows complete control over all I/O pins on the Gumbi board.
+
+Parallel mode is (quasi) generic mode for talking to devices that use a parallel interface. This simplifies the code required for interfacing with parallel devices and is significantly faster for repeated read/write operations than using the GPIO mode.
+
+Monitor mode allows you to monitor the status of all, or part, of the Gumbi board's I/O pins in real time. Bear in mind that the sample rate is relatively low so this will not be a replacement for a proper signal analyzer. However, it is very useful for alerting on various external events, such as a pin changing state.
+
+= GPIO Mode =
+
+The GPIO class has only a handful of methods, most of which are fairly self explanatory:
+
+  * PinHigh / PinsHigh
+  * PinLow / PinsLow
+  * ReadPin / ReadPins
+  * SetPins
+
+Let's take a look at a simple hello world program that will blink an LED connected to pin 1 of the Gumbi board 10 times, once per second:
+
+{{{
+import time
+from gumbi import GPIO
+
+# This initializes the Gumbi board and enables its on board 3v regulator
+io = GPIO(voltage=3)
+
+for i in range(0,10):
+   io.PinHigh(1)
+   time.sleep(.5)
+   io.PinLow(1)
+   time.sleep(.5)
+
+io.Close()
+}}}
+
+Here is another example, this time reading the status of pin 8 every second (1 is high, 0 is low):
+
+{{{
+import time
+from gumbi import GPIO
+
+io = GPIO()
+
+try:
+   while True:
+      print "Pin 8 status:", io.ReadPin(8)
+      time.sleep(1)
+except KeyboardInterrupt:
+   pass
+
+io.Close()
+}}}
+
+= Parallel Mode =
+
+Many parallel interfaces are very similar in operation, requiring a number of data/address pins and a handful of control pins (write enable, chip enable, etc). 
+
+To simplify the interaction with parallel interfaces, the parallel mode accepts a configuration file that defines the necessary pins and makes reading and writing to such interfaces trivial.
+
+First, let's create a configuration file for a fictitious chip:
+
+{{{
+# There are three address pins for the chip:
+#
+#   A0 - Pin 1
+#   A1 - Pin 5
+#   A2 - Pin 6
+ADDRESS=1,5,6
+
+# There are three data pins for the chip:
+#
+#   D0 - Pin 2
+#   D1 - Pin 3
+#   D2 - Pin 4
+DATA=2,3,4
+
+# Define the write enable (pin 7) and the chip enable (pin 8) pins
+# These pins are active low (0)
+WE=7:0
+CE=8:0
+}}}
+
+To interface with this chip, we can use the following code:
+
+{{{
+from gumbi import Parallel
+
+chip = Parallel(config="my.conf")
+
+# Read 10 bytes from the chip starting at address 0
+data = chip.Read(0, 10)
+
+# Write four bytes to the chip starting at address 0
+chip.Write(0, "\x01\x02\x03\x04")
+
+chip.Close()
+}}}
