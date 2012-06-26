@@ -63,7 +63,7 @@ io.Close()
 
 Many parallel interfaces are very similar in operation, requiring a number of data/address pins and a handful of control pins (write enable, chip enable, etc). 
 
-To simplify the interaction with parallel interfaces, the parallel mode accepts a configuration file that defines the necessary pins and makes reading and writing to such interfaces trivial.
+To simplify the interaction with parallel interfaces, the parallel mode accepts a [http://code.google.com/p/gumbi/wiki/ConfigurationFiles configuration file] that defines the necessary pins and makes reading and writing to such interfaces trivial.
 
 First, let's create a configuration file for a fictitious chip:
 
