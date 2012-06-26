@@ -244,6 +244,7 @@ uint16_t read_data_pins(void)
 
 		if(rega || regb)
 		{
+			/* We can now process all data pins assigned to this I/O chip without any additional reads */
 			for(j=0; j<hconfig.num_data_pins; j++)
 			{
 				/* Does this data pin reside on this chip? */
@@ -426,6 +427,10 @@ void parallel_write(void)
 	uint32_t i = 0, c = 0, j = 0;
 	uint8_t data1 = 0, data2 = 0;
 	uint8_t write_size = data_size();
+
+	/* Make sure data pins are set as outputs */
+	configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
+	commit_ddr_settings();
 
 	/* Make sure write_size is sane. */
 	if(write_size <= sizeof(data))
