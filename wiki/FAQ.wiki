@@ -6,7 +6,7 @@ The external voltage source must be between 1.8 and 5 volts, or else permanent d
 
 == 2. What is the maximum current that Gumbi can supply to a target chip? ==
 
-The I/O pins can supply up to 15mA continuously, however, the on board voltage regulators can supply several hundred mA. If your chip requires more current, you may connect the Vcc pin on the Gumbi board expansion header directly to your chip's Vcc pin, but *make sure you have the voltage set properly first*.
+The I/O pins can supply up to 15mA continuously, however, the on board voltage regulators can supply several hundred mA. If your chip requires more current, you may connect the Vcc pin on the Gumbi board expansion header directly to your chip's Vcc pin, but *make sure you have the voltage set properly first* (this can be done with the gumbictl utility).
 
 == 3. Erasing a flash chip using flashbin sets flash contents to all 0x00's ==
 
