@@ -85,6 +85,19 @@ class Configuration(Gumbi):
 				I/O pins each time an action is received. If 0,
 				the I/O pins will only be configured once.
 
+		PINS		The pin count of the target chip. If this is defined,	0
+				the chip pins will automatically be mapped to the 
+				pins on the Gumbi board (i.e., on an 8 pin chip, chip 
+				pin 1 will be connected to Gumbi pin 1, chip pin 8 will
+				be connected to Gumbi pin 64). If this is not defined,
+				all specified pins (address, data, CE, etc) will be
+				considered absolute pin numbers on the Gumbi board.
+
+		VOLTAGE		The voltage regulator to enable. This value may be	0
+				any valid value accepted by Gumbi.SetVoltage. If not
+				specified, the currently enabled voltage regulator will
+				be used.
+
 	Values in the CONFIG dict can also be viewed/modified using the GetSetting() and
 	SetSetting() methods.
 
@@ -114,28 +127,29 @@ class Configuration(Gumbi):
 		"VOLTAGE"	: [None]
 	}
 	
-	def __init__(self, config, mode, pins=None):
+	def __init__(self, config, mode):
 		"""
-		Class initializer. Must be called BEFORE SetMode so that it can retrieve the current pin count from the Gumbi board.
+		Class initializer. Must be called BEFORE Gumbi.SetMode so that it can retrieve the current pin count from the Gumbi board.
 
 		@config - Path to the configuration file.
 		@mode   - The expected MODE value in the configuration file.
-		@pins   - Number of available I/O pins on the Gumbi board. If not specified, this is detected automatically.
 
 		Returns None.
 		"""
 		self.config = config
 		self.cmode = mode
-		self.num_pins = pins
 		self.package_pins = 0
 		self.pins_shifted = False
 		
 		Gumbi.__init__(self)
 
+		# Get the number of available pins on the Gumbi board
 		self.num_pins = self.PinCount()
 
+		# Parse the configuration file
 		self._parse_config(self.config)
 
+		# If a voltage was specified in the config file, set it
 		if self.CONFIG["VOLTAGE"][0] is not None:
 			self.SetVoltage(self.CONFIG["VOLTAGE"][0])
 		
@@ -326,7 +340,7 @@ class Configuration(Gumbi):
 	def Pack(self, action, start, count):
 		"""
 		Packs the configuration data into a strinig of bytes suitable for transmission to the Gumbi board.
-		Automatically called by Gumbi.Write and Gumbi.Read.
+		Automatically called by Gumbi.Write, Gumbi.Read and Gumbi.ExecuteCommand.
 		
 		@action   - Action (READ, WRITE, EXIT, etc).
 		@start    - Start address.
@@ -345,7 +359,7 @@ class Configuration(Gumbi):
 		data += self.PackByte(self.CONFIG["RECONFIGURE"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
-		data += self.Pack16(len(self.CONFIG["VCC"]))
+		Gumbi.data += self.Pack16(len(self.CONFIG["VCC"]))
 		data += self.Pack16(len(self.CONFIG["GND"]))
 		data += self.PackByte(len(self.CONFIG["COMMANDS"]))
 		data += self._pack_pins(self.CONFIG["ADDRESS"])
