@@ -32,8 +32,8 @@ API
 HARDWARE
 	
 	The Gumbi hardware consists of an AVR microcontroller which registers itself with the host computer
-	as a generic USB Human Interface Device. The microcontroller acts as an interface between the host 
-	computer and the 16 bit I/O expansion chips on the Gumbi board. 
+	as a virtual serial port. The microcontroller acts as an interface between the host computer and the 
+	16 bit I/O expansion chips on the Gumbi board. 
 
 	Although the Gumbi board uses four I/O expansion chips with a total of 64 I/O pins, it can support 
 	up to eight expansion chips providing 128 I/O pins. Additional expansion chips are easily added via
@@ -44,7 +44,8 @@ FIRMWARE
 
 	The firmware for the AVR microcontroller is freely available and can be easily upgraded via USB; no 
 	additional hardware or programmers are needed. To put the microcontroller into program mode, short 
-	the 'PROGRAM' jumper on the Gumbi board and press the reset button. You can then download new firmware
-	to the microcontroller using Atmel's FLIP software, or the open source dfu-programmer utility. To
-	take the microcontroller out of program mode, remove the PROGRAM jumper and press the reset button.
+	the 'PROGRAM' jumper on the Gumbi board, followed by the 'RESSET' jumper. This will place the AVR
+	chip into prorgamming mode. You can then download new firmware to the microcontroller using Atmel's 
+	FLIP software, or the open source dfu-programmer utility. To take the microcontroller out of program 
+	mode, remove the PROGRAM and RESET jumpers and power cycle the board.
 
