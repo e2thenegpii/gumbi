@@ -427,10 +427,6 @@ void parallel_write(void)
 	uint8_t data1 = 0, data2 = 0;
 	uint8_t write_size = data_size();
 
-	/* Make sure data pins are set as outputs */
-	configure_pins_as_outputs(hconfig.data_pins, hconfig.num_data_pins);
-	commit_ddr_settings();
-
 	/* Make sure write_size is sane. */
 	if(write_size <= sizeof(data))
 	{
