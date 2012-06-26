@@ -35,7 +35,10 @@ FOO=bar
 There are several configuration keys that have special meaning. Many of these are primarily applicable when operating in parallel mode, but they can be used by any mode of operation.
 
 || *Key* || *Description* || *Accepted Values* ||
-|| VOLTAGE || The voltage regulator to enable. This value may be any valid value accepted by Gumbi.SetVoltage. If specified in the configuration file, the selected voltage regulator will be automatically enabled. If not specified, the currently enabled voltage regulator will be used. || 0 2 3 5 ||
+|| VOLTAGE || The voltage regulator to enable. This value may be any valid value accepted by Gumbi.SetVoltage. If specified in the configuration file, the selected voltage regulator will be automatically enabled. If not specified, the currently enabled voltage regulator will be used. || One of: 0, 2, 3, 5 ||
+|| PINS || The pin count of the target device, used internally for automatic pin mapping. For example, if an 8 pin chip is plugged into the Gumbi board, chip pin 1 will be connected to Gumbi pin 1 while chip pin 8 will be connected to Gumbi pin 64. If this key is defined, the mapping between the specified pin (e.g., 8) and the actual Gumbi pin (e.g., 64) will be done automatically. If this is not defined, all specified pins will be considered absolute pin numbers on the Gumbi board. || Any numeric value less than or equal to the number of available I/O pins on the Gumbi board ||
+|| ADDRESS || An ordered list of address bus pins, LSB first. || Any delimited list of pin numbers. Example: ADDRESS=1,2,3,4 ||
+|| DATA || An ordered list of data bus pins, LSB first. || Any delimited list of pin numbers. Example: DATA=5,6,7,8 ||
 
 = Instantiating the Configuration Class =
 
