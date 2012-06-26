@@ -10,7 +10,7 @@ The Gumbi API provides three primary modes of operation:
 
 GPIO mode is by far the most flexible mode of operation, but also the slowest. It allows complete control over all I/O pins on the Gumbi board.
 
-Parallel mode is (quasi) generic mode for talking to devices that use a parallel interface. This simplifies the code required for interfacing with parallel devices and is significantly faster for repeated read/write operations than using the GPIO mode.
+Parallel mode provides a generic method for talking to devices that use a parallel interface. This simplifies the code required for interfacing with parallel devices and is significantly faster for repeated read/write operations than using the GPIO mode.
 
 Monitor mode allows you to monitor the status of all, or part, of the Gumbi board's I/O pins in real time. Bear in mind that the sample rate is relatively low so this will not be a replacement for a proper signal analyzer. However, it is very useful for alerting on various external events, such as a pin changing state.
 
@@ -41,7 +41,7 @@ for i in range(0,10):
 io.Close()
 }}}
 
-Here is another example, this time reading the status of pin 8 every second (1 is high, 0 is low):
+Here is another example, this time reading the status of pin 8 every second (a ReadPin return value of 1 is high, 0 is low):
 
 {{{
 import time
@@ -102,4 +102,30 @@ data = chip.Read(0, 10)
 chip.Write(0, "\x01\x02\x03\x04")
 
 chip.Close()
+}}}
+
+= Monitor Mode =
+
+The monitor mode allows you to continuously stream the status of each Gumbi I/O pin back to your PC. You may elect to monitor the status of all I/O pins, or a select number of I/O pins (in multiples of 16).
+
+{{{
+from gumbi import Monitor
+
+done = False
+
+# Monitor the first 32 pins on the Gumbi board
+mon = Monitor(32)
+
+while not done:
+   # Read back the state of the first 32 pins 10 times.
+   # This will return 10 blocks of data.
+   for pins in mon.Sniff(10):
+
+      # Loop through all 10 blocks and check to see if pins 4 and 30 are high
+      if pins[4] == 1 and pins[30] == 1:
+          print "Pins 4 and 30 are both high!"
+          done = True
+          break
+
+mon.Close()
 }}}
