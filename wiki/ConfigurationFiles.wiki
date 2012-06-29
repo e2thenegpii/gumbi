@@ -46,6 +46,12 @@ There are several configuration keys that have special meaning. Many of these ar
 || RE || The Rhip Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically asserted when reading data in parallel mode. || A delimited pin number and active state value. Example: RE=21:0 ||
 || OE || The Output Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically asserted when reading data in parallel mode. || A delimited pin number and active state value. Example: RE=21:0 ||
 || BE || The Byte Enable pin and its active state (0 is active low, 1 is active high), for chips that support both word (16 bit) and byte (8 bit) data busses. If specified, this pin is automatically asserted if  8 or fewer DATA pins are specified in parallel mode. || A delimited pin number and active state value. Example: BE=21:0 ||
+|| BY || The Busy pin and its active state (0 is active low, 1 is active high). When specified in parallel mode, Gumbi will not perform any read/write operations while this pin is in its active state. || A delimited pin number and active state value. Example: BY=21:0 ||
+|| WP || The Write Protect pin and its active state (0 is active low, 1 is active high). This pin is deactivated in parallel mode. || A delimited pin number and active state value. Example: WP=21:0 ||
+|| RST || The Reset pin and its active state (0 is active low, 1 is active high). If specified, this pin is deactivated in parallel mode. || A delimited pin number and active state value. Example: RST=21:0 ||
+|| COMMANDS || A list of commands to be executed prior to read/write operations in parallel mode. Each command consists of an address and data value pair. || A delimited list of address data pairs. Example: COMMANDS=0x5555:0xAA,0xAAAA:0x55 ||
+|| CMDELAY || The delay period, in seconds, to wait after executing the commands listed in the COMMANDS directive. || An integer value. Example: CMDELAY=5 ||
+|| RECONFIGURE || If this value is set to 1, the Gumbi board will reconfigure the I/O pins each time an action is executed. If set to 0 or not specified, they will only be configured once. || A value of 0 or 1. Example: RECONFIGURE=1 ||
 
 = Instantiating the Configuration Class =
 
