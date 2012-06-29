@@ -41,6 +41,11 @@ There are several configuration keys that have special meaning. Many of these ar
 || DATA || An ordered list of data bus pins, LSB first. || Any delimited list of pin numbers. Example: DATA=1,2,3,4 ||
 || VCC || An ordered list of pins that should be explicitly pulled high. || Any delimited list of pin numbers. Example: VCC=1,2,3,4 ||
 || GND || An ordered list of pins that should be explicitly pulled low. || Any delimited list of pin numbers. Example: GND=1,2,3,4 ||
+|| CE || The Chip Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically asserted when initializing the Gumbi board in parallel mode. || A delimited pin number and active state value. Example: CE=21:0 ||
+|| WE || The Whip Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically asserted when writing data in parallel mode. || A delimited pin number and active state value. Example: WE=21:0 ||
+|| RE || The Rhip Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically asserted when reading data in parallel mode. || A delimited pin number and active state value. Example: RE=21:0 ||
+|| OE || The Output Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically asserted when reading data in parallel mode. || A delimited pin number and active state value. Example: RE=21:0 ||
+|| BE || The Byte Enable pin and its active state (0 is active low, 1 is active high), for chips that support both word (16 bit) and byte (8 bit) data busses. If specified, this pin is automatically asserted if  8 or fewer DATA pins are specified in parallel mode. || A delimited pin number and active state value. Example: BE=21:0 ||
 
 = Instantiating the Configuration Class =
 
