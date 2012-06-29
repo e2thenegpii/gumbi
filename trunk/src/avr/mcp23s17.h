@@ -11,6 +11,7 @@
 #define IOCON_DEFAULT_VALUE 0x38
 #define IODIR_DEFAULT_VALUE 0xFF
 #define REG_DEFAULT_VALUE 0x00
+#define IO_PWR_CYCLE_PERIOD 1000
 
 void mcp23s17_init(void);
 void mcp23s17_enable(void);

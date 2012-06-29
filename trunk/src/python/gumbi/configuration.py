@@ -359,7 +359,7 @@ class Configuration(Gumbi):
 		data += self.PackByte(self.CONFIG["RECONFIGURE"][0])
 		data += self.Pack16(len(self.CONFIG["ADDRESS"]))
 		data += self.Pack16(len(self.CONFIG["DATA"]))
-		Gumbi.data += self.Pack16(len(self.CONFIG["VCC"]))
+		data += self.Pack16(len(self.CONFIG["VCC"]))
 		data += self.Pack16(len(self.CONFIG["GND"]))
 		data += self.PackByte(len(self.CONFIG["COMMANDS"]))
 		data += self._pack_pins(self.CONFIG["ADDRESS"])
