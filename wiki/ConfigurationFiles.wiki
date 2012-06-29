@@ -112,3 +112,21 @@ Alternatively, you can specify the name of an existing configuration key, and th
 {{{
 conf.SetCommands("ERASE")
 }}}
+
+= The INCLUDE Directive =
+
+Some configurations may be very similar and require only a few changes. In these cases, it does not make sense to re-write the entire configuration file. Instead, the INCLUDE directive can be used to include settings from an existing configuration file:
+
+{{{
+VOLTAGE=3
+
+# If the VOLTAGE setting is defined in the foo file, it will override the above VOLTAGE setting
+INCLUDE=foo
+
+# If the PINS setting is defined in the foo config file, this will override that setting
+PINS=32
+}}}
+
+The file name specified in the INCLUDE directive is case sensitive and must exclude the file extension. The file extension of the file being included must match that of the current configuration file, and both files must be located in the same directory.
+
+For example, if the bar.conf file wants to include the settings from foo.conf, they must be placed in the same directory.
