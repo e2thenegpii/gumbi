@@ -20,8 +20,11 @@ Example:
 # This configuration file is for use in Gumbi's parallel mode
 MODE=parallel
 
+# Set the number of pins on the chip
+PINS=8
+
 #Enable the 3 volt on board regulator
-VOLTAGE = 3 
+VOLTAGE=3 
 
 # Specify a list of address pins
 ADDRESS=1,2,3,4
