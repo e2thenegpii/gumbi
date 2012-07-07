@@ -14,4 +14,4 @@ This is typically due to the chip drawing too much current during an erase opera
 
 == 4. Writing to a flash chip using flashbin isn't always reliable ==
 
-This is typically due to the chip drawing too much current during an erase operation. See FAQ #2.
+This is typically due to the chip drawing too much current during a write operation. See FAQ #2.
