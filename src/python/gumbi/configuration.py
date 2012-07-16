@@ -104,6 +104,8 @@ class Configuration(Gumbi):
 	If used, this class instance must be called prior to invoking Gumbi.SetMode().
 	"""
 
+	INCLUDE = "INCLUDE"
+
 	CONFIG = {
 		"TOE"		: [Gumbi.TOE_DEFAULT],
 		"TBP"		: [Gumbi.TBP_DEFAULT],
@@ -146,7 +148,7 @@ class Configuration(Gumbi):
 		# Get the number of available pins on the Gumbi board
 		self.num_pins = self.PinCount()
 
-		# Parse the configuration file
+		# Parse the configuration file/dict
 		self._parse_config(self.config)
 
 		# If a voltage was specified in the config file, set it
@@ -277,7 +279,21 @@ class Configuration(Gumbi):
 					return value
 		return None
 
-	def _parse_config(self, config):
+	def _parse_config(self):
+		"""
+		If the specified config value is a dict, populate self.CONFIG with the contents of the config dict.
+		Else, call _parse_config_file to treat config as a path to a configuration file.
+		"""
+		if type(self.config) == type({}):
+			for key,value in self.config:
+				if type(value) != type([]):
+					self.CONFIG[key] = [value]
+				else:
+					 self.CONFIG[key] = value
+		else:
+			self._parse_config_file()
+
+	def _parse_config_file(self):
 		"""
 		Parses the specified configuration file. For internal use only.
 		"""
@@ -289,7 +305,7 @@ class Configuration(Gumbi):
 			for line in open(config).readlines():
 				(key, value) = self.ParseConfigLine(line)
 				if key is not None and value is not None:
-					if key == "INCLUDE":
+					if key == self.INCLUDE:
 						filepath = os.path.dirname(config)
 						filename = "%s%s" % (value, os.path.splitext(config)[1])
 						self._parse_config(os.path.join(*[filepath, filename]))
