@@ -149,7 +149,7 @@ class Configuration(Gumbi):
 		self.num_pins = self.PinCount()
 
 		# Parse the configuration file/dict
-		self._parse_config(self.config)
+		self._parse_config()
 
 		# If a voltage was specified in the config file, set it
 		if self.CONFIG["VOLTAGE"][0] is not None:
@@ -285,13 +285,16 @@ class Configuration(Gumbi):
 		Else, call _parse_config_file to treat config as a path to a configuration file.
 		"""
 		if type(self.config) == type({}):
-			for key,value in self.config:
+			for key,value in self.config.iteritems():
 				if type(value) != type([]):
 					self.CONFIG[key] = [value]
 				else:
 					 self.CONFIG[key] = value
 		else:
 			self._parse_config_file()
+		
+		if self.CONFIG.has_key("PINS"):
+			self.package_pins = self.CONFIG["PINS"][0]
 
 	def _parse_config_file(self):
 		"""
@@ -301,8 +304,8 @@ class Configuration(Gumbi):
 		if mode_name is not None and mode_name != self.cmode:
 			raise Exception("Wrong mode specified in configuration file. Got '%s', expected '%s'." % (mode_name, self.cmode))
 
-		if config and config is not None:
-			for line in open(config).readlines():
+		if self.config and self.config is not None:
+			for line in open(self.config).readlines():
 				(key, value) = self.ParseConfigLine(line)
 				if key is not None and value is not None:
 					if key == self.INCLUDE:
@@ -311,8 +314,6 @@ class Configuration(Gumbi):
 						self._parse_config(os.path.join(*[filepath, filename]))
 					else:
 						self.CONFIG[key] = value
-
-		self.package_pins = self.CONFIG["PINS"][0]
 
 	def SetCommand(self, commands):
 		"""
