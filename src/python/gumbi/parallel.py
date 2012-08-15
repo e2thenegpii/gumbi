@@ -8,7 +8,7 @@ class Parallel(Gumbi):
 
 	MODE = "PARALLEL"
 	
-	def __init__(self, config=None, port=None):
+	def __init__(self, config=None, voltage=None, port=None):
 		"""
 		Class constructor.
 
@@ -18,6 +18,8 @@ class Parallel(Gumbi):
 		"""
 		self.config = Configuration(config, self.MODE)
 		Gumbi.__init__(self, port=port)
+		if voltage is not None:
+			self.SetVoltage(voltage)
 		self.SetMode(self.PARALLEL)
 	
 	def _exit(self):
