@@ -16,7 +16,7 @@ class GPIO(Gumbi):
 
 		Returns None.
 		"""
-		self.config = Configuration(config, self.MODE)
+		self.config = Configuration(config, self.MODE, port)
 		Gumbi.__init__(self, port=port)
 		if voltage is not None:
 			self.SetVoltage(voltage)

@@ -129,7 +129,7 @@ class Configuration(Gumbi):
 		"VOLTAGE"	: [None]
 	}
 	
-	def __init__(self, config, mode):
+	def __init__(self, config, mode, port=None):
 		"""
 		Class initializer. Must be called BEFORE Gumbi.SetMode so that it can retrieve the current pin count from the Gumbi board.
 
@@ -143,7 +143,7 @@ class Configuration(Gumbi):
 		self.package_pins = 0
 		self.pins_shifted = False
 		
-		Gumbi.__init__(self)
+		Gumbi.__init__(self, port=port)
 
 		# Get the number of available pins on the Gumbi board
 		self.num_pins = self.PinCount()
