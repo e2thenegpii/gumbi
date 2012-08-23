@@ -18,5 +18,11 @@ data:
 	cp bin/config/* $(FLASHCONFDIR)/
 
 clean:
+	rm -f gumbi/*.pyc
 	rm -rf *.cache config.* build
 	rm -f Makefile
+
+uninstall:
+	rm -f $(BINDIR)/gumbictl
+	rm -f $(BINDIR)/flashbin
+	rm -rf $(FLASHCONFDIR)

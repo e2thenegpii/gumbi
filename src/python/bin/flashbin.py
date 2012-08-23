@@ -76,7 +76,6 @@ if __name__ == "__main__":
 
 	CONFIG_PATH = "bin/config/"
 	CONF_EXT = '.conf'
-	PORT = None
 
 	def wordflip(data):
 		"""
@@ -125,6 +124,7 @@ if __name__ == "__main__":
 		print "\t-a, --address=<int>      Specify the starting address [0]"
 		print "\t-s, --size=<int>         Specify the number of bytes to read/write"
 		print "\t-f, --word-flip=<file>   Word-flip the contents of the specified file"
+		print "\t-P, --port=<port>        Set the Gumbi board's virtual serial port [/dev/ttyACM0]"
 		print "\t-p, --path=<path>        Set the path to the chip configuration files [%s]" % CONFIG_PATH
 		print "\t-v, --verbose            Enabled verbose output"
 		print "\t-h, --help               Show help"
@@ -145,13 +145,14 @@ if __name__ == "__main__":
 	doerase = False
 	verbose = False
 	chip = None
+	port = None
 	infile = None
 	config = None
 	outfile = None
 	flipfile = None
 
 	try:
-		opts, args = GetOpt(sys.argv[1:], "iela:s:r:w:c:f:p:vh", ["id", "erase", "list", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "--path=", "help"])
+		opts, args = GetOpt(sys.argv[1:], "iela:s:r:w:c:f:P:p:vh", ["id", "erase", "list", "address=", "size=", "read=", "write=", "chip=", "word-flip=", "port=", "path=", "verbose", "help"])
 	except GetoptError, e:
 		print e
 		usage()
@@ -179,6 +180,8 @@ if __name__ == "__main__":
 			open("%s.flip" % flipfile, "wb").write(wordflip(open(arg, "rb").read()))
 			print "File saved to: %s.flip" % arg
 			sys.exit(0)
+		elif opt in ('-P', '--port'):
+			port = arg
 		elif opt in ('-p', '--path'):
 			CONFIG_PATH = arg + '/'
 		elif opt in ('-v', '--verbose'):
@@ -193,6 +196,10 @@ if __name__ == "__main__":
 		print "Please specify the chip type!"
 		usage()
 
+	if len(ACTIONS) == 0:
+		print "Please specify an action (id, read, write, etc)!"
+		usage()
+
 	for action in ACTION_LIST:
 
 		if ACTIONS.has_key(action):
@@ -202,7 +209,7 @@ if __name__ == "__main__":
 				sys.stdout.write("Connecting to Gumbi board...")
 				sys.stdout.flush()
 
-			flash = NORFlash(config=config, port=PORT)
+			flash = NORFlash(config=config, port=port)
 
 			if verbose:
 				print "connected."

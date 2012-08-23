@@ -30,7 +30,7 @@ class Gumbi:
 	NULL = "\x00"
 	DUMMY_BYTE = "\xFF"
 	SERIAL_PORT = "/dev/ttyACM0"
-
+	
 	TBP_DEFAULT = 25
 	TOE_DEFAULT = 0
 
@@ -81,9 +81,6 @@ class Gumbi:
 		self.port = port
 		self.num_pins = 0
 
-		if self.port is None:
-			self.port = self.SERIAL_PORT
-
 		if new:
 			self._open()
 
@@ -91,7 +88,26 @@ class Gumbi:
 		"""
 		Opens a connection to the Gumbi board. For internal use only.
 		"""
-		self.serial = serial.Serial(self.port)
+	
+		if self.port is not None:
+			self.serial = serial.Serial(self.port)
+		else:	
+			n = 0
+			last_error = ''
+			prefix = self.SERIAL_PORT[:-1]
+
+			while n < 10:
+				try:
+					self.port = prefix + str(n)
+					self.serial = serial.Serial(self.port)
+					break
+				except Exception, e:
+					last_error = str(e)
+					n += 1
+					self.port = None
+
+			if self.port is None:
+				raise Exception(last_error)
 
 	def _exit(self):
 		"""
