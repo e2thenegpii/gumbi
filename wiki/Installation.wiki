@@ -1,0 +1,35 @@
+#summary Installation procedures for Gumbi firmware and API
+
+=Prerequisites=
+
+        The Gumbi API is written in Python, and requires no additional modules
+        outside of those included with the standard Python installation.
+
+        The firmware is written in C, and must be built for the AVR architecture;
+        thus, you must have the AVR cross-compiler and toolchain installed on
+        your system in order to build the firmware.
+
+        To install the firmware via the Makefile, you must also have the dfu-programmer
+        utility installed. Alternately, you can install the firmware using the
+        Atmel Flip utility.
+
+        The majority of the API code is platform independant, and should work on
+        most systems; currently however, it has only been tested under Linux.
+
+=Installation Procedures=
+
+        To install the Gumbi API modules and associated Gumbi utilities:
+{{{
+                $ cd src/python
+                $ ./configure
+                # make
+}}}
+        To install the firmware onto the Gumbi board:
+{{{
+                $ cd src/avr
+                $ make
+                # make install
+}}}
+        Note that prior to installing the Gumbi board firmware, you must first
+        put the board into programming mode, by shorting the two RESET pins while
+        also shorting the two PROGRAM pins together.
