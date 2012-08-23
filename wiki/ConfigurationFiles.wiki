@@ -71,7 +71,7 @@ from gumbi import Parallel
 p = Parallel(config="configs/mysettings.conf")
 }}}
 
-All of the Configuration methods, as described in the 'Instantiating the Configuration Class' section below, are accessible through the 'conf' instance:
+All of the Configuration methods, as described in the sections below, are accessible through the 'conf' instance:
 
 {{{
 print "Foo setting:", p.conf.GetSetting("FOO")[0]
