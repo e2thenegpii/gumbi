@@ -44,7 +44,7 @@ There are several configuration keys that have special meaning. The following ma
 || GND || An ordered list of pins that should be explicitly pulled low. || Any delimited list of pin numbers. Example: GND=1,2,3,4 ||
 || PINS || The pin count of the target device, used internally by the Configuration class for automatic pin mapping. For example, if an 8 pin chip is plugged into the Gumbi board, chip pin 1 will be connected to Gumbi pin 1 while chip pin 8 will be connected to Gumbi pin 64. If this key is defined, the mapping between the specified pin (e.g., 8) and the actual Gumbi pin (e.g., 64) will be done automatically. If this is not defined, all specified pins will be considered absolute pin numbers on the Gumbi board. || Any numeric value less than or equal to the number of available I/O pins on the Gumbi board ||
 
-The following configuration keys have special meaning in parallel mode, but may be used in configuration files for other modes, such as GPIO. However, n non-parallel modes, the actions listed here will not be taken by default.
+The following configuration keys have special meaning in parallel mode, but may be used in configuration files for other modes, such as GPIO. However, in non-parallel modes, the actions listed here will not be taken by default.
 
 || *Key* || *Description* || *Accepted Values* ||
 || ADDRESS || An ordered list of address bus pins, LSB first. || Any delimited list of pin numbers. Example: ADDRESS=1,2,3,4 ||
@@ -61,13 +61,27 @@ The following configuration keys have special meaning in parallel mode, but may 
 || CMDELAY || The delay period, in seconds, to wait after executing the commands listed in the COMMANDS directive. || An integer value. Example: CMDELAY=5 ||
 || RECONFIGURE || If this value is set to 1, the Gumbi board will reconfigure the I/O pins each time an action is executed. If set to 0 or not specified, they will only be configured once. || A value of 0 or 1. Example: RECONFIGURE=1 ||
 
-= Instantiating the Configuration Class =
+=Loading a Configuration File=
 
-If using a built-in mode, such as the GPIO or Parallel modes, you do not need to instantiate the Configuration class directly; the class constructors for these modes will do this for you.
+If using a built-in mode, such as the Monitor, GPIO or Parallel modes, you do not need to instantiate the Configuration class directly; the class constructors for these modes will do this for you. The class constructors for these modes accept a 'config' field, which can be either the path to a configuration file, or a dictionary containing configuration settings:
+
+{{{
+from gumbi import Parallel
+
+p = Parallel(config="configs/mysettings.conf")
+}}}
+
+All of the Configuration methods, as described in the 'Instantiating the Configuration Class' section below, are accessible through the 'conf' instance:
+
+{{{
+print "Foo setting:", p.conf.GetSetting("FOO")[0]
+}}}
+
+= Instantiating the Configuration Class =
 
 The Configuration class requires two arguments: 
 
-  # The path to a configuration file
+  # The path to a configuration file / a dictionary of configuration settings
   # The mode of operation
 
 The mode is simply a text string, which must match the value for the MODE key in the configuration file, if one is specified. This is to help applications quickly identify an incorrect configuration file.
