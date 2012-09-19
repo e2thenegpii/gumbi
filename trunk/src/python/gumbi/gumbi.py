@@ -108,6 +108,8 @@ class Gumbi:
 
 			if self.port is None:
 				raise Exception(last_error)
+			else:
+				self.Reset()
 
 	def _exit(self):
 		"""
@@ -125,6 +127,13 @@ class Gumbi:
 		Closes the connection with the Gumbi board. For internal use only.
 		"""
 		self.serial.close()
+
+	def _flush_serial(self):
+		"""
+		Flushes the serial port's input and output buffers. For internal use only."
+		"""
+		self.serial.flushInput()
+		self.serial.flushOutput()
 
 	def StartTimer(self):
 		"""
@@ -412,11 +421,12 @@ class Gumbi:
 	def Reset(self):
 		"""
 		Attempts to reset the communications stream with the Gumbi board.
+		This will exit out of any mode the Gumbi board may be stuck in from a previous unclosed session.
 
 		Returns None.
 		"""
-		for i in range(0, self.RESET_LEN):
-			self.SetMode(self.NOP)
+		self.WriteBytes(self.EXIT * self.RESET_LEN)
+		self._flush_serial()
 
 	def PrintProgress(self, current, total):
 		"""
