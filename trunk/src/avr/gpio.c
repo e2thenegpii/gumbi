@@ -11,6 +11,7 @@ void gpio(void)
 
 	while(loop)
 	{
+		send_data = FALSE;
 		read_data((uint8_t *) &cmd, sizeof(cmd));
 		
 		switch(cmd.action)
@@ -44,7 +45,6 @@ void gpio(void)
 		if(send_data)
 		{
 			fputc(data, &gconfig.usb);
-			send_data = FALSE;
 		}
 	}
 	

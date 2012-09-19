@@ -10,7 +10,7 @@ void monitor(void)
 
 	while(TRUE)
 	{
-		read_data((uint8_t *) &count, 4);
+		read_data((uint8_t *) &count, sizeof(uint32_t));
 
 		if(count == 0)
 		{

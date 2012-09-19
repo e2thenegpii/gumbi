@@ -13,6 +13,13 @@ void parallel(void)
 		/* Read in parallel configuration data */
 		read_data((uint8_t *) &hconfig, sizeof(hconfig));
 
+		/* If given the exit command, don't do anything else, just acknowledge and exit */
+		if(hconfig.action == EXIT)
+		{
+			ack();
+			break;
+		}
+
 		/* Validate that the number of operational commands is sane */
 		if(hconfig.num_commands > MAX_COMMANDS)
 		{
@@ -103,10 +110,10 @@ void parallel(void)
 					execute_commands();
 					ack();
 					break;
-				case EXIT:
-					ack();
-					loop = FALSE;
-					break;
+//				case EXIT:
+//					ack();
+//					loop = FALSE;
+//					break;
 				default:
 					/* Bad action specified, respond with NACK and a reason string */
 					nack();
@@ -119,6 +126,7 @@ void parallel(void)
 			/* Band configuration specified, send a NACK and a reason */
 			nack();
 			fprintf(&gconfig.usb, "Invalid configuration");
+			break;
 		}
 	}
 	

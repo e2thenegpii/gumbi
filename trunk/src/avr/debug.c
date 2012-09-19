@@ -63,7 +63,7 @@ void speed_test(void)
 	}
 }
 
-/* Handler for XFER mode. Reads in a 4 byte size field, reads in size data while sending it back out to the host. */
+/* Handler for XFER mode. Reads in XFER_TEST_SIZE bytes of data then sends it back out to the host. */
 void xfer_test(void)
 {
 	uint32_t i = 0;
