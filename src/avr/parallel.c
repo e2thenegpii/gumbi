@@ -55,6 +55,8 @@ void parallel(void)
 				configure_pin_as_output(hconfig.re.pin);
 				configure_pin_as_output(hconfig.ce.pin);
 				configure_pin_as_output(hconfig.be.pin);
+				configure_pin_as_output(hconfig.wi.pin);
+				configure_pin_as_output(hconfig.ri.pin);
 				configure_pin_as_output(hconfig.rst.pin);
 
 				/* Set the busy/ready pin as an input */
@@ -76,8 +78,10 @@ void parallel(void)
 				read_enable(FALSE);
 				output_enable(FALSE);
 				write_protect(FALSE);
+				write_indicator(FALSE);
+				read_indicator(FALSE);
 				chip_enable(FALSE);
-					
+				
 				/* Supply power to the target chip */
 				set_pins_high(hconfig.vcc_pins, hconfig.num_vcc_pins);
 				set_pins_low(hconfig.gnd_pins, hconfig.num_gnd_pins);
@@ -176,6 +180,18 @@ void reset_enable(uint8_t tf)
 void byte_enable(uint8_t tf)
 {
 	set_control_pin(hconfig.be, tf);
+}
+
+/* Set the write indicator pin */
+void write_indicator(uint8_t tf)
+{
+	set_control_pin(hconfig.wi, tf);
+}
+
+/* Set the read indicator pin */
+void read_indicator(uint8_t tf)
+{
+	set_control_pin(hconfig.ri, tf);
 }
 
 /* Check if the chip is busy or not */
@@ -389,6 +405,8 @@ void parallel_read(void)
 	configure_pins_as_inputs(hconfig.data_pins, hconfig.num_data_pins);
 	commit_ddr_settings();
 
+	read_indicator(TRUE);
+
 	for(i=0, j=0, c=0; i<hconfig.count; i+=read_size, j++, c++)
 	{
 		/* Wait until the target chip is not busy */
@@ -423,6 +441,8 @@ void parallel_read(void)
 		}
 	}
 
+	read_indicator(FALSE);
+
 	/* Make sure the LED is on after the read loop */
 	led_on();
 	return;
@@ -443,6 +463,8 @@ void parallel_write(void)
 	/* Make sure write_size is sane. */
 	if(write_size <= sizeof(data))
 	{
+		write_indicator(TRUE);
+
 		/* Loop until we've written hconfig.count bytes */
 		for(i=0, j=hconfig.addr, c=0; i<hconfig.count; c++, j++, i+=write_size)
 		{
@@ -477,6 +499,8 @@ void parallel_write(void)
 			/* Acknowledge when we've finished processing a block of data so the host knows we're ready for more */
 			ack();
 		}
+
+		write_indicator(FALSE);
 	}
 
 	led_on();

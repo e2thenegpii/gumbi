@@ -151,6 +151,8 @@ struct confdata
 	struct ctrlpin be;			/* Byte Enable */
 	struct ctrlpin by;			/* Ready / Busy */
 	struct ctrlpin wp;			/* Write Protect */
+	struct ctrlpin wi;			/* Write Indicator */
+	struct ctrlpin ri;			/* Read Indicator */
 	struct ctrlpin rst;			/* Reset */
 } hconfig;
 
