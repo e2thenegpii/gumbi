@@ -70,6 +70,16 @@ class Configuration(Gumbi):
 				active low, 1 is active high). This pin is deasserted
 				in parallel mode.
 
+		WI		The Write Indicator pin, and its active state (0 is	[255, 0]
+				active low, 1 is active high). This pin is asserted
+				at the beginning of a Write(), and deasserted when
+				the Write() is finished.
+
+		RI		The Rrite Indicator pin, and its active state (0 is     [255, 0]
+				active low, 1 is active high). This pin is asserted
+				at the beginning of a Read(), and deasserted when
+				the Read() is finished.
+
 		RST		The chip reset pin, and its active state (0 is		[255, 0]
 				active low, 1 is active high). This pin is deasserted
 				in parallel mode.
@@ -120,6 +130,8 @@ class Configuration(Gumbi):
 		"BE"		: [Gumbi.UNUSED, 0],
 		"BY"		: [Gumbi.UNUSED, 0],
 		"WP"		: [Gumbi.UNUSED, 0],
+		"WI"		: [Gumbi.UNUSED, 0],
+		"RI"		: [Gumbi.UNUSED, 0],
 		"RST"		: [Gumbi.UNUSED, 0],
 		"COMMANDS"	: [],
 		"CMDELAY"	: [0],
@@ -391,6 +403,8 @@ class Configuration(Gumbi):
 		data += self.PackBytes(self.CONFIG["BE"])
 		data += self.PackBytes(self.CONFIG["BY"])
 		data += self.PackBytes(self.CONFIG["WP"])
+		data += self.PackBytes(self.CONFIG["WI"])
+		data += self.PackBytes(self.CONFIG["RI"])
 		data += self.PackBytes(self.CONFIG["RST"])
 		return data
 

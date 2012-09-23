@@ -14,6 +14,8 @@ void read_enable(uint8_t tf);
 void chip_enable(uint8_t tf);
 void reset_enable(uint8_t tf);
 void byte_enable(uint8_t tf);
+void write_indicator(uint8_t tf);
+void read_indicator(uint8_t tf);
 uint8_t data_size(void);
 void commit_targeted_settings(uint8_t pins[], uint32_t count);
 void commit_address_settings(void);
