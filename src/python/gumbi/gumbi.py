@@ -425,8 +425,9 @@ class Gumbi:
 
 		Returns None.
 		"""
-		self.WriteBytes(self.EXIT * self.RESET_LEN)
-		self._flush_serial()
+		#self.WriteBytes(chr(self.EXIT) * self.RESET_LEN)
+		#self._flush_serial()
+		return None
 
 	def PrintProgress(self, current, total):
 		"""

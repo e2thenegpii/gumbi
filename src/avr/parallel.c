@@ -91,9 +91,9 @@ void parallel(void)
 				commit_io_settings();
 
 				/* Enable the target chip */
-				_delay_us(hconfig.toe);
+				usleep(hconfig.toe);
 				chip_enable(TRUE);
-				_delay_us(hconfig.toe);
+				usleep(hconfig.toe);
 	
 				/* Set the configured flag */
 				configured = TRUE;
@@ -364,14 +364,14 @@ void write_data_to_addr(uint32_t address, uint16_t data)
 	/* Setup the address and data lines  */
 	set_address(address);
 	set_data(data);
-	_delay_us(hconfig.toe);
+	usleep(hconfig.toe);
 
 	/* Toggle the write enable pin */
 	write_enable(TRUE);
-	_delay_us(hconfig.toe);
+	usleep(hconfig.toe);
 	
 	write_enable(FALSE);
-	_delay_us(hconfig.toe);
+	usleep(hconfig.toe);
 }
 
 /* Execute the address/data commands listed in hconfig.commands */
@@ -418,13 +418,13 @@ void parallel_read(void)
 		read_enable(TRUE);
 
 		/* Wait for the output to become active, then read data off the data pins */
-		_delay_us(hconfig.toe);
+		usleep(hconfig.toe);
 		data = read_data_pins();
 
 		/* Release the output/read enable line, and wait for the output be be deactivated */
 		output_enable(FALSE);
 		read_enable(FALSE);
-		_delay_us(hconfig.toe);
+		usleep(hconfig.toe);
 
 		/* Send one (or two) bytes of read data back to the host */
 		fputc((uint8_t) (data & 0xFF), &gconfig.usb);
@@ -487,7 +487,7 @@ void parallel_write(void)
 
 			/* Write the specified byte/word to the next address, then wait for the write to complete */
 			write_data_to_addr(j, data);
-			_delay_us(hconfig.tbp);
+			usleep(hconfig.tbp);
 
 			/* Toggle the status LED */
 			if(c == LED_TOGGLE_INTERVAL)

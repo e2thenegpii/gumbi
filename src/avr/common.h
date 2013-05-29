@@ -174,6 +174,7 @@ void led_off(void);
 void toggle_led(void);
 void ack(void);
 void nack(void);
+void usleep(uint8_t useconds);
 void sleep(uint8_t seconds);
 uint8_t is_valid_pin(uint8_t p);
 void set_control_pin(struct ctrlpin p, uint8_t tf);

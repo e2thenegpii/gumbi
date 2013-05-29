@@ -34,6 +34,17 @@ void nack(void)
 	fprintf(&gconfig.usb, "%s\n", NACK);
 }
 
+/* Delay for x number of micro seconds */
+void usleep(uint8_t useconds)
+{
+	uint8_t i = 0;
+
+	for(i=0; i<useconds; i++)
+	{
+		_delay_us(1);
+	}
+}
+
 /* Delay for x number of seconds */
 void sleep(uint8_t seconds)
 {
