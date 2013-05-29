@@ -9,6 +9,7 @@ class NORFlash(Parallel):
 
 	# Default chip erase time in seconds
 	DEFAULT_TSCE = 60
+	#DEBUG = True
 
 	def ReadChip(self, address=0, count=0):
 		"""
