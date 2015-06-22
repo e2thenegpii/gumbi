@@ -1,0 +1,149 @@
+# Configuration Class #
+
+The Gumbi API includes a Configuration class which is responsible for parsing configuration files used by Gumbi based applications. While it does look for specific fields that are common to most Gumbi applications, it is generic enough to be used for parsing customized configuration files as well.
+
+# Configuration File Format #
+
+Configuration files are expected to contain one entry per line, in the format of KEY=VALUE. Any text preceded by a pound sign (#) will be considered a comment and ignored. White space is allowed, and while KEY strings are case insensitive it is good convention to make them all upper case.
+
+If multiple values need to be provided for a given key, they may be separated by any of the following separators:
+
+  * ,
+  * :
+  * ;
+
+Example:
+
+```
+# This configuration file is for use in Gumbi's parallel mode
+MODE=parallel
+
+# Set the number of pins on the chip
+PINS=8
+
+#Enable the 3 volt on board regulator
+VOLTAGE=3 
+
+# Specify a list of address pins
+ADDRESS=1,2,3,4
+
+# This is a custom key value.
+FOO=bar
+```
+
+# Built In Keys #
+
+There are several configuration keys that have special meaning. The following may be specified for any mode of operation:
+
+| **Key** | **Description** | **Accepted Values** |
+|:--------|:----------------|:--------------------|
+| MODE    | A case insensitive string value describing the mode the configuration file was designed for. If specified, this mode must match the mode specified when instantiating the Gumbi.Configuration class. | Example: MODE=parallel |
+| VOLTAGE | The voltage regulator to enable. This value may be any valid value accepted by Gumbi.SetVoltage. If specified in the configuration file, the selected voltage regulator will be automatically enabled. If not specified, the currently enabled voltage regulator will be used. | One of: 0, 2, 3, 5  |
+| VCC     | An ordered list of pins that should be explicitly pulled high. | Any delimited list of pin numbers. Example: VCC=1,2,3,4 |
+| GND     | An ordered list of pins that should be explicitly pulled low. | Any delimited list of pin numbers. Example: GND=1,2,3,4 |
+| PINS    | The pin count of the target device, used internally by the Configuration class for automatic pin mapping. For example, if an 8 pin chip is plugged into the Gumbi board, chip pin 1 will be connected to Gumbi pin 1 while chip pin 8 will be connected to Gumbi pin 64. If this key is defined, the mapping between the specified pin (e.g., 8) and the actual Gumbi pin (e.g., 64) will be done automatically. If this is not defined, all specified pins will be considered absolute pin numbers on the Gumbi board. | Any numeric value less than or equal to the number of available I/O pins on the Gumbi board |
+
+The following configuration keys have special meaning in parallel mode, but may be used in configuration files for other modes, such as GPIO. However, in non-parallel modes, the actions listed here will not be taken by default.
+
+| **Key** | **Description** | **Accepted Values** |
+|:--------|:----------------|:--------------------|
+| ADDRESS | An ordered list of address bus pins, LSB first. | Any delimited list of pin numbers. Example: ADDRESS=1,2,3,4 |
+| DATA    | An ordered list of data bus pins, LSB first. | Any delimited list of pin numbers. Example: DATA=1,2,3,4 |
+| CE      | The Chip Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically activated when initializing the target chip. | A delimited pin number and active state value. Example: CE=21:0 |
+| WE      | The Write Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically activated when writing data. | A delimited pin number and active state value. Example: WE=21:0 |
+| RE      | The Read Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically activated when reading data. | A delimited pin number and active state value. Example: RE=21:0 |
+| OE      | The Output Enable pin, and its active state (0 is active low, 1 is active high). If specified, this pin is automatically activated when reading data. | A delimited pin number and active state value. Example: RE=21:0 |
+| BE      | The Byte Enable pin and its active state (0 is active low, 1 is active high), for chips that support both word (16 bit) and byte (8 bit) data busses. If specified, this pin is automatically activated if  8 or fewer DATA pins are specified. | A delimited pin number and active state value. Example: BE=21:0 |
+| BY      | The Busy pin and its active state (0 is active low, 1 is active high). When specified, Gumbi will not perform any read/write operations while this pin is in its active state. | A delimited pin number and active state value. Example: BY=21:0 |
+| WP      | The Write Protect pin and its active state (0 is active low, 1 is active high). If specified, this pin is deactivated when initializing the target chip. | A delimited pin number and active state value. Example: WP=21:0 |
+| RST     | The Reset pin and its active state (0 is active low, 1 is active high). If specified, this pin is deactivated when initializing the target chip. | A delimited pin number and active state value. Example: RST=21:0 |
+| COMMANDS | A list of commands to be executed prior to read/write operations. Each command consists of an address and data value pair. | A delimited list of address data pairs. Example: COMMANDS=0x5555:0xAA,0xAAAA:0x55 |
+| CMDELAY | The delay period, in seconds, to wait after executing the commands listed in the COMMANDS directive. | An integer value. Example: CMDELAY=5 |
+| RECONFIGURE | If this value is set to 1, the Gumbi board will reconfigure the I/O pins each time an action is executed. If set to 0 or not specified, they will only be configured once. | A value of 0 or 1. Example: RECONFIGURE=1 |
+
+# Loading a Configuration File #
+
+If using a built-in mode, such as the Monitor, GPIO or Parallel modes, you do not need to instantiate the Configuration class directly; the class constructors for these modes will do this for you. The class constructors for these modes accept a 'config' field, which can be either the path to a configuration file, or a dictionary containing configuration settings:
+
+```
+from gumbi import Parallel
+
+p = Parallel(config="configs/mysettings.conf")
+```
+
+All of the Configuration methods, as described in the sections below, are accessible through the 'conf' instance:
+
+```
+print "Foo setting:", p.conf.GetSetting("FOO")[0]
+```
+
+# Instantiating the Configuration Class #
+
+The Configuration class requires two arguments:
+
+  1. The path to a configuration file / a dictionary of configuration settings
+  1. The mode of operation
+
+The mode is simply a text string, which must match the value for the MODE key in the configuration file, if one is specified. This is to help applications quickly identify an incorrect configuration file.
+
+If a MODE value is specified in the configuration file and it does not match the string passed to the Configuration class, an exception will be raised. If no MODE is specified in the configuration file, the mode value will be ignored.
+
+Example:
+
+```
+from gumbi import Configuration
+
+conf = Configuration("configs/my.conf", "GPIO")
+```
+
+# Accessing Key Values #
+
+You can access specific key values using the GetSetting method:
+
+```
+print "Foo setting:", conf.GetSetting("FOO")[0]
+```
+
+Note that all values are stored as lists, so GetSetting will return a list on success, or None on failure.
+
+# Setting Key Values #
+
+You can explicitly set key values using the SetSetting method:
+
+```
+conf.SetSetting("FOO", ["bar2"])
+```
+
+Note that all values are stored as lists, so your value should always be a list.
+
+# Setting Commands #
+
+Because the COMMANDS field - a list of address/data values that need to be written prior to a read or write operation - is a common field that needs to be changed, there is a convenience function for doing so:
+
+```
+conf.SetCommands([0x5555, 0xAA])
+```
+
+Alternatively, you can specify the name of an existing configuration key, and the COMMANDS value will be set to the value of that key:
+
+```
+conf.SetCommands("ERASE")
+```
+
+# The INCLUDE Directive #
+
+Some configurations may be very similar and require only a few changes. In these cases, it does not make sense to re-write the entire configuration file. Instead, the INCLUDE directive can be used to include settings from an existing configuration file:
+
+```
+VOLTAGE=3
+
+# If the VOLTAGE setting is defined in the foo file, it will override the above VOLTAGE setting
+INCLUDE=foo
+
+# If the PINS setting is defined in the foo config file, this will override that setting
+PINS=32
+```
+
+The file name specified in the INCLUDE directive is case sensitive and must exclude the file extension. The file extension of the file being included must match that of the current configuration file, and both files must be located in the same directory.
+
+For example, if the bar.conf file wants to include the settings from foo.conf, they must be placed in the same directory.

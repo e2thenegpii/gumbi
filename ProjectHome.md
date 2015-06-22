@@ -1,0 +1,1 @@
+The Gumbi board provides a flexible USB interface to the real world in the form of 64 digital I/O pins – all controllable from the comfort of your Python shell, allowing you to rapidly prototype and create new tools for interfacing with external devices.
